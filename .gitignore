@@ -7,3 +7,17 @@
 .DS_Store
 .idea
 .vscode
+# Node
+node_modules/
+.angular/
+dist/
+
+# PHP / Composer
+vendor/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+
