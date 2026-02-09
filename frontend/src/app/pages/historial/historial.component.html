@@ -1,0 +1,50 @@
+<div class="historial-wrapper">
+  <h2 (click)="mostrarHistorial = !mostrarHistorial" class="historial-toggle">
+    Historial de Envíos
+    <span class="arrow">{{ mostrarHistorial ? '▲' : '▼' }}</span>
+  </h2>
+
+  <div *ngIf="mostrarHistorial" class="historial-content">
+    <div class="filtros">
+      <input type="text" placeholder="Buscar por asunto..." [(ngModel)]="filtroAsunto" />
+      <input type="date" [(ngModel)]="filtroFechaMin" />
+      <input type="date" [(ngModel)]="filtroFechaMax" />
+    </div>
+
+    <table class="historial-table" *ngIf="historialFiltrado().length > 0; else sinResultados">
+      <thead>
+        <tr>
+          <th>Asunto</th>
+          <th>Plantilla</th>
+          <th>Fecha envío</th>
+          <th>Destinatarios</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let envio of historialFiltrado()">
+          <td>{{ envio.asunto }}</td>
+          <td>
+            <span *ngIf="envio.plantilla !== 'Sin plantilla'; else plantillaEliminada">
+              {{ envio.plantilla }}
+            </span>
+            <ng-template #plantillaEliminada>
+              <span class="text-danger">Eliminada</span>
+            </ng-template>
+          </td>
+          <td>{{ envio.enviado_en | date:'short' }}</td>
+          <td>{{ envio.total_destinatarios }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #sinResultados>
+      <p>No se encontraron resultados.</p>
+    </ng-template>
+
+    <div class="ver-mas-wrapper" *ngIf="historial.length > 5">
+      <button (click)="mostrarTodo = !mostrarTodo" class="ver-mas-btn">
+        {{ mostrarTodo ? 'Ver menos ▲' : 'Ver más ▼' }}
+      </button>
+    </div>
+  </div>
+</div>

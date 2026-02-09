@@ -1,0 +1,35 @@
+<div class="dashboard-wrapper">
+  <h2>Bienvenida, Admin 👋</h2>
+  <p class="dashboard-subtitle">Resumen de actividad y accesos rápidos</p>
+
+  <div class="dashboard-cards">
+    <div class="card">
+      <h3>Correos enviados</h3>
+      <p>{{ stats.envios }}</p>
+    </div>
+    <div class="card">
+      <h3>Contactos activos</h3>
+      <p>{{ stats.contactos }}</p>
+    </div>
+    <div class="card">
+      <h3>Plantillas creadas</h3>
+      <p>{{ stats.plantillas }}</p>
+    </div>
+  </div>
+
+  <div class="dashboard-actions">
+    <button (click)="goTo('send')" class="dashboard-btn">Enviar nuevo correo</button>
+    <button (click)="goTo('templates')" class="dashboard-btn">Crear plantilla</button>
+    <button (click)="goTo('contactos')" class="dashboard-btn">Ver contactos</button>
+  </div>
+
+
+  <div class="dashboard-resumen">
+    <h4>Resumen del sistema</h4>
+    <ul>
+      <li><strong>Plantilla más usada:</strong> {{ resumen.plantilla_mas_usada }} ({{ resumen.total_usos }} envíos)</li>
+      <li><strong>Contacto más frecuente:</strong> {{ resumen.contacto_destacado }} ({{ resumen.total_recibidos }}
+        correos)</li>
+    </ul>
+  </div>
+</div>

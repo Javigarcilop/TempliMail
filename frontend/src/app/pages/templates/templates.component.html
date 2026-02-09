@@ -1,0 +1,66 @@
+<div *ngIf="mensajeVisible" [ngClass]="{
+    'alert': true,
+    'alert-success': mensaje.startsWith('✅'),
+    'alert-danger': mensaje.startsWith('❌')
+  }" class="text-center">
+  {{ mensaje }}
+</div>
+
+<form (ngSubmit)="agregarPlantilla()" #form="ngForm">
+  <div class="mb-3">
+    <label for="nombre" class="form-label">Nombre de la plantilla</label>
+    <input type="text" id="nombre" class="form-control" [(ngModel)]="nueva.nombre" name="nombre" required />
+  </div>
+
+  <div class="mb-3">
+    <label for="asunto" class="form-label">Asunto</label>
+    <input type="text" id="asunto" class="form-control" [(ngModel)]="nueva.asunto" name="asunto" required />
+  </div>
+
+  <div class="editor-container mb-3">
+    <label for="contenido" class="form-label">Contenido</label>
+    <editor apiKey="90fkwvwq8dyv54dm0438f6opzfzf2deaz8j3ss23vmw3gtoq" [(ngModel)]="nueva.contenido_html"
+      name="contenido_html" [init]="{
+        height: 500,
+        resize: true,
+        menubar: true,
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+        toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | fullscreen | help'
+      }"></editor>
+  </div>
+
+  <div class="mb-3 upload-wrapper">
+    <label for="fileInput" class="form-label">📎 Subir archivo (.docx o .pdf):</label>
+    <div class="upload-row">
+      <input type="file" id="fileInput" (change)="archivoSeleccionado = $event" accept=".docx,.pdf" />
+      <button type="button" class="btn btn-secondary" (click)="subirArchivo()">Cargar archivo</button>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Guardar Plantilla</button>
+</form>
+
+<hr class="my-5" />
+<h3 class="mb-3 text-center fw-semibold">Plantillas guardadas</h3>
+
+<div class="tabla-plantillas">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Asunto</th>
+        <th style="width: 180px;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let plantilla of plantillas">
+        <td>{{ plantilla.nombre }}</td>
+        <td>{{ plantilla.asunto }}</td>
+        <td class="acciones">
+          <button (click)="editarPlantilla(plantilla)">Editar</button>
+          <button (click)="eliminarPlantilla(plantilla.id)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

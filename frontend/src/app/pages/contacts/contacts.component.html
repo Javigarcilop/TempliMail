@@ -1,0 +1,39 @@
+<h2>Gestión de Contactos</h2>
+
+<form (ngSubmit)="agregarContacto()">
+  <input [(ngModel)]="nuevo.nombre" name="nombre" placeholder="Nombre" required>
+  <input [(ngModel)]="nuevo.apellidos" name="apellidos" placeholder="Apellidos">
+  <input [(ngModel)]="nuevo.email" name="email" type="email" placeholder="Email" required>
+  <input [(ngModel)]="nuevo.telefono" name="telefono" placeholder="Teléfono">
+  <input [(ngModel)]="nuevo.empresa" name="empresa" placeholder="Empresa">
+  <input [(ngModel)]="nuevo.cargo" name="cargo" placeholder="Cargo">
+  <input [(ngModel)]="nuevo.etiquetas" name="etiquetas" placeholder="Etiquetas">
+
+  <button type="submit">{{ editandoId ? 'Actualizar' : 'Añadir' }}</button>
+  <button *ngIf="editandoId" type="button" (click)="cancelarEdicion()" class="btn-cancelar">Cancelar</button>
+</form>
+
+<hr>
+
+<table>
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Email</th>
+      <th>Empresa</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let c of contactos">
+      <td>{{ c.nombre }} {{ c.apellidos }}</td>
+      <td>{{ c.email }}</td>
+      <td>{{ c.empresa }}</td>
+      
+      <td>
+        <button (click)="editarContacto(c)" class="btn-editar">Editar</button>
+        <button (click)="eliminarContacto(c.id)">🗑</button>
+      </td>
+    </tr>
+  </tbody>
+</table>

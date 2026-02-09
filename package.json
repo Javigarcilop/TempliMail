@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "lucide": "^0.511.0",
+    "lucide-angular": "^0.511.0"
+  }
+}

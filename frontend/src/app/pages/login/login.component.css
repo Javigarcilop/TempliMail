@@ -1,0 +1,102 @@
+/* Página completa */
+.login-fullpage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #0e1a2b;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Encabezado del login */
+.login-header {
+  text-align: center;
+  margin-bottom: 16px; /* ✅ Más pegado a la caja */
+}
+
+.login-logo {
+  width: 200px;
+  margin-bottom: 6px; /* ✅ Más cerca del texto */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-subtitle {
+  font-size: 15px;
+  color: #b0b8c1;
+  margin-top: 0;
+  margin-bottom: 0; /* ✅ Sin separación extra */
+}
+
+/* Caja del formulario */
+.login-box {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 40px; /* ✅ Más espacio debajo */
+}
+
+/* Formulario */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Etiquetas */
+.login-form label {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Inputs */
+.login-form input {
+  padding: 12px;
+  font-size: 15px;
+  border: none;
+  border-radius: 10px;
+  background-color: #1f2c44;
+  color: #ffffff;
+  outline: none;
+  transition: background-color 0.2s ease;
+}
+
+.login-form input:focus {
+  background-color: #263a5d;
+}
+
+/* Botón */
+.login-form button {
+  padding: 14px;
+  background-color: #4A90E2;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.login-form button:hover {
+  background-color: #357ABD;
+}
+
+/* Enlace de recuperación */
+.forgot-password {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #b0b8c1;
+  cursor: pointer;
+}

@@ -1,0 +1,145 @@
+/* Contenedor del formulario */
+form {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  font-family: 'Inter', 'Poppins', sans-serif;
+}
+
+/* Inputs del formulario */
+input {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #B0B8C1;
+  font-size: 15px;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+  background-color: #F5F7FA;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: #4A90E2;
+  outline: none;
+  background-color: #ffffff;
+}
+
+/* Botón de añadir / actualizar */
+button[type="submit"] {
+  grid-column: span 2;
+  padding: 14px;
+  background-color: #4A90E2;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+  font-size: 15px;
+}
+
+button[type="submit"]:hover {
+  background-color: #357ABD;
+  transform: translateY(-1px);
+}
+
+/* Botón cancelar */
+.btn-cancelar {
+  grid-column: span 2;
+  padding: 14px;
+  background-color: #B0B8C1;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  font-size: 15px;
+  margin-top: -10px;
+}
+
+.btn-cancelar:hover {
+  background-color: #9099A2;
+  transform: translateY(-1px);
+}
+
+/* Botón EDITAR */
+.btn-editar {
+  padding: 10px 16px;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-family: inherit;
+  margin-right: 10px;
+}
+
+
+/* Encabezado */
+h2 {
+  text-align: center;
+  margin-top: 40px;
+  color: #1F2C44;
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Inter', 'Poppins', sans-serif;
+}
+
+/* Línea divisoria */
+hr {
+  margin: 40px auto;
+  max-width: 900px;
+}
+
+/* Tabla de contactos */
+table {
+  width: 90%;
+  margin: 0 auto 60px auto;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  font-family: 'Inter', 'Poppins', sans-serif;
+}
+
+th, td {
+  padding: 14px 20px;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+th {
+  background-color: #F5F7FA;
+  font-weight: 600;
+  color: #1F2C44;
+}
+
+td {
+  color: #1F2C44;
+}
+
+/* Botón eliminar */
+td button {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #E74C3C;
+  transition: color 0.2s;
+  vertical-align: middle;
+}
+
+td button:hover {
+  color: #C0392B;
+}

@@ -1,0 +1,196 @@
+form {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 32px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
+  font-family: 'Inter', 'Poppins', sans-serif;
+  overflow: visible;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+  color: #1F2C44;
+  font-size: 15px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid #B0B8C1;
+  border-radius: 10px;
+  font-size: 15px;
+  background-color: #F5F7FA;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+input[type="text"]:focus {
+  border-color: #4A90E2;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.editor-container {
+  margin-bottom: 24px;
+}
+
+::ng-deep .tox-tinymce {
+  border-radius: 10px;
+  border: 1px solid #B0B8C1;
+  box-shadow: none;
+  min-height: 300px !important;
+  height: auto !important;
+  resize: vertical !important;
+  overflow: auto !important;
+}
+
+::ng-deep .tox .tox-editor-container {
+  min-height: 300px !important;
+  height: auto !important;
+  overflow: visible !important;
+  font-family: 'Inter', 'Poppins', sans-serif;
+}
+
+/* Subida de archivo */
+.upload-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.upload-row input[type="file"] {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid #B0B8C1;
+  border-radius: 10px;
+  background-color: #F5F7FA;
+}
+
+.upload-row input[type="file"]:focus {
+  border-color: #4A90E2;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.upload-row .btn {
+  white-space: nowrap;
+  padding: 10px 20px;
+}
+
+/* Botón principal */
+button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #4A90E2;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+}
+
+button:hover {
+  background-color: #357ABD;
+  transform: translateY(-1px);
+}
+
+/* Alertas */
+.alert {
+  max-width: 840px;
+  margin: 24px auto;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  text-align: center;
+}
+
+.alert-success {
+  background-color: #E6F4EA;
+  color: #276749;
+  border: 1px solid #C6ECCD;
+}
+
+.alert-danger {
+  background-color: #FCEBEA;
+  color: #A94442;
+  border: 1px solid #F5C6CB;
+}
+
+/* Tabla de plantillas */
+.tabla-plantillas {
+  max-width: 900px;
+  margin: 40px auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+}
+
+.tabla-plantillas table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', 'Poppins', sans-serif;
+}
+
+.tabla-plantillas thead {
+  background-color: #F5F7FA;
+}
+
+.tabla-plantillas th, .tabla-plantillas td {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 15px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.tabla-plantillas tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla-plantillas th {
+  font-weight: 600;
+  color: #1F2C44;
+}
+
+.tabla-plantillas td {
+  color: #333;
+}
+
+.tabla-plantillas .acciones {
+  display: flex;
+  gap: 10px;
+}
+
+.tabla-plantillas button {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #B0B8C1;
+  background-color: #f0f3f6;
+  color: #1F2C44;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabla-plantillas button:hover {
+  background-color: #e1e7ee;
+  border-color: #4A90E2;
+  color: #357ABD;
+}

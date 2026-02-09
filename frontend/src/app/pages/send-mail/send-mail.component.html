@@ -1,0 +1,20 @@
+<h2>Enviar correo</h2>
+
+<form (ngSubmit)="onSubmit()" #mailForm="ngForm">
+  <label for="to">Destinatario:</label>
+  <input type="email" id="to" name="to" [(ngModel)]="to" required /><br /><br />
+
+  <label for="subject">Asunto:</label>
+  <input type="text" id="subject" name="subject" [(ngModel)]="subject" required /><br /><br />
+
+  <label for="body">Mensaje:</label><br />
+  <editor apiKey="90fkwvwq8dyv54dm0438f6opzfzf2deaz8j3ss23vmw3gtoq" [(ngModel)]="body" name="body"
+    [ngModelOptions]="{ standalone: true }" [init]="{
+      height: 300,
+      menubar: false,
+      plugins: 'advlist autolink lists link charmap preview anchor code',
+      toolbar: 'undo redo | bold italic underline | bullist numlist | link | code'
+    }"></editor><br />
+
+  <button type="submit">Enviar</button>
+</form>
