@@ -1,11 +1,9 @@
 
 # 📬 TempliMail
 
-**TempliMail es una aplicación web profesional de email marketing desarrollada como Trabajo de Fin de Grado (DAW).** Permite crear, gestionar y enviar correos electrónicos personalizados mediante plantillas visuales enriquecidas. El sistema incluye funcionalidades avanzadas como edición HTML con TinyMCE, carga automática de archivos .docx y .pdf, envío masivo, programación automática de correos por fecha y hora, historial detallado de envíos y gestión segmentada de contactos.
+**TempliMail es una aplicación web profesional de email marketing.** Permite crear, gestionar y enviar correos electrónicos personalizados mediante plantillas visuales enriquecidas. 
 
-Diseñada para ejecutarse en entorno local (XAMPP), TempliMail combina un frontend moderno desarrollado en Angular 19 con un backend robusto en PHP puro, conectados a una base de datos MySQL estructurada, eficiente y escalable.
-
-TempliMail no solo es una solución funcional en su estado actual, sino que está pensada para evolucionar y escalar, incorporando en futuras versiones funcionalidades como estadísticas de apertura, gestión multicuenta, control de roles, exportación a PDF, e integración con plataformas externas.
+TempliMail combina un frontend moderno desarrollado en Angular 19 con un backend robusto en PHP puro, conectados a una base de datos MySQL estructurada, eficiente y escalable. No es solo una solución funcional en su estado actual, sino que está pensada para evolucionar y escalar, incorporando en futuras versiones funcionalidades como estadísticas de apertura, gestión multicuenta, control de roles, exportación a PDF, e integración con plataformas externas.
 
 ---
 
@@ -44,8 +42,7 @@ TempliMail/
 ---
 
 ## ⚙️ Requisitos del Sistema
-
-- Sistema operativo: Windows 10/11  
+ 
 - XAMPP instalado (PHP 8.x + MySQL + Apache)  
 - Node.js y Angular CLI  
 
@@ -78,38 +75,11 @@ Acceso vía navegador: `http://localhost:4200`
 
 ---
 
-## 🔐 Credenciales de Acceso
-
-```
-Usuario: admin
-Contraseña: templi123
-```
-
----
-
 ## 📝 Información del Proyecto
 
 - **Nombre**: TempliMail  
-- **Autor**: Francisco Javier García López  
-- **Tutor**: Carlos Basulto Pardo  
+- **Autor**: Francisco Javier García López   
 - **Fecha de inicio**: Abril 2025  
-
----
-
-## 📎 Documentación incluida
-
-- Documento formal de despliegue (PDF)  
-- Documento de memoria (PDF)  
-- Presentación ejecutiva (opcional)  
-
----
-
-## 📦 Qué se entrega
-
-- Código fuente completo (Angular + PHP)  
-- Base de datos exportada  
-- README completo (este archivo)  
-- Documentación técnica y académica  
 
 ---
 
