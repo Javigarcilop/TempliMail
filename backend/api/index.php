@@ -7,6 +7,13 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Content-Type: application/json");
 
+require_once __DIR__ . '/../controllers/UserController.php';
+require_once __DIR__ . '/../controllers/MailController.php';
+require_once __DIR__ . '/../controllers/ContactController.php';
+require_once __DIR__ . '/../controllers/TemplateController.php';
+require_once __DIR__ . '/../controllers/UploadTemplateController.php';
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -34,8 +41,8 @@ file_put_contents(
 // AUTH
 // =======================
 if ($request === '/login' && $method === 'POST') {
-    require_once __DIR__ . '/../controllers/UserController.php';
-    (new UserController())->login();
+    $contact = new UserController();
+    $contact->login();
     exit;
 }
 
@@ -43,25 +50,21 @@ if ($request === '/login' && $method === 'POST') {
 // MAIL
 // =======================
 if ($request === '/send-mail' && $method === 'POST') {
-    require_once __DIR__ . '/../controllers/MailController.php';
     (new MailController())->send();
     exit;
 }
 
 if ($request === '/templates/mass-send' && $method === 'POST') {
-    require_once __DIR__ . '/../controllers/MailController.php';
     (new MailController())->sendMassive();
     exit;
 }
 
 if ($request === '/mail/ejecutar-programados' && $method === 'GET') {
-    require_once __DIR__ . '/../controllers/MailController.php';
     (new MailController())->ejecutarProgramados();
     exit;
 }
 
 if ($request === '/history' && $method === 'GET') {
-    require_once __DIR__ . '/../controllers/MailController.php';
     (new MailController())->getHistorial();
     exit;
 }
@@ -70,7 +73,6 @@ if ($request === '/history' && $method === 'GET') {
 // CONTACTS
 // =======================
 if ($request === '/contacts') {
-    require_once __DIR__ . '/../controllers/ContactController.php';
     $controller = new ContactController();
 
     if ($method === 'GET') {
@@ -85,7 +87,6 @@ if ($request === '/contacts') {
 }
 
 if (preg_match('#^/contacts/(\d+)$#', $request, $matches)) {
-    require_once __DIR__ . '/../controllers/ContactController.php';
     $controller = new ContactController();
     $id = (int) $matches[1];
 
@@ -104,7 +105,6 @@ if (preg_match('#^/contacts/(\d+)$#', $request, $matches)) {
 // TEMPLATES
 // =======================
 if ($request === '/templates') {
-    require_once __DIR__ . '/../controllers/TemplateController.php';
     $controller = new TemplateController();
 
     if ($method === 'GET') {
@@ -119,7 +119,6 @@ if ($request === '/templates') {
 }
 
 if (preg_match('#^/templates/(\d+)$#', $request, $matches)) {
-    require_once __DIR__ . '/../controllers/TemplateController.php';
     $controller = new TemplateController();
     $id = (int) $matches[1];
 
@@ -138,7 +137,6 @@ if (preg_match('#^/templates/(\d+)$#', $request, $matches)) {
 // UPLOAD TEMPLATE FILE
 // =======================
 if ($request === '/upload-template-file' && $method === 'POST') {
-    require_once __DIR__ . '/../controllers/UploadTemplateController.php';
     (new UploadTemplateController())->handleUpload();
     exit;
 }
