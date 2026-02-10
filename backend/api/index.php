@@ -37,8 +37,8 @@ file_put_contents(
 // AUTH
 // =======================
 if ($request === '/login' && $method === 'POST') {
-    $contact = new UserController();
-    $contact->login();
+    $userController = new UserController();
+    $userController->login();
     exit;
 }
 
@@ -46,22 +46,23 @@ if ($request === '/login' && $method === 'POST') {
 // MAIL
 // =======================
 if ($request === '/send-mail' && $method === 'POST') {
-    (new MailController())->send();
+    $mailController = new MailController();
+    $mailController->send();
     exit;
 }
 
 if ($request === '/templates/mass-send' && $method === 'POST') {
-    (new MailController())->sendMassive();
+    $mailController->sendMassive();
     exit;
 }
 
 if ($request === '/mail/ejecutar-programados' && $method === 'GET') {
-    (new MailController())->ejecutarProgramados();
+    $mailController->ejecutarProgramados();
     exit;
 }
 
 if ($request === '/history' && $method === 'GET') {
-    (new MailController())->getHistorial();
+    $mailController->getHistorial();
     exit;
 }
 
@@ -69,30 +70,30 @@ if ($request === '/history' && $method === 'GET') {
 // CONTACTS
 // =======================
 if ($request === '/contacts') {
-    $controller = new ContactController();
+    $contactController = new ContactController();
 
     if ($method === 'GET') {
-        $controller->getAll();
+        $contactController->getAll();
         exit;
     }
 
     if ($method === 'POST') {
-        $controller->create();
+        $contactController->create();
         exit;
     }
 }
 
 if (preg_match('#^/contacts/(\d+)$#', $request, $matches)) {
-    $controller = new ContactController();
+    $contactController = new ContactController();
     $id = (int) $matches[1];
 
     if ($method === 'PUT') {
-        $controller->update($id);
+        $contactController->update($id);
         exit;
     }
 
     if ($method === 'DELETE') {
-        $controller->delete($id);
+        $contactController->delete($id);
         exit;
     }
 }
