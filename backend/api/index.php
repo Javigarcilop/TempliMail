@@ -7,11 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Content-Type: application/json");
 
-require_once __DIR__ . '/../controllers/UserController.php';
-require_once __DIR__ . '/../controllers/MailController.php';
-require_once __DIR__ . '/../controllers/ContactController.php';
-require_once __DIR__ . '/../controllers/TemplateController.php';
-require_once __DIR__ . '/../controllers/UploadTemplateController.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
