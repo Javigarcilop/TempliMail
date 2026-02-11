@@ -2,188 +2,65 @@
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Utils\DB;
-use TempliMail\Utils\Mailer;
-use PDO;
+use TempliMail\Services\MailService;
+use Exception;
 
 class MailController
 {
-    private PDO $pdo;
-
-    public function __construct()
-    {
-        $this->pdo = DB::get();
-    }
-
     public function send(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
 
-        if (!isset($data['to'], $data['subject'], $data['body'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Faltan datos obligatorios']);
-            return;
-        }
+            MailService::sendSingle($data);
 
-        $result = Mailer::send(
-            $data['to'],
-            $data['subject'],
-            $data['body']
-        );
-
-        if ($result === true) {
             echo json_encode(['success' => true]);
-        } else {
-            http_response_code(500);
+
+        } catch (Exception $e) {
+
+            http_response_code(400);
             echo json_encode([
-                'success' => false,
-                'error'   => $result
+                'error' => $e->getMessage()
             ]);
         }
     }
 
     public function sendMassive(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
 
-        $contactoIds     = $data['contactos'] ?? [];
-        $plantillaId     = $data['plantilla_id'] ?? null;
-        $fechaProgramada = $data['fecha_programada'] ?? null;
+            $result = MailService::sendMassive($data);
 
-        if (empty($contactoIds) || !$plantillaId) {
+            echo json_encode([
+                'success'    => true,
+                'programado' => $result['programado']
+            ]);
+
+        } catch (Exception $e) {
+
             http_response_code(400);
-            echo json_encode(['error' => 'Datos incompletos']);
-            return;
+            echo json_encode([
+                'error' => $e->getMessage()
+            ]);
         }
-
-        $stmt = $this->pdo->prepare("SELECT * FROM plantillas WHERE id = ?");
-        $stmt->execute([$plantillaId]);
-        $plantilla = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$plantilla) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Plantilla no encontrada']);
-            return;
-        }
-
-        $estado     = $fechaProgramada ? 'pendiente' : 'enviado';
-        $fechaEnvio = $fechaProgramada ? null : date('Y-m-d H:i:s');
-
-        $stmt = $this->pdo->prepare("
-            INSERT INTO envios 
-            (plantilla_id, asunto, mensaje, estado, fecha_programada, enviado_en)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-
-        $stmt->execute([
-            $plantillaId,
-            $plantilla['asunto'],
-            $plantilla['contenido_html'],
-            $estado,
-            $fechaProgramada,
-            $fechaEnvio
-        ]);
-
-        $envioId = $this->pdo->lastInsertId();
-
-        $inClause = implode(',', array_fill(0, count($contactoIds), '?'));
-
-        $stmt = $this->pdo->prepare("
-            SELECT id, email 
-            FROM contactos 
-            WHERE id IN ($inClause)
-        ");
-
-        $stmt->execute($contactoIds);
-        $contactos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($contactos as $contacto) {
-
-            $stmt = $this->pdo->prepare("
-                INSERT INTO envios_contacto (envio_id, contacto_id)
-                VALUES (?, ?)
-            ");
-            $stmt->execute([$envioId, $contacto['id']]);
-
-            if (!$fechaProgramada) {
-                Mailer::send(
-                    $contacto['email'],
-                    $plantilla['asunto'],
-                    $plantilla['contenido_html']
-                );
-            }
-        }
-
-        echo json_encode([
-            'success'    => true,
-            'programado' => (bool) $fechaProgramada
-        ]);
     }
 
     public function getHistorial(): void
     {
-        $stmt = $this->pdo->query("
-            SELECT e.id, e.asunto, e.enviado_en, e.estado, e.fecha_programada,
-                   COALESCE(p.nombre, 'Sin plantilla') AS plantilla,
-                   COUNT(ec.contacto_id) AS total_destinatarios
-            FROM envios e
-            LEFT JOIN plantillas p ON e.plantilla_id = p.id
-            LEFT JOIN envios_contacto ec ON e.id = ec.envio_id
-            GROUP BY e.id
-            ORDER BY e.enviado_en DESC
-        ");
-
-        $historial = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         echo json_encode([
             'success' => true,
-            'data'    => $historial
+            'data'    => MailService::historial()
         ]);
     }
 
     public function ejecutarProgramados(): void
     {
-        $stmt = $this->pdo->prepare("
-            SELECT * FROM envios
-            WHERE estado = 'pendiente'
-            AND fecha_programada <= NOW()
-        ");
-
-        $stmt->execute();
-        $envios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($envios as $envio) {
-
-            $stmt = $this->pdo->prepare("
-                SELECT c.email
-                FROM envios_contacto ec
-                JOIN contactos c ON ec.contacto_id = c.id
-                WHERE ec.envio_id = ?
-            ");
-
-            $stmt->execute([$envio['id']]);
-            $destinatarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($destinatarios as $destino) {
-                Mailer::send(
-                    $destino['email'],
-                    $envio['asunto'],
-                    $envio['mensaje']
-                );
-            }
-
-            $stmt = $this->pdo->prepare("
-                UPDATE envios
-                SET estado = 'enviado', enviado_en = NOW()
-                WHERE id = ?
-            ");
-
-            $stmt->execute([$envio['id']]);
-        }
+        $procesados = MailService::ejecutarProgramados();
 
         echo json_encode([
             'success'    => true,
-            'procesados' => count($envios)
+            'procesados' => $procesados
         ]);
     }
 

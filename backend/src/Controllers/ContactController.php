@@ -2,97 +2,57 @@
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Utils\DB;
-use PDO;
-use PDOException;
+use TempliMail\Services\ContactService;
+use Exception;
 
 class ContactController
 {
-    private PDO $pdo;
-
-    public function __construct()
-    {
-        $this->pdo = DB::get();
-    }
-
     public function getAll(): void
     {
-        $stmt = $this->pdo->query(
-            "SELECT * FROM contactos ORDER BY creado_en DESC"
+        echo json_encode(
+            ContactService::getAll()
         );
-
-        $contactos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode($contactos);
     }
 
     public function create(): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
 
-        if (!isset($data['nombre'], $data['email'])) {
+            ContactService::create($data);
+
+            echo json_encode(['success' => true]);
+
+        } catch (Exception $e) {
+
             http_response_code(400);
-            echo json_encode(['error' => 'Faltan campos obligatorios']);
-            return;
+            echo json_encode([
+                'error' => $e->getMessage()
+            ]);
         }
-
-        $stmt = $this->pdo->prepare("
-            INSERT INTO contactos 
-            (nombre, apellidos, email, telefono, empresa, cargo, etiquetas)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-
-        $stmt->execute([
-            $data['nombre'],
-            $data['apellidos'] ?? '',
-            $data['email'],
-            $data['telefono'] ?? '',
-            $data['empresa'] ?? '',
-            $data['cargo'] ?? '',
-            $data['etiquetas'] ?? ''
-        ]);
-
-        echo json_encode(['success' => true]);
     }
 
     public function update(int $id): void
     {
-        $data = json_decode(file_get_contents('php://input'), true);
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
 
-        $stmt = $this->pdo->prepare("
-            UPDATE contactos
-            SET nombre = ?, 
-                apellidos = ?, 
-                email = ?, 
-                telefono = ?, 
-                empresa = ?, 
-                cargo = ?, 
-                etiquetas = ?, 
-                actualizado_en = NOW()
-            WHERE id = ?
-        ");
+            ContactService::update($id, $data);
 
-        $stmt->execute([
-            $data['nombre'] ?? '',
-            $data['apellidos'] ?? '',
-            $data['email'] ?? '',
-            $data['telefono'] ?? '',
-            $data['empresa'] ?? '',
-            $data['cargo'] ?? '',
-            $data['etiquetas'] ?? '',
-            $id
-        ]);
+            echo json_encode(['success' => true]);
 
-        echo json_encode(['success' => true]);
+        } catch (Exception $e) {
+
+            http_response_code(400);
+            echo json_encode([
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public function delete(int $id): void
     {
-        $stmt = $this->pdo->prepare(
-            "DELETE FROM contactos WHERE id = ?"
-        );
-
-        $stmt->execute([$id]);
+        ContactService::delete($id);
 
         echo json_encode(['success' => true]);
     }
