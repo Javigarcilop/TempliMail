@@ -1,6 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../models/TemplateModel.php';
+namespace TempliMail\Services;
+
+use TempliMail\Models\TemplateModel;
+use Exception;
 
 class TemplateService
 {

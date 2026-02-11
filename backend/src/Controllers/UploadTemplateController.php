@@ -1,6 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../services/UploadTemplateService.php';
+namespace TempliMail\Controllers;
+
+use TempliMail\Services\UploadTemplateService;
+use Exception;
 
 class UploadTemplateController
 {

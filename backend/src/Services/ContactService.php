@@ -1,6 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../models/ContactModel.php';
+namespace TempliMail\Services;
+
+use TempliMail\Models\ContactModel;
+use Exception;
 
 class ContactService
 {

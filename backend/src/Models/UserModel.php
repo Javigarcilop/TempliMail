@@ -1,6 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../utils/DB.php';
+namespace TempliMail\Models;
+use TempliMail\Utils\DB;
+use PDO;
 
 class UserModel
 {
@@ -9,15 +11,17 @@ class UserModel
         $db = DB::get();
 
         $stmt = $db->prepare(
-            "SELECT id, usuario, password_hash 
-             FROM usuarios 
-             WHERE usuario = :usuario 
+            "SELECT id, usuario, password_hash
+             FROM usuarios
+             WHERE usuario = :usuario
              LIMIT 1"
         );
 
-        $stmt->execute(['usuario' => $usuario]);
+        $stmt->execute([
+            'usuario' => $usuario
+        ]);
 
-        return $stmt->fetch() ?: null;
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public static function create(string $usuario, string $password): void

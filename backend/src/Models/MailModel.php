@@ -1,6 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../utils/DB.php';
+namespace TempliMail\Models;
+use TempliMail\Utils\DB;
+use PDO;
 
 class MailModel
 {

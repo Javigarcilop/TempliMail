@@ -1,16 +1,21 @@
 <?php
-require_once __DIR__ . '/../utils/Mailer.php';
+
+namespace TempliMail\Controllers;
+
+use TempliMail\Utils\DB;
+use TempliMail\Utils\Mailer;
+use PDO;
 
 class MailController
 {
-    private $pdo;
+    private PDO $pdo;
 
-    public function __construct($pdo = null)
+    public function __construct()
     {
-        $this->pdo = $pdo;
+        $this->pdo = DB::get();
     }
 
-    public function send()
+    public function send(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -20,11 +25,11 @@ class MailController
             return;
         }
 
-        $to = $data['to'];
-        $subject = $data['subject'];
-        $body = $data['body'];
-
-        $result = Mailer::send($to, $subject, $body);
+        $result = Mailer::send(
+            $data['to'],
+            $data['subject'],
+            $data['body']
+        );
 
         if ($result === true) {
             echo json_encode(['success' => true]);
@@ -35,14 +40,14 @@ class MailController
                 'error'   => $result
             ]);
         }
-
     }
 
-    public function sendMassive()
+    public function sendMassive(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
-        $contactoIds = $data['contactos'] ?? [];
-        $plantillaId = $data['plantilla_id'] ?? null;
+
+        $contactoIds     = $data['contactos'] ?? [];
+        $plantillaId     = $data['plantilla_id'] ?? null;
         $fechaProgramada = $data['fecha_programada'] ?? null;
 
         if (empty($contactoIds) || !$plantillaId) {
@@ -61,13 +66,15 @@ class MailController
             return;
         }
 
-        $estado = $fechaProgramada ? 'pendiente' : 'enviado';
+        $estado     = $fechaProgramada ? 'pendiente' : 'enviado';
         $fechaEnvio = $fechaProgramada ? null : date('Y-m-d H:i:s');
 
         $stmt = $this->pdo->prepare("
-            INSERT INTO envios (plantilla_id, asunto, mensaje, estado, fecha_programada, enviado_en) 
+            INSERT INTO envios 
+            (plantilla_id, asunto, mensaje, estado, fecha_programada, enviado_en)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
+
         $stmt->execute([
             $plantillaId,
             $plantilla['asunto'],
@@ -76,26 +83,44 @@ class MailController
             $fechaProgramada,
             $fechaEnvio
         ]);
+
         $envioId = $this->pdo->lastInsertId();
 
         $inClause = implode(',', array_fill(0, count($contactoIds), '?'));
-        $stmt = $this->pdo->prepare("SELECT id, email, nombre FROM contactos WHERE id IN ($inClause)");
+
+        $stmt = $this->pdo->prepare("
+            SELECT id, email 
+            FROM contactos 
+            WHERE id IN ($inClause)
+        ");
+
         $stmt->execute($contactoIds);
         $contactos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($contactos as $contacto) {
-            $stmt = $this->pdo->prepare("INSERT INTO envios_contacto (envio_id, contacto_id) VALUES (?, ?)");
+
+            $stmt = $this->pdo->prepare("
+                INSERT INTO envios_contacto (envio_id, contacto_id)
+                VALUES (?, ?)
+            ");
             $stmt->execute([$envioId, $contacto['id']]);
 
             if (!$fechaProgramada) {
-                Mailer::send($contacto['email'], $plantilla['asunto'], $plantilla['contenido_html']);
+                Mailer::send(
+                    $contacto['email'],
+                    $plantilla['asunto'],
+                    $plantilla['contenido_html']
+                );
             }
         }
 
-        echo json_encode(['success' => true, 'programado' => (bool) $fechaProgramada]);
+        echo json_encode([
+            'success'    => true,
+            'programado' => (bool) $fechaProgramada
+        ]);
     }
 
-    public function getHistorial()
+    public function getHistorial(): void
     {
         $stmt = $this->pdo->query("
             SELECT e.id, e.asunto, e.enviado_en, e.estado, e.fecha_programada,
@@ -109,64 +134,72 @@ class MailController
         ");
 
         $historial = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['success' => true, 'data' => $historial]);
+
+        echo json_encode([
+            'success' => true,
+            'data'    => $historial
+        ]);
     }
 
-    public function ejecutarProgramados()
+    public function ejecutarProgramados(): void
     {
         $stmt = $this->pdo->prepare("
-            SELECT * FROM envios 
-            WHERE estado = 'pendiente' 
+            SELECT * FROM envios
+            WHERE estado = 'pendiente'
             AND fecha_programada <= NOW()
         ");
+
         $stmt->execute();
         $envios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $ahora = strtotime(date('Y-m-d H:i:00'));
 
         foreach ($envios as $envio) {
-            if (strtotime($envio['fecha_programada']) > $ahora) {
-                continue;
-            }
-
-            $envioId = $envio['id'];
 
             $stmt = $this->pdo->prepare("
-                SELECT c.email FROM envios_contacto ec
+                SELECT c.email
+                FROM envios_contacto ec
                 JOIN contactos c ON ec.contacto_id = c.id
                 WHERE ec.envio_id = ?
             ");
-            $stmt->execute([$envioId]);
+
+            $stmt->execute([$envio['id']]);
             $destinatarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($destinatarios as $destino) {
-                Mailer::send($destino['email'], $envio['asunto'], $envio['mensaje']);
+                Mailer::send(
+                    $destino['email'],
+                    $envio['asunto'],
+                    $envio['mensaje']
+                );
             }
 
             $stmt = $this->pdo->prepare("
-                UPDATE envios SET estado = 'enviado', enviado_en = NOW() WHERE id = ?
+                UPDATE envios
+                SET estado = 'enviado', enviado_en = NOW()
+                WHERE id = ?
             ");
-            $stmt->execute([$envioId]);
+
+            $stmt->execute([$envio['id']]);
         }
 
-        echo json_encode(['success' => true, 'procesados' => count($envios)]);
+        echo json_encode([
+            'success'    => true,
+            'procesados' => count($envios)
+        ]);
     }
 
-    public function previewTest()
-{
-    $template = "Hola {{name}}, bienvenido a {{app}}";
-    $data = [
-        'name' => 'Javi',
-        'app' => 'TempliMail'
-    ];
+    public function previewTest(): void
+    {
+        $template = "Hola {{name}}, bienvenido a {{app}}";
 
-    $content = $template;
+        $data = [
+            'name' => 'Javi',
+            'app'  => 'TempliMail'
+        ];
 
-    foreach ($data as $key => $value) {
-        $content = str_replace('{{' . $key . '}}', $value, $content);
+        foreach ($data as $key => $value) {
+            $template = str_replace('{{' . $key . '}}', $value, $template);
+        }
+
+        echo $template;
     }
-
-    echo $content;
-    exit;
-}
-
 }

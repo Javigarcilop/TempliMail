@@ -1,21 +1,32 @@
 <?php
+
+namespace TempliMail\Controllers;
+
+use TempliMail\Utils\DB;
+use PDO;
+use PDOException;
+
 class ContactController
 {
-    private $pdo;
+    private PDO $pdo;
 
     public function __construct()
     {
-       
+        $this->pdo = DB::get();
     }
 
-    public function getAll()
+    public function getAll(): void
     {
-        $stmt = $this->pdo->query("SELECT * FROM contactos ORDER BY creado_en DESC");
+        $stmt = $this->pdo->query(
+            "SELECT * FROM contactos ORDER BY creado_en DESC"
+        );
+
         $contactos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         echo json_encode($contactos);
     }
 
-    public function create()
+    public function create(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
@@ -26,9 +37,11 @@ class ContactController
         }
 
         $stmt = $this->pdo->prepare("
-            INSERT INTO contactos (nombre, apellidos, email, telefono, empresa, cargo, etiquetas)
+            INSERT INTO contactos 
+            (nombre, apellidos, email, telefono, empresa, cargo, etiquetas)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
+
         $stmt->execute([
             $data['nombre'],
             $data['apellidos'] ?? '',
@@ -42,33 +55,45 @@ class ContactController
         echo json_encode(['success' => true]);
     }
 
-    public function update($id)
+    public function update(int $id): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
         $stmt = $this->pdo->prepare("
             UPDATE contactos
-            SET nombre = ?, apellidos = ?, email = ?, telefono = ?, empresa = ?, cargo = ?, etiquetas = ?, actualizado_en = NOW()
+            SET nombre = ?, 
+                apellidos = ?, 
+                email = ?, 
+                telefono = ?, 
+                empresa = ?, 
+                cargo = ?, 
+                etiquetas = ?, 
+                actualizado_en = NOW()
             WHERE id = ?
         ");
+
         $stmt->execute([
-            $data['nombre'],
-            $data['apellidos'],
-            $data['email'],
-            $data['telefono'],
-            $data['empresa'],
-            $data['cargo'],
-            $data['etiquetas'],
+            $data['nombre'] ?? '',
+            $data['apellidos'] ?? '',
+            $data['email'] ?? '',
+            $data['telefono'] ?? '',
+            $data['empresa'] ?? '',
+            $data['cargo'] ?? '',
+            $data['etiquetas'] ?? '',
             $id
         ]);
 
         echo json_encode(['success' => true]);
     }
 
-    public function delete($id)
+    public function delete(int $id): void
     {
-        $stmt = $this->pdo->prepare("DELETE FROM contactos WHERE id = ?");
+        $stmt = $this->pdo->prepare(
+            "DELETE FROM contactos WHERE id = ?"
+        );
+
         $stmt->execute([$id]);
+
         echo json_encode(['success' => true]);
     }
 }

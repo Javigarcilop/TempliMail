@@ -1,6 +1,9 @@
 <?php
 
-require_once __DIR__ . '/../models/UserModel.php';
+namespace TempliMail\Services;
+
+use TempliMail\Models\UserModel;
+use Exception;
 
 class UserService
 {

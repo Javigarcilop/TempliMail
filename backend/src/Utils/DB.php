@@ -1,5 +1,11 @@
 <?php
 
+namespace TempliMail\Utils;
+
+use PDO;
+use PDOException;
+use RuntimeException;
+
 class DB
 {
     private static ?PDO $instance = null;

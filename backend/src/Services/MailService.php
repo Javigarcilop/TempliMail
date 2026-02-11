@@ -1,7 +1,11 @@
 <?php
 
-require_once __DIR__ . '/../models/MailModel.php';
-require_once __DIR__ . '/../utils/Mailer.php';
+namespace TempliMail\Services;
+
+use TempliMail\Models\MailModel;
+use TempliMail\Utils\Mailer;
+use Exception;
+
 
 class MailService
 {
