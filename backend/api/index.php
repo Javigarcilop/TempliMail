@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-use TempliMail\Controllers\UserController;
+use TempliMail\Controllers\AuthController;
 use TempliMail\Controllers\MailController;
 use TempliMail\Controllers\ContactController;
 use TempliMail\Controllers\TemplateController;
@@ -40,10 +40,15 @@ try {
     // AUTH
     // =======================
     if ($request === '/login' && $method === 'POST') {
-        (new UserController())->login();
+        (new AuthController())->login();
         exit;
     }
 
+    if ($request === '/register' && $method === 'POST') {
+        (new AuthController())->register();
+        exit;
+    }
+    
     // =======================
     // MAIL
     // =======================

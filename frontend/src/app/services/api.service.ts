@@ -92,4 +92,13 @@ export class ApiService {
   uploadTemplateFile(formData: FormData): Observable<any> {
     return this.http.post(`${this.baseUrl}/upload-template-file`, formData);
   }
+
+  login(data: { user: string; password: string }) {
+    return this.http.post(`${this.baseUrl}/login`, data);
+  }
+  
+  register(data: { usuario: string; password: string }) {
+    return this.http.post(`${this.baseUrl}/register`, data);
+  }
+  
 }

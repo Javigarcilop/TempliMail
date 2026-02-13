@@ -4,7 +4,7 @@ namespace TempliMail\Models;
 use TempliMail\Utils\DB;
 use PDO;
 
-class UserModel
+class AuthModel
 {
     public static function findByUsuario(string $usuario): ?array
     {
@@ -37,5 +37,33 @@ class UserModel
             'usuario' => $usuario,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT)
         ]);
+    }
+
+
+    public static function update(int $id, string $password): void
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare(
+            "UPDATE usuarios
+             SET usuario = :usuario,
+                 password_hash = :password_hash,
+             WHERE id = :id"
+        );
+
+        $stmt->execute([
+            'id' => $id,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT)
+        ]);
+    }
+
+    public static function delete(int $id): void
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare(
+            "DELETE FROM usuarios WHERE id = :id"
+        );
+        $stmt->execute(['id' => $id]);
     }
 }

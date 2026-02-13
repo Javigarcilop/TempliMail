@@ -1,30 +1,42 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, HttpClientModule],
+  imports: [FormsModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
+
   user = '';
   password = '';
 
-  constructor(private http: HttpClient, private router: Router) { }
+  constructor(
+    private api: ApiService,
+    private router: Router
+  ) {}
 
-  onLogin() {
-    const data = { user: this.user, password: this.password };
+  onLogin(): void {
 
-    this.http.post('http://localhost/TempliMail/backend/api/index.php/login', data).subscribe({
+    if (!this.user || !this.password) {
+      alert('Completa todos los campos');
+      return;
+    }
+
+    this.api.login({
+      user: this.user,
+      password: this.password
+    }).subscribe({
       next: () => {
         localStorage.setItem('loggedIn', 'true');
         this.router.navigate(['/dashboard']);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Error login:', err);
         alert('❌ Credenciales incorrectas');
       }
     });
