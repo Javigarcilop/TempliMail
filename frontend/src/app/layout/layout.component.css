@@ -1,0 +1,48 @@
+/* Contenedor principal */
+.app-container {
+    display: flex;
+    height: 100vh;
+    background-color: #0f2a47; /* azul oscuro fondo */
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background-color: #132f4c;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar .logo {
+    margin-bottom: 40px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .sidebar a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+  }
+  
+  .sidebar a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Contenido principal */
+  .app-content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+  }
+  
