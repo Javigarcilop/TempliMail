@@ -97,8 +97,9 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/login`, data);
   }
   
-  register(data: { usuario: string; password: string }) {
+  register(data: { user: string; password: string }) {
     return this.http.post(`${this.baseUrl}/register`, data);
   }
+  
   
 }

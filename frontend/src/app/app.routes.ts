@@ -12,6 +12,11 @@ export const routes: Routes = [
       import('./pages/login/login.component').then(m => m.LoginComponent)
   },
   {
+    path: 'register',
+    loadComponent: () =>
+      import('./pages/register/register.component').then(m => m.RegisterComponent)
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
@@ -41,5 +46,4 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/historial/historial.component').then(m => m.HistorialComponent)
   }
-
 ];

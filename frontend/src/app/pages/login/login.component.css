@@ -100,3 +100,9 @@
   color: #b0b8c1;
   cursor: pointer;
 }
+
+.register-link a {
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+}

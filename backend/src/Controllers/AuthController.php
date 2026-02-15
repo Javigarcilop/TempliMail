@@ -37,21 +37,35 @@ class AuthController
         }
     }
 
+
     public function register(): void
     {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
 
+            if (
+                !$data ||
+                empty($data['user']) ||
+                empty($data['password'])
+            ) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Datos incompletos']);
+                return;
+            }
+
             AuthService::registerUser(
-                $data['usuario'],
+                $data['user'],
                 $data['password']
             );
 
             http_response_code(201);
             echo json_encode(['success' => true]);
         } catch (Exception $e) {
+
             http_response_code(400);
-            echo json_encode(['error' => $e->getMessage()]);
+            echo json_encode([
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }
