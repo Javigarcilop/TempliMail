@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 
@@ -9,7 +10,8 @@ import { ApiService } from '../../services/api.service';
   standalone: true,
   imports: [
     CommonModule,   
-    FormsModule
+    FormsModule,
+    RouterModule
   ],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.css']
