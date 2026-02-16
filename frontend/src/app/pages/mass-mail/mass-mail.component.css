@@ -50,7 +50,7 @@ select.form-select {
 
 select.form-select:focus {
   outline: none;
-  border-color: #4A90E2;
+  border-color: #132f4c;
   background-color: #ffffff;
 }
 
@@ -94,7 +94,7 @@ input[type="checkbox"] {
 
 /* Botón corporativo */
 button.btn {
-  background-color: #4A90E2;
+  background-color: #132f4c;
   color: #FFFFFF;
   padding: 12px 24px;
   font-size: 15px;

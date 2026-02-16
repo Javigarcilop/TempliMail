@@ -34,7 +34,7 @@ input:focus {
 button[type="submit"] {
   grid-column: span 2;
   padding: 14px;
-  background-color: #4A90E2;
+  background-color: #132f4c;
   color: white;
   font-weight: 600;
   border: none;

@@ -1,98 +1,13 @@
-/* ===== Layout Base ===== */
-
+/* Contenedor principal */
 .app-container {
   display: flex;
   height: 100vh;
-  background-color: #f8fafc; /* gris SaaS limpio */
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f2f2f2; /* Azul oscuro fondo */
 }
 
-/* ===== Sidebar ===== */
-
-.sidebar {
-  width: 230px;
-  background-color: #111827; /* gris azulado moderno */
-  color: #e5e7eb;
-  padding: 32px 18px;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Logo / Marca */
-.sidebar .logo {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 36px;
-  letter-spacing: 0.4px;
-  color: #ffffff;
-}
-
-/* Navegación */
-.sidebar nav {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* Links base */
-.sidebar a {
-  display: flex;
-  align-items: center;
-  padding: 9px 12px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  color: #9ca3af;
-  transition: all 0.18s ease;
-}
-
-/* Hover moderno */
-.sidebar a:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-}
-
-/* Activo estilo SaaS */
-.sidebar a.router-link-active {
-  background-color: #1f2937;
-  color: #ffffff;
-}
-
-/* ===== Contenido principal ===== */
-
+/* Contenido principal */
 .app-content {
   flex: 1;
-  padding: 48px 60px;
+  padding: 40px;
   overflow-y: auto;
-  background-color: #f8fafc;
-}
-
-/* ===== Cards estilo CRM ===== */
-
-.card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  border: 1px solid #f1f5f9;
-}
-
-/* ===== Botones estilo SaaS ===== */
-
-.btn-primary {
-  background-color: #2563eb;
-  color: white;
-  padding: 10px 18px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: #1e40af;
 }
