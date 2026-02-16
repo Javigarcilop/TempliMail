@@ -4,19 +4,20 @@ namespace TempliMail\Utils;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/smtp_config.php';
+
 
 
 class Mailer
 {
-    public static function send(string $to, string $subject, string $body)
+    public static function send(string $to, string $subject, string $body): void
     {
         $mail = new PHPMailer(true);
 
         try {
-            $mail->SMTPDebug  = 2;
+            $mail->SMTPDebug  = 0; 
             $mail->Debugoutput = 'error_log';
 
-            // Configuración SMTP
             $mail->isSMTP();
             $mail->Host       = SMTP_HOST;
             $mail->SMTPAuth   = true;
@@ -25,25 +26,22 @@ class Mailer
             $mail->SMTPSecure = SMTP_SECURE;
             $mail->Port       = SMTP_PORT;
 
-            // Codificación
             $mail->CharSet  = 'UTF-8';
             $mail->Encoding = 'base64';
 
-            // Remitente y destinatario
             $mail->setFrom(SMTP_FROM, SMTP_FROM_NAME);
             $mail->addAddress($to);
 
-            // Contenido
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body    = $body;
             $mail->AltBody = strip_tags($body);
 
-            $mail->send();
-            return true;
-
-        } catch (Exception $e) {
-            return $mail->ErrorInfo; 
+            if (!$mail->send()) {
+                throw new Exception($mail->ErrorInfo);
+            }
+        } catch (\Throwable $e) {
+            throw new Exception("Error enviando correo: " . $e->getMessage());
         }
     }
 }
