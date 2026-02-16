@@ -1,5 +1,6 @@
 .app-container {
   display: flex;
+  background-color: #1F2C44;
   height: 100vh;
   font-family: 'Inter', 'Poppins', sans-serif;
 }
