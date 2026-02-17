@@ -7,54 +7,75 @@ use Exception;
 
 class AuthService
 {
-    public static function login(string $usuario, string $password): void
+    /**
+     * Register new user
+     */
+    public static function register(string $username, string $email, string $password): void
     {
-        $user = AuthModel::findByUsuario($usuario);
+        if (trim($username) === '' || trim($email) === '' || trim($password) === '') {
+            throw new Exception('Invalid input data');
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Invalid email format');
+        }
+
+        if (strlen($password) < 6) {
+            throw new Exception('Password must be at least 6 characters');
+        }
+
+        $existingUser = AuthModel::findByUsername($username);
+
+        if ($existingUser !== null) {
+            throw new Exception('Username already exists');
+        }
+
+        AuthModel::create($username, $email, $password);
+    }
+
+    /**
+     * Login user
+     */
+    public static function login(string $username, string $password): array
+    {
+        if (trim($username) === '' || trim($password) === '') {
+            throw new Exception('Invalid credentials');
+        }
+
+        $user = AuthModel::findByUsername($username);
 
         if (!$user) {
-            throw new Exception('Credenciales incorrectas');
+            throw new Exception('Invalid credentials');
         }
 
         if (!password_verify($password, $user['password_hash'])) {
-            throw new Exception('Credenciales incorrectas');
+            throw new Exception('Invalid credentials');
         }
+
+        return [
+            'id'       => $user['id'],
+            'username' => $user['username'],
+            'email'    => $user['email']
+        ];
     }
 
-    public static function createUser(string $usuario, string $password): void
+    /**
+     * Change password
+     */
+    public static function changePassword(int $userId, string $newPassword): void
     {
-        AuthModel::create($usuario, $password);
-    }
-
-    public static function registerUser1(string $usuario, string $password): void
-    {
-
-        $existingUser = AuthModel::findByUsuario($usuario);
-
-        if($existingUser && $password){
-            throw new Exception('Usuario ya existe');
+        if (strlen($newPassword) < 6) {
+            throw new Exception('Password must be at least 6 characters');
         }
-        AuthModel::create($usuario, $password);
 
+        AuthModel::updatePassword($userId, $newPassword);
     }
 
-    public static function registerUser(string $usuario, string $password): void
-{
-    if (trim($usuario) === '' || trim($password) === '') {
-        throw new Exception('Datos inválidos');
+    /**
+     * Delete account (soft delete)
+     */
+    public static function deleteAccount(int $userId): void
+    {
+        AuthModel::softDelete($userId);
     }
-
-    if (strlen($password) < 4) {
-        throw new Exception('Password demasiado corta');
-    }
-    $existingUser = AuthModel::findByUsuario($usuario);
-
-    if ($existingUser !== null) {
-        throw new Exception('Usuario ya existe');
-    }
-
-    $hash = password_hash($password, PASSWORD_DEFAULT);
-    AuthModel::create($usuario, $hash);
-}
-
-
 }

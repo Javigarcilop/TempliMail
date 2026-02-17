@@ -36,13 +36,13 @@ class AuthModel
         ");
 
         $stmt->execute([
-            'username' => $username,
-            'email' => $email,
+            'username'      => $username,
+            'email'         => $email,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT)
         ]);
     }
 
-    public static function updatePassword(int $id, string $password): void
+    public static function updatePassword(int $userId, string $newPassword): void
     {
         $db = DB::get();
 
@@ -51,15 +51,16 @@ class AuthModel
             SET password_hash = :password_hash,
                 updated_at = NOW()
             WHERE id = :id
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([
-            'id' => $id,
-            'password_hash' => password_hash($password, PASSWORD_DEFAULT)
+            'id' => $userId,
+            'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT)
         ]);
     }
 
-    public static function softDelete(int $id): void
+    public static function softDelete(int $userId): void
     {
         $db = DB::get();
 
@@ -69,6 +70,8 @@ class AuthModel
             WHERE id = :id
         ");
 
-        $stmt->execute(['id' => $id]);
+        $stmt->execute([
+            'id' => $userId
+        ]);
     }
 }

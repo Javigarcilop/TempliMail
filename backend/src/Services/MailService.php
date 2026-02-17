@@ -2,79 +2,85 @@
 
 namespace TempliMail\Services;
 
-use TempliMail\Models\MailModel;
+use TempliMail\Models\EmailCampaignModel;
+use TempliMail\Models\EmailDeliveryModel;
+use TempliMail\Models\TemplateModel;
 use TempliMail\Utils\Mailer;
 use Exception;
-
 
 class MailService
 {
     public static function sendSingle(array $data): void
     {
         if (!isset($data['to'], $data['subject'], $data['body'])) {
-            throw new Exception('Faltan datos obligatorios');
+            throw new Exception('Missing required data');
         }
 
         Mailer::send($data['to'], $data['subject'], $data['body']);
     }
 
-    public static function sendMassive(array $data): array
+    public static function sendMassive(int $userId, array $data): array
     {
-        if (empty($data['contactos']) || empty($data['plantilla_id'])) {
-            throw new Exception('Datos incompletos');
+        if (empty($data['contact_ids']) || empty($data['template_id'])) {
+            throw new Exception('Incomplete data');
         }
 
-        $plantilla = MailModel::getTemplateById((int)$data['plantilla_id']);
+        $template = TemplateModel::getById($userId, (int)$data['template_id']);
 
-        if (!$plantilla) {
-            throw new Exception('Plantilla no encontrada');
+        if (!$template) {
+            throw new Exception('Template not found');
         }
 
-        $programado = !empty($data['fecha_programada']);
-        $estado     = $programado ? 'pendiente' : 'enviado';
-        $fechaEnvio = $programado ? null : date('Y-m-d H:i:s');
+        $scheduled = !empty($data['scheduled_at']);
 
-        $envioId = MailModel::createEnvio(
-            (int)$data['plantilla_id'],
-            $plantilla['asunto'],
-            $plantilla['contenido_html'],
-            $estado,
-            $data['fecha_programada'] ?? null,
-            $fechaEnvio
+        $status = $scheduled ? 'scheduled' : 'processing';
+
+        $campaignId = EmailCampaignModel::create(
+            $userId,
+            (int)$data['template_id'],
+            $template['subject'],
+            $template['content_html'],
+            $status,
+            $data['scheduled_at'] ?? null
         );
 
-        $contactos = MailModel::getContactsByIds($data['contactos']);
+        EmailDeliveryModel::insertBatch(
+            $campaignId,
+            $data['contact_ids']
+        );
 
-        foreach ($contactos as $c) {
-            MailModel::linkEnvioContacto($envioId, (int)$c['id']);
+        if (!$scheduled) {
+            self::processCampaign($campaignId);
+        }
 
-            if (!$programado) {
-                Mailer::send($c['email'], $plantilla['asunto'], $plantilla['contenido_html']);
+        return ['scheduled' => $scheduled];
+    }
+
+    public static function processCampaign(int $campaignId): void
+    {
+        EmailCampaignModel::setProcessing($campaignId);
+
+        $deliveries = EmailDeliveryModel::getPendingByCampaign($campaignId);
+
+        foreach ($deliveries as $delivery) {
+            try {
+                Mailer::send(
+                    $delivery['email'],
+                    'Subject',
+                    'Body'
+                );
+
+                EmailDeliveryModel::markSent($delivery['id']);
+
+            } catch (Exception $e) {
+
+                EmailDeliveryModel::markFailed(
+                    $delivery['id'],
+                    $e->getMessage()
+                );
             }
         }
 
-        return ['programado' => $programado];
-    }
-
-    public static function historial(): array
-    {
-        return MailModel::getHistorial();
-    }
-
-    public static function ejecutarProgramados(): int
-    {
-        $envios = MailModel::getPendientes();
-
-        foreach ($envios as $envio) {
-            $destinatarios = MailModel::getDestinatarios((int)$envio['id']);
-
-            foreach ($destinatarios as $d) {
-                Mailer::send($d['email'], $envio['asunto'], $envio['mensaje']);
-            }
-
-            MailModel::marcarEnviado((int)$envio['id']);
-        }
-
-        return count($envios);
+        EmailCampaignModel::markCompleted($campaignId);
     }
 }

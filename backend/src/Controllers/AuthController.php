@@ -7,6 +7,9 @@ use Exception;
 
 class AuthController
 {
+    /**
+     * Login user
+     */
     public function login(): void
     {
         try {
@@ -14,30 +17,41 @@ class AuthController
 
             if (
                 !$data ||
-                empty($data['user']) ||
+                empty($data['username']) ||
                 empty($data['password'])
             ) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Datos incompletos']);
+                echo json_encode([
+                    'success' => false,
+                    'error'   => 'Incomplete data'
+                ]);
                 return;
             }
 
-            AuthService::login(
-                $data['user'],
+            $user = AuthService::login(
+                $data['username'],
                 $data['password']
             );
 
-            echo json_encode(['success' => true]);
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'user'    => $user
+            ]);
+
         } catch (Exception $e) {
 
             http_response_code(401);
             echo json_encode([
-                'error' => 'Credenciales incorrectas'
+                'success' => false,
+                'error'   => $e->getMessage()
             ]);
         }
     }
 
-
+    /**
+     * Register new user
+     */
     public function register(): void
     {
         try {
@@ -45,26 +59,36 @@ class AuthController
 
             if (
                 !$data ||
-                empty($data['user']) ||
+                empty($data['username']) ||
+                empty($data['email']) ||
                 empty($data['password'])
             ) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Datos incompletos']);
+                echo json_encode([
+                    'success' => false,
+                    'error'   => 'Incomplete data'
+                ]);
                 return;
             }
 
-            AuthService::registerUser(
-                $data['user'],
+            AuthService::register(
+                $data['username'],
+                $data['email'],
                 $data['password']
             );
 
             http_response_code(201);
-            echo json_encode(['success' => true]);
+            echo json_encode([
+                'success' => true,
+                'message' => 'User created successfully'
+            ]);
+
         } catch (Exception $e) {
 
             http_response_code(400);
             echo json_encode([
-                'error' => $e->getMessage()
+                'success' => false,
+                'error'   => $e->getMessage()
             ]);
         }
     }

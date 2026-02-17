@@ -24,6 +24,28 @@ class TemplateModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public static function getById(int $userId, int $id): ?array
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare("
+        SELECT *
+        FROM templates
+        WHERE id = :id
+          AND user_id = :user_id
+          AND deleted_at IS NULL
+        LIMIT 1
+    ");
+
+        $stmt->execute([
+            'id' => $id,
+            'user_id' => $userId
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+
     public static function create(int $userId, array $data): void
     {
         $db = DB::get();
