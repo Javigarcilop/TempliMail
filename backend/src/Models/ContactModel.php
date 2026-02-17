@@ -1,77 +1,93 @@
 <?php
 
 namespace TempliMail\Models;
+
 use TempliMail\Utils\DB;
 use PDO;
 
 class ContactModel
 {
-    public static function getAll(): array
-    {
-        $db = DB::get();
-
-        $stmt = $db->query(
-            "SELECT * FROM contactos ORDER BY creado_en DESC"
-        );
-
-        return $stmt->fetchAll();
-    }
-
-    public static function create(array $data): void
+    public static function getAllByUser(int $userId): array
     {
         $db = DB::get();
 
         $stmt = $db->prepare("
-            INSERT INTO contactos 
-            (nombre, apellidos, email, telefono, empresa, cargo, etiquetas)
-            VALUES (:nombre, :apellidos, :email, :telefono, :empresa, :cargo, :etiquetas)
+            SELECT *
+            FROM contacts
+            WHERE user_id = :user_id
+              AND deleted_at IS NULL
+            ORDER BY created_at DESC
+        ");
+
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function create(int $userId, array $data): void
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare("
+            INSERT INTO contacts 
+            (user_id, first_name, last_name, email, phone, company, position)
+            VALUES (:user_id, :first_name, :last_name, :email, :phone, :company, :position)
         ");
 
         $stmt->execute([
-            'nombre'    => $data['nombre'],
-            'apellidos' => $data['apellidos'] ?? '',
-            'email'     => $data['email'],
-            'telefono'  => $data['telefono'] ?? '',
-            'empresa'   => $data['empresa'] ?? '',
-            'cargo'     => $data['cargo'] ?? '',
-            'etiquetas' => $data['etiquetas'] ?? ''
+            'user_id'    => $userId,
+            'first_name' => $data['first_name'] ?? null,
+            'last_name'  => $data['last_name'] ?? null,
+            'email'      => $data['email'],
+            'phone'      => $data['phone'] ?? null,
+            'company'    => $data['company'] ?? null,
+            'position'   => $data['position'] ?? null
         ]);
     }
 
-    public static function update(int $id, array $data): void
+    public static function update(int $userId, int $id, array $data): void
     {
         $db = DB::get();
 
         $stmt = $db->prepare("
-            UPDATE contactos
-            SET nombre = :nombre,
-                apellidos = :apellidos,
+            UPDATE contacts
+            SET first_name = :first_name,
+                last_name = :last_name,
                 email = :email,
-                telefono = :telefono,
-                empresa = :empresa,
-                cargo = :cargo,
-                etiquetas = :etiquetas,
-                actualizado_en = NOW()
+                phone = :phone,
+                company = :company,
+                position = :position,
+                updated_at = NOW()
             WHERE id = :id
+              AND user_id = :user_id
         ");
 
         $stmt->execute([
-            'id'        => $id,
-            'nombre'    => $data['nombre'],
-            'apellidos' => $data['apellidos'],
-            'email'     => $data['email'],
-            'telefono'  => $data['telefono'],
-            'empresa'   => $data['empresa'],
-            'cargo'     => $data['cargo'],
-            'etiquetas' => $data['etiquetas']
+            'id'         => $id,
+            'user_id'    => $userId,
+            'first_name' => $data['first_name'],
+            'last_name'  => $data['last_name'],
+            'email'      => $data['email'],
+            'phone'      => $data['phone'],
+            'company'    => $data['company'],
+            'position'   => $data['position']
         ]);
     }
 
-    public static function delete(int $id): void
+    public static function softDelete(int $userId, int $id): void
     {
         $db = DB::get();
 
-        $stmt = $db->prepare("DELETE FROM contactos WHERE id = :id");
-        $stmt->execute(['id' => $id]);
+        $stmt = $db->prepare("
+            UPDATE contacts
+            SET deleted_at = NOW()
+            WHERE id = :id
+              AND user_id = :user_id
+        ");
+
+        $stmt->execute([
+            'id' => $id,
+            'user_id' => $userId
+        ]);
     }
 }

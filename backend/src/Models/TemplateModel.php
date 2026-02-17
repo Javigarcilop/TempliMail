@@ -1,71 +1,83 @@
 <?php
 
 namespace TempliMail\Models;
+
 use TempliMail\Utils\DB;
 use PDO;
+
 class TemplateModel
 {
-    public static function getAll(): array
+    public static function getAllByUser(int $userId): array
     {
         $db = DB::get();
 
-        $stmt = $db->query(
-            "SELECT * FROM plantillas ORDER BY creado_en DESC"
-        );
+        $stmt = $db->prepare("
+            SELECT *
+            FROM templates
+            WHERE user_id = :user_id
+              AND deleted_at IS NULL
+            ORDER BY created_at DESC
+        ");
 
-        return $stmt->fetchAll();
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function create(array $data): void
+    public static function create(int $userId, array $data): void
     {
         $db = DB::get();
 
-        $stmt = $db->prepare(
-            "INSERT INTO plantillas (nombre, asunto, contenido_html)
-             VALUES (:nombre, :asunto, :contenido_html)"
-        );
+        $stmt = $db->prepare("
+            INSERT INTO templates (user_id, name, subject, content_html)
+            VALUES (:user_id, :name, :subject, :content_html)
+        ");
 
         $stmt->execute([
-            'nombre'         => $data['nombre'],
-            'asunto'         => $data['asunto'],
-            'contenido_html' => $data['contenido_html']
+            'user_id' => $userId,
+            'name' => $data['name'],
+            'subject' => $data['subject'],
+            'content_html' => $data['content_html']
         ]);
     }
 
-    public static function update(int $id, array $data): void
+    public static function update(int $userId, int $id, array $data): void
     {
         $db = DB::get();
 
-        $stmt = $db->prepare(
-            "UPDATE plantillas
-             SET nombre = :nombre,
-                 asunto = :asunto,
-                 contenido_html = :contenido_html
-             WHERE id = :id"
-        );
+        $stmt = $db->prepare("
+            UPDATE templates
+            SET name = :name,
+                subject = :subject,
+                content_html = :content_html,
+                updated_at = NOW()
+            WHERE id = :id
+              AND user_id = :user_id
+        ");
 
         $stmt->execute([
-            'id'             => $id,
-            'nombre'         => $data['nombre'],
-            'asunto'         => $data['asunto'],
-            'contenido_html' => $data['contenido_html']
+            'id' => $id,
+            'user_id' => $userId,
+            'name' => $data['name'],
+            'subject' => $data['subject'],
+            'content_html' => $data['content_html']
         ]);
     }
 
-    public static function delete(int $id): void
+    public static function softDelete(int $userId, int $id): void
     {
         $db = DB::get();
 
-        // Desvincular envíos primero (integridad)
-        $update = $db->prepare(
-            "UPDATE envios SET plantilla_id = NULL WHERE plantilla_id = :id"
-        );
-        $update->execute(['id' => $id]);
+        $stmt = $db->prepare("
+            UPDATE templates
+            SET deleted_at = NOW()
+            WHERE id = :id
+              AND user_id = :user_id
+        ");
 
-        // Eliminar plantilla
-        $stmt = $db->prepare(
-            "DELETE FROM plantillas WHERE id = :id"
-        );
-        $stmt->execute(['id' => $id]);
+        $stmt->execute([
+            'id' => $id,
+            'user_id' => $userId
+        ]);
     }
 }

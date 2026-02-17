@@ -31,9 +31,16 @@ export class RegisterComponent {
   onRegister(): void {
 
     if (!this.user || !this.password) {
-      this.message = 'Completa todos los campos';
+      alert(this.message = 'Completa todos los campos');
       return;
     }
+
+    if (this.password.length < 4) {
+      this.message = 'Contraseña demasiado corta';
+      alert(this.message);
+      return;
+    }
+    
 
     this.loading = true;
     this.message = '';

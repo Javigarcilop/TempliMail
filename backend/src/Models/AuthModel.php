@@ -1,55 +1,57 @@
 <?php
 
 namespace TempliMail\Models;
+
 use TempliMail\Utils\DB;
 use PDO;
 
 class AuthModel
 {
-    public static function findByUsuario(string $usuario): ?array
+    public static function findByUsername(string $username): ?array
     {
         $db = DB::get();
 
-        $stmt = $db->prepare(
-            "SELECT id, usuario, password_hash
-             FROM usuarios
-             WHERE usuario = :usuario
-             LIMIT 1"
-        );
+        $stmt = $db->prepare("
+            SELECT id, username, email, password_hash
+            FROM users
+            WHERE username = :username
+              AND deleted_at IS NULL
+            LIMIT 1
+        ");
 
         $stmt->execute([
-            'usuario' => $usuario
+            'username' => $username
         ]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function create(string $usuario, string $password): void
+    public static function create(string $username, string $email, string $password): void
     {
         $db = DB::get();
 
-        $stmt = $db->prepare(
-            "INSERT INTO usuarios (usuario, password_hash)
-             VALUES (:usuario, :password_hash)"
-        );
+        $stmt = $db->prepare("
+            INSERT INTO users (username, email, password_hash)
+            VALUES (:username, :email, :password_hash)
+        ");
 
         $stmt->execute([
-            'usuario' => $usuario,
+            'username' => $username,
+            'email' => $email,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT)
         ]);
     }
 
-
-    public static function update(int $id, string $password): void
+    public static function updatePassword(int $id, string $password): void
     {
         $db = DB::get();
 
-        $stmt = $db->prepare(
-            "UPDATE usuarios
-             SET usuario = :usuario,
-                 password_hash = :password_hash,
-             WHERE id = :id"
-        );
+        $stmt = $db->prepare("
+            UPDATE users
+            SET password_hash = :password_hash,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
 
         $stmt->execute([
             'id' => $id,
@@ -57,13 +59,16 @@ class AuthModel
         ]);
     }
 
-    public static function delete(int $id): void
+    public static function softDelete(int $id): void
     {
         $db = DB::get();
 
-        $stmt = $db->prepare(
-            "DELETE FROM usuarios WHERE id = :id"
-        );
+        $stmt = $db->prepare("
+            UPDATE users
+            SET deleted_at = NOW()
+            WHERE id = :id
+        ");
+
         $stmt->execute(['id' => $id]);
     }
 }
