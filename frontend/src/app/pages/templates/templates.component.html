@@ -1,50 +1,107 @@
-<div *ngIf="mensajeVisible" [ngClass]="{
-    'alert': true,
-    'alert-success': mensaje.startsWith('✅'),
-    'alert-danger': mensaje.startsWith('❌')
-  }" class="text-center">
-  {{ mensaje }}
+<!-- Message -->
+<div *ngIf="messageVisible"
+     [ngClass]="{
+       'alert': true,
+       'alert-success': !message.startsWith('❌'),
+       'alert-danger': message.startsWith('❌')
+     }"
+     class="text-center">
+  {{ message }}
 </div>
 
-<form (ngSubmit)="agregarPlantilla()" #form="ngForm">
+<!-- Form -->
+<form (ngSubmit)="saveTemplate()" #form="ngForm">
+
   <div class="mb-3">
-    <label for="nombre" class="form-label">Nombre de la plantilla</label>
-    <input type="text" id="nombre" class="form-control" [(ngModel)]="nueva.nombre" name="nombre" required />
+    <label for="name" class="form-label">
+      Nombre plantilla
+    </label>
+
+    <input
+      type="text"
+      id="name"
+      class="form-control"
+      [(ngModel)]="templateForm.name"
+      name="name"
+      required
+    />
   </div>
 
   <div class="mb-3">
-    <label for="asunto" class="form-label">Asunto</label>
-    <input type="text" id="asunto" class="form-control" [(ngModel)]="nueva.asunto" name="asunto" required />
+    <label for="subject" class="form-label">
+      Asunto
+    </label>
+
+    <input
+      type="text"
+      id="subject"
+      class="form-control"
+      [(ngModel)]="templateForm.subject"
+      name="subject"
+      required
+    />
   </div>
 
   <div class="editor-container mb-3">
-    <label for="contenido" class="form-label">Contenido</label>
-    <editor apiKey="90fkwvwq8dyv54dm0438f6opzfzf2deaz8j3ss23vmw3gtoq" [(ngModel)]="nueva.contenido_html"
-      name="contenido_html" [init]="{
+    <label for="content" class="form-label">
+      Contenido
+    </label>
+
+    <editor
+      apiKey="90fkwvwq8dyv54dm0438f6opzfzf2deaz8j3ss23vmw3gtoq"
+      [(ngModel)]="templateForm.content_html"
+      name="content_html"
+      [init]="{
         height: 500,
         resize: true,
         menubar: true,
         plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
         toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | fullscreen | help'
-      }"></editor>
+      }">
+    </editor>
   </div>
 
+  <!-- File Upload -->
   <div class="mb-3 upload-wrapper">
-    <label for="fileInput" class="form-label">📎 Subir archivo (.docx o .pdf):</label>
+
+    <label for="fileInput" class="form-label">
+       Subir archivo (.docx or .pdf):
+    </label>
+
     <div class="upload-row">
-      <input type="file" id="fileInput" (change)="archivoSeleccionado = $event" accept=".docx,.pdf" />
-      <button type="button" class="btn btn-secondary" (click)="subirArchivo()">Cargar archivo</button>
+      <input
+        type="file"
+        id="fileInput"
+        (change)="selectedFile = $event"
+        accept=".docx,.pdf"
+      />
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="uploadFile()">
+        Cargar archivo
+      </button>
     </div>
+
   </div>
 
-  <button type="submit" class="btn btn-primary">Guardar Plantilla</button>
+  <button type="submit" class="btn btn-primary">
+    {{ editing ? 'Update Template' : 'Guardar plantilla' }}
+  </button>
+
 </form>
 
 <hr class="my-5" />
-<h3 class="mb-3 text-center fw-semibold">Plantillas guardadas</h3>
+
+<h3 class="mb-3 text-center fw-semibold">
+  Plantillas guardadas
+</h3>
 
 <div class="tabla-plantillas">
+
   <table>
+
     <thead>
       <tr>
         <th>Nombre</th>
@@ -52,15 +109,26 @@
         <th style="width: 180px;">Acciones</th>
       </tr>
     </thead>
+
     <tbody>
-      <tr *ngFor="let plantilla of plantillas">
-        <td>{{ plantilla.nombre }}</td>
-        <td>{{ plantilla.asunto }}</td>
+      <tr *ngFor="let template of templates">
+
+        <td>{{ template.name }}</td>
+        <td>{{ template.subject }}</td>
+
         <td class="acciones">
-          <button (click)="editarPlantilla(plantilla)">Editar</button>
-          <button (click)="eliminarPlantilla(plantilla.id)">Eliminar</button>
+          <button (click)="editTemplate(template)">
+            Editar
+          </button>
+
+          <button (click)="deleteTemplate(template.id)">
+            Eliminar
+          </button>
         </td>
+
       </tr>
     </tbody>
+
   </table>
+
 </div>

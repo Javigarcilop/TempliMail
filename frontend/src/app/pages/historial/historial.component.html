@@ -1,50 +1,81 @@
-<div class="historial-wrapper">
-  <h2 (click)="mostrarHistorial = !mostrarHistorial" class="historial-toggle">
-    Historial de Envíos
-    <span class="arrow">{{ mostrarHistorial ? '▲' : '▼' }}</span>
+<div class="history-wrapper">
+
+  <h2 (click)="showHistory = !showHistory" class="history-toggle">
+    Campaign History
+    <span class="arrow">
+      {{ showHistory ? '▲' : '▼' }}
+    </span>
   </h2>
 
-  <div *ngIf="mostrarHistorial" class="historial-content">
-    <div class="filtros">
-      <input type="text" placeholder="Buscar por asunto..." [(ngModel)]="filtroAsunto" />
-      <input type="date" [(ngModel)]="filtroFechaMin" />
-      <input type="date" [(ngModel)]="filtroFechaMax" />
+  <div *ngIf="showHistory" class="history-content">
+
+    <div class="filters">
+      <input
+        type="text"
+        placeholder="Search by subject..."
+        [(ngModel)]="subjectFilter"
+      />
+
+      <input
+        type="date"
+        [(ngModel)]="minDateFilter"
+      />
+
+      <input
+        type="date"
+        [(ngModel)]="maxDateFilter"
+      />
     </div>
 
-    <table class="historial-table" *ngIf="historialFiltrado().length > 0; else sinResultados">
+    <table
+      class="history-table"
+      *ngIf="filteredHistory().length > 0; else noResults"
+    >
       <thead>
         <tr>
-          <th>Asunto</th>
-          <th>Plantilla</th>
-          <th>Fecha envío</th>
-          <th>Destinatarios</th>
+          <th>Subject</th>
+          <th>Template</th>
+          <th>Sent at</th>
+          <th>Recipients</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr *ngFor="let envio of historialFiltrado()">
-          <td>{{ envio.asunto }}</td>
+        <tr *ngFor="let campaign of filteredHistory()">
+
+          <td>{{ campaign.subject }}</td>
+
           <td>
-            <span *ngIf="envio.plantilla !== 'Sin plantilla'; else plantillaEliminada">
-              {{ envio.plantilla }}
-            </span>
-            <ng-template #plantillaEliminada>
-              <span class="text-danger">Eliminada</span>
-            </ng-template>
+            {{ campaign.template_name || 'Deleted' }}
           </td>
-          <td>{{ envio.enviado_en | date:'short' }}</td>
-          <td>{{ envio.total_destinatarios }}</td>
+
+          <td>
+            {{ campaign.sent_at | date:'short' }}
+          </td>
+
+          <td>
+            {{ campaign.total_recipients }}
+          </td>
+
         </tr>
       </tbody>
     </table>
 
-    <ng-template #sinResultados>
-      <p>No se encontraron resultados.</p>
+    <ng-template #noResults>
+      <p>No results found.</p>
     </ng-template>
 
-    <div class="ver-mas-wrapper" *ngIf="historial.length > 5">
-      <button (click)="mostrarTodo = !mostrarTodo" class="ver-mas-btn">
-        {{ mostrarTodo ? 'Ver menos ▲' : 'Ver más ▼' }}
+    <div
+      class="show-more-wrapper"
+      *ngIf="history.length > 5"
+    >
+      <button
+        (click)="showAll = !showAll"
+        class="show-more-btn"
+      >
+        {{ showAll ? 'Show less ▲' : 'Show more ▼' }}
       </button>
     </div>
+
   </div>
 </div>

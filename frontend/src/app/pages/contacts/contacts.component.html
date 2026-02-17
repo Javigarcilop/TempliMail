@@ -1,39 +1,33 @@
-<h2>Gestión de Contactos</h2>
+<form (ngSubmit)="saveContact()">
 
-<form (ngSubmit)="agregarContacto()">
-  <input [(ngModel)]="nuevo.nombre" name="nombre" placeholder="Nombre" required>
-  <input [(ngModel)]="nuevo.apellidos" name="apellidos" placeholder="Apellidos">
-  <input [(ngModel)]="nuevo.email" name="email" type="email" placeholder="Email" required>
-  <input [(ngModel)]="nuevo.telefono" name="telefono" placeholder="Teléfono">
-  <input [(ngModel)]="nuevo.empresa" name="empresa" placeholder="Empresa">
-  <input [(ngModel)]="nuevo.cargo" name="cargo" placeholder="Cargo">
-  <input [(ngModel)]="nuevo.etiquetas" name="etiquetas" placeholder="Etiquetas">
+  <input [(ngModel)]="newContact.first_name" name="first_name" placeholder="Nombre" required />
+  <input [(ngModel)]="newContact.last_name" name="last_name" placeholder="Apellidos" />
+  <input [(ngModel)]="newContact.email" name="email" type="email" placeholder="Email" required />
+  <input [(ngModel)]="newContact.phone" name="phone" placeholder="Teléfono" />
+  <input [(ngModel)]="newContact.company" name="company" placeholder="Empresa" />
+  <input [(ngModel)]="newContact.position" name="position" placeholder="Cargo" />
 
-  <button type="submit">{{ editandoId ? 'Actualizar' : 'Añadir' }}</button>
-  <button *ngIf="editandoId" type="button" (click)="cancelarEdicion()" class="btn-cancelar">Cancelar</button>
+  <button type="submit">
+    {{ editingId ? 'Actualizar' : 'Añadir' }}
+  </button>
+
+  <button *ngIf="editingId" type="button" (click)="cancelEdit()">
+    Cancelar
+  </button>
+
 </form>
 
-<hr>
-
 <table>
-  <thead>
-    <tr>
-      <th>Nombre</th>
-      <th>Email</th>
-      <th>Empresa</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let c of contactos">
-      <td>{{ c.nombre }} {{ c.apellidos }}</td>
-      <td>{{ c.email }}</td>
-      <td>{{ c.empresa }}</td>
-      
-      <td>
-        <button (click)="editarContacto(c)" class="btn-editar">Editar</button>
-        <button (click)="eliminarContacto(c.id)" class="btn-editar">Eliminar</button>
-      </td>
-    </tr>
-  </tbody>
+  <tr *ngFor="let c of contacts">
+    <td>{{ c.first_name }}</td>
+    <td>{{ c.last_name }}</td>
+    <td>{{ c.email }}</td>
+    <td>{{ c.phone }}</td>
+    <td>{{ c.company }}</td>
+    <td>{{ c.position }}</td>
+    <td>
+      <button (click)="editContact(c)">Editar</button>
+      <button (click)="deleteContact(c.id)">Eliminar</button>
+    </td>
+  </tr>
 </table>

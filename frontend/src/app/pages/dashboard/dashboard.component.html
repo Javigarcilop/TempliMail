@@ -1,35 +1,47 @@
 <div class="dashboard-wrapper">
-  <h2>Bienvenida, Admin 👋</h2>
-  <p class="dashboard-subtitle">Resumen de actividad y accesos rápidos</p>
+
+  <h2>Bienvenida 👋</h2>
+  <p class="dashboard-subtitle">Resumen del sistema</p>
 
   <div class="dashboard-cards">
+
     <div class="card">
-      <h3>Correos enviados</h3>
-      <p>{{ stats.envios }}</p>
+      <h3>Campañas enviadas</h3>
+      <p>{{ stats.total_campaigns }}</p>
     </div>
+
     <div class="card">
       <h3>Contactos activos</h3>
-      <p>{{ stats.contactos }}</p>
+      <p>{{ stats.total_contacts }}</p>
     </div>
+
     <div class="card">
       <h3>Plantillas creadas</h3>
-      <p>{{ stats.plantillas }}</p>
+      <p>{{ stats.total_templates }}</p>
     </div>
+
   </div>
 
   <div class="dashboard-actions">
-    <button (click)="goTo('send')" class="dashboard-btn">Enviar nuevo correo</button>
+    <button (click)="goTo('send')" class="dashboard-btn">Enviar correo</button>
     <button (click)="goTo('templates')" class="dashboard-btn">Crear plantilla</button>
-    <button (click)="goTo('contactos')" class="dashboard-btn">Ver contactos</button>
+    <button (click)="goTo('contacts')" class="dashboard-btn">Ver contactos</button>
   </div>
 
-
-  <div class="dashboard-resumen">
-    <h4>Resumen del sistema</h4>
+  <div class="dashboard-summary">
+    <h4>Resumen avanzado</h4>
     <ul>
-      <li><strong>Plantilla más usada:</strong> {{ resumen.plantilla_mas_usada }} ({{ resumen.total_usos }} envíos)</li>
-      <li><strong>Contacto más frecuente:</strong> {{ resumen.contacto_destacado }} ({{ resumen.total_recibidos }}
-        correos)</li>
+      <li>
+        <strong>Plantilla más usada:</strong>
+        {{ summary.most_used_template }}
+        ({{ summary.total_uses }} envíos)
+      </li>
+      <li>
+        <strong>Contacto más frecuente:</strong>
+        {{ summary.top_contact }}
+        ({{ summary.total_received }} correos)
+      </li>
     </ul>
   </div>
+
 </div>

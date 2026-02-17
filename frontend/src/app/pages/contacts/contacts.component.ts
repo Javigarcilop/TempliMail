@@ -1,84 +1,101 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-contacts',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './contacts.component.html',
   styleUrls: ['./contacts.component.css']
 })
 export class ContactsComponent implements OnInit {
-  contactos: any[] = [];
 
-  nuevo = {
-    nombre: '',
-    apellidos: '',
+  contacts: any[] = [];
+
+  // Estructura alineada con backend nuevo
+  newContact = {
+    first_name: '',
+    last_name: '',
     email: '',
-    telefono: '',
-    empresa: '',
-    cargo: '',
-    etiquetas: ''
+    phone: '',
+    company: '',
+    position: ''
   };
 
-  editandoId: number | null = null;
+  editingId: number | null = null;
 
   constructor(private api: ApiService) {}
 
-  ngOnInit() {
-    this.cargarContactos();
+  ngOnInit(): void {
+    this.loadContacts();
   }
 
-  cargarContactos() {
-    this.api.getContactos().subscribe(data => {
-      this.contactos = data;
+  // =========================
+  // Cargar contactos
+  // =========================
+  loadContacts(): void {
+    this.api.getContacts().subscribe((data: any[]) => {
+      this.contacts = data;
     });
   }
 
-  agregarContacto() {
-    if (this.editandoId) {
-      this.api.updateContacto(this.editandoId, this.nuevo).subscribe(() => {
-        this.cancelarEdicion();
-        this.cargarContactos();
-      });
+  // =========================
+  // Crear o actualizar
+  // =========================
+  saveContact(): void {
+
+    if (this.editingId) {
+
+      this.api.updateContact(this.editingId, this.newContact)
+        .subscribe(() => {
+          this.cancelEdit();
+          this.loadContacts();
+        });
+
     } else {
-      this.api.addContacto(this.nuevo).subscribe(() => {
-        this.cargarContactos();
-        this.resetFormulario();
-      });
+
+      this.api.addContact(this.newContact)
+        .subscribe(() => {
+          this.loadContacts();
+          this.resetForm();
+        });
     }
   }
 
-  editarContacto(c: any) {
-    this.nuevo = { ...c };
-    this.editandoId = c.id;
+  // =========================
+  // Editar
+  // =========================
+  editContact(contact: any): void {
+    this.newContact = { ...contact };
+    this.editingId = contact.id;
   }
 
-  cancelarEdicion() {
-    this.resetFormulario();
-    this.editandoId = null;
+  cancelEdit(): void {
+    this.resetForm();
+    this.editingId = null;
   }
 
-  eliminarContacto(id: number) {
+  // =========================
+  // Eliminar
+  // =========================
+  deleteContact(id: number): void {
     if (confirm('¿Eliminar contacto?')) {
-      this.api.deleteContacto(id).subscribe(() => {
-        this.cargarContactos();
+      this.api.deleteContact(id).subscribe(() => {
+        this.loadContacts();
       });
     }
   }
 
-  resetFormulario() {
-    this.nuevo = {
-      nombre: '',
-      apellidos: '',
+  resetForm(): void {
+    this.newContact = {
+      first_name: '',
+      last_name: '',
       email: '',
-      telefono: '',
-      empresa: '',
-      cargo: '',
-      etiquetas: ''
+      phone: '',
+      company: '',
+      position: ''
     };
   }
 }

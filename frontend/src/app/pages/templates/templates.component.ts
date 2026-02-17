@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api.service';
 import { EditorModule } from '@tinymce/tinymce-angular';
@@ -8,126 +7,109 @@ import { EditorModule } from '@tinymce/tinymce-angular';
 @Component({
   selector: 'app-templates',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, EditorModule],
+  imports: [CommonModule, FormsModule, EditorModule],
   templateUrl: './templates.component.html',
   styleUrls: ['./templates.component.css']
 })
 export class TemplatesComponent implements OnInit {
-  plantillas: any[] = [];
 
-  nueva = {
-    id: null,
-    nombre: '',
-    asunto: '',
-    contenido_html: ''
+  templates: any[] = [];
+
+  templateForm = {
+    id: null as number | null,
+    name: '',
+    subject: '',
+    content_html: ''
   };
 
-  editando = false;
-  mensaje: string = '';
-  mensajeVisible = false;
+  editing = false;
+  message = '';
+  messageVisible = false;
 
-  archivoSeleccionado: any = null;
+  selectedFile: any = null;
 
-  constructor(private api: ApiService) { }
+  constructor(private api: ApiService) {}
 
-  ngOnInit() {
-    this.cargarPlantillas();
+  ngOnInit(): void {
+    this.loadTemplates();
   }
 
-  cargarPlantillas() {
-    this.api.getPlantillas().subscribe(data => {
-      this.plantillas = data;
+  loadTemplates(): void {
+    this.api.getTemplates().subscribe((data: any[]) => {
+      this.templates = data;
     });
   }
 
-  agregarPlantilla() {
-    if (this.editando && this.nueva.id !== null) {
-      this.api.updatePlantilla(this.nueva.id, this.nueva).subscribe(() => {
-        this.mostrarMensaje('✅ Plantilla actualizada correctamente');
-        this.cargarPlantillas();
-        this.resetFormulario();
-      }, error => {
-        this.mostrarMensaje('❌ Error al actualizar la plantilla');
-        console.error(error);
-      });
+  saveTemplate(): void {
+
+    if (this.editing && this.templateForm.id !== null) {
+
+      this.api.updateTemplate(this.templateForm.id, this.templateForm)
+        .subscribe(() => {
+          this.showMessage('✅ Template updated successfully');
+          this.loadTemplates();
+          this.resetForm();
+        });
+
     } else {
-      this.api.addPlantilla(this.nueva).subscribe(() => {
-        this.mostrarMensaje('✅ Plantilla guardada con éxito');
-        this.cargarPlantillas();
-        this.resetFormulario();
-      }, error => {
-        this.mostrarMensaje('❌ Error al guardar la plantilla');
-        console.error(error);
-      });
+
+      this.api.addTemplate(this.templateForm)
+        .subscribe(() => {
+          this.showMessage('✅ Template saved successfully');
+          this.loadTemplates();
+          this.resetForm();
+        });
     }
   }
 
-  subirArchivo() {
-    if (this.archivoSeleccionado && this.archivoSeleccionado.target.files.length > 0) {
-      const file = this.archivoSeleccionado.target.files[0];
+  uploadFile(): void {
+
+    if (this.selectedFile?.target?.files?.length > 0) {
+
+      const file = this.selectedFile.target.files[0];
       const formData = new FormData();
       formData.append('file', file);
 
       this.api.uploadTemplateFile(formData).subscribe({
         next: (response: any) => {
           if (response.success) {
-            this.nueva.contenido_html = response.html;
-            this.mostrarMensaje('✅ Archivo cargado en el editor');
-          } else {
-            this.mostrarMensaje('❌ Error al procesar el archivo');
+            this.templateForm.content_html = response.html;
+            this.showMessage('✅ File loaded into editor');
           }
         },
-        error: () => {
-          this.mostrarMensaje('❌ Error al subir el archivo');
-        }
-      });
-    } else {
-      alert('Por favor selecciona un archivo primero.');
-    }
-  }
-
-  editarPlantilla(plantilla: any) {
-    this.nueva = { ...plantilla };
-    this.editando = true;
-  }
-
-  eliminarPlantilla(id: number) {
-    if (confirm('¿Estás segura de que deseas eliminar esta plantilla?')) {
-      this.api.deletePlantilla(id).subscribe({
-        next: (res: any) => {
-          if (res.success) {
-            this.mostrarMensaje('🗑️ Plantilla eliminada con éxito');
-            this.cargarPlantillas();
-          } else {
-            this.mostrarMensaje(res.error || '❌ No se pudo eliminar la plantilla');
-          }
-        },
-        error: (err) => {
-          const msg = err.error?.error || '❌ Error inesperado al eliminar';
-          this.mostrarMensaje(msg);
-          console.error('Error al eliminar:', err);
-        }
+        error: () => this.showMessage('❌ Upload error')
       });
     }
   }
 
+  editTemplate(template: any): void {
+    this.templateForm = { ...template };
+    this.editing = true;
+  }
 
-  resetFormulario() {
-    this.nueva = {
+  deleteTemplate(id: number): void {
+    if (confirm('¿Eliminar plantilla?')) {
+      this.api.deleteTemplate(id).subscribe(() => {
+        this.showMessage('🗑️ Template deleted');
+        this.loadTemplates();
+      });
+    }
+  }
+
+  resetForm(): void {
+    this.templateForm = {
       id: null,
-      nombre: '',
-      asunto: '',
-      contenido_html: ''
+      name: '',
+      subject: '',
+      content_html: ''
     };
-    this.editando = false;
-    this.archivoSeleccionado = null;
+    this.editing = false;
+    this.selectedFile = null;
   }
 
-  mostrarMensaje(texto: string) {
-    this.mensaje = texto;
-    this.mensajeVisible = true;
-    setTimeout(() => {
-      this.mensajeVisible = false;
-    }, 3000);
+  showMessage(text: string): void {
+    this.message = text;
+    this.messageVisible = true;
+    setTimeout(() => this.messageVisible = false, 3000);
   }
 }

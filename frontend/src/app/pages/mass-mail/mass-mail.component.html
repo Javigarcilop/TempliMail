@@ -1,50 +1,106 @@
 <div class="container mt-4">
-  <h2>Envío masivo de correos</h2>
 
+  <h2>Email Marketing: Envio Masivo</h2>
 
-  <div *ngIf="mensajeVisible" class="alert">
-    {{ mensaje }}
+  <!-- Alert message -->
+  <div *ngIf="messageVisible" class="alert alert-info">
+    {{ message }}
   </div>
 
+  <!-- Template selector -->
   <div class="mb-3">
-    <label for="plantilla" class="form-label">Selecciona una plantilla:</label>
-    <select [(ngModel)]="plantillaSeleccionada" id="plantilla" class="form-select" required>
-      <option [ngValue]="null">-- Elige una plantilla --</option>
-      <option *ngFor="let p of plantillas" [ngValue]="p.id">{{ p.nombre }}</option>
+    <label for="template" class="form-label">
+      Selecciona una plantilla:
+    </label>
+
+    <select
+      [(ngModel)]="selectedTemplateId"
+      id="template"
+      class="form-select"
+      required
+    >
+      <option [ngValue]="null">
+        -- Elige plantilla --
+      </option>
+
+      <option
+        *ngFor="let t of templates"
+        [ngValue]="t.id"
+      >
+        {{ t.name }}
+      </option>
     </select>
   </div>
 
-
+  <!-- Schedule -->
   <div class="mb-3">
-    <label for="fechaProgramada" class="form-label">Programar envío (opcional):</label>
-    <input type="datetime-local" [(ngModel)]="fechaProgramada" id="fechaProgramada" class="form-control" />
+    <label for="scheduledAt" class="form-label">
+      Programar envio (opcional):
+    </label>
+
+    <input
+      type="datetime-local"
+      [(ngModel)]="scheduledAt"
+      id="scheduledAt"
+      class="form-control"
+    />
   </div>
 
+  <!-- Contacts table -->
   <div class="table-responsive">
     <table class="table table-bordered table-hover mt-3">
+
       <thead>
         <tr>
-          <th scope="col"><input type="checkbox" (change)="toggleSeleccionTodos($event)" /></th>
-          <th scope="col">Nombre</th>
-          <th scope="col">Email</th>
-          <th scope="col">Empresa</th>
+          <th>
+            <input
+              type="checkbox"
+              (change)="toggleSelectAll($event)"
+            />
+          </th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Empresa</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr *ngFor="let contacto of contactos">
+        <tr *ngFor="let contact of contacts">
+
           <td>
-            <input type="checkbox" [checked]="seleccionados.includes(contacto.id)"
-              (change)="onToggleSeleccion($event, contacto.id)" />
+            <input
+              type="checkbox"
+              [checked]="selectedContactIds.includes(contact.id)"
+              (change)="onToggleSelection($event, contact.id)"
+            />
           </td>
-          <td>{{ contacto.nombre }} {{ contacto.apellidos }}</td>
-          <td>{{ contacto.email }}</td>
-          <td>{{ contacto.empresa }}</td>
+
+          <td>
+            {{ contact.first_name }} {{ contact.last_name }}
+          </td>
+
+          <td>
+            {{ contact.email }}
+          </td>
+
+          <td>
+            {{ contact.company }}
+          </td>
+
         </tr>
       </tbody>
+
     </table>
   </div>
 
+  <!-- Send button -->
   <div class="d-flex flex-wrap gap-2">
-    <button class="btn btn-primary" (click)="enviarMasivo()">Enviar a seleccionados</button>
+    <button
+      class="btn btn-primary"
+      (click)="sendMassive()"
+    >
+      Enviar a seleccionado
+    </button>
   </div>
+
 </div>

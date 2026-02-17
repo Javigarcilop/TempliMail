@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 
 @Component({
@@ -9,107 +8,153 @@ import { ApiService } from '../../services/api.service';
   selector: 'app-mass-mail',
   templateUrl: './mass-mail.component.html',
   styleUrls: ['./mass-mail.component.css'],
-  imports: [CommonModule, FormsModule, HttpClientModule]
+  imports: [CommonModule, FormsModule]
 })
-export class MassMailComponent implements OnInit {
-  contactos: any[] = [];
-  plantillas: any[] = [];
-  seleccionados: number[] = [];
-  plantillaSeleccionada: number | null = null;
-  fechaProgramada: string | null = null;
-  mensaje: string = '';
-  mensajeVisible = false;
+export class MassMailComponent implements OnInit, OnDestroy {
 
-  constructor(private api: ApiService, private http: HttpClient) { }
+  contacts: any[] = [];
+  templates: any[] = [];
+  selectedContactIds: number[] = [];
+  selectedTemplateId: number | null = null;
+  scheduledAt: string | null = null;
+
+  message: string = '';
+  messageVisible = false;
+
+  private intervalId: any;
+
+  constructor(private api: ApiService) {}
+
+  // =====================================================
+  // INIT
+  // =====================================================
 
   ngOnInit(): void {
-    this.cargarContactos();
-    this.cargarPlantillas();
-    this.iniciarEnvioAutomatico();
+    this.loadContacts();
+    this.loadTemplates();
+    this.startAutoProcessor();
   }
 
-  iniciarEnvioAutomatico() {
-    // Ejecuta al cargar
-    this.api.ejecutarCorreosProgramados().subscribe();
-
-    // Ejecuta cada 1 minuto automáticamente
-    setInterval(() => {
-      this.api.ejecutarCorreosProgramados().subscribe();
-    }, 60000); // 60 segundos
-  }
-
-  cargarContactos() {
-    this.api.getContactos().subscribe(data => {
-      this.contactos = data;
-    });
-  }
-
-  cargarPlantillas() {
-    this.api.getPlantillas().subscribe(data => {
-      this.plantillas = data;
-    });
-  }
-
-  onToggleSeleccion(event: Event, contactoId: number) {
-    const input = event.target as HTMLInputElement;
-    const checked = input.checked;
-    this.toggleSeleccion(contactoId, checked);
-  }
-
-  toggleSeleccion(id: number, checked: boolean) {
-    if (checked) {
-      if (!this.seleccionados.includes(id)) {
-        this.seleccionados.push(id);
-      }
-    } else {
-      this.seleccionados = this.seleccionados.filter(c => c !== id);
+  ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
     }
   }
 
-  toggleSeleccionTodos(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const checked = input.checked;
-    this.seleccionados = checked ? this.contactos.map(c => c.id) : [];
+  // =====================================================
+  // AUTO PROCESS SCHEDULED CAMPAIGNS
+  // =====================================================
+
+  startAutoProcessor(): void {
+
+    // Ejecutar al cargar
+    this.api.processScheduledCampaigns().subscribe();
+
+    // Ejecutar cada 60s
+    this.intervalId = setInterval(() => {
+      this.api.processScheduledCampaigns().subscribe();
+    }, 60000);
   }
 
-  enviarMasivo() {
-    if (!this.plantillaSeleccionada || this.seleccionados.length === 0) {
-      this.mostrarMensaje('❌ Debes seleccionar al menos un contacto y una plantilla');
+  // =====================================================
+  // LOAD DATA
+  // =====================================================
+
+  loadContacts(): void {
+    this.api.getContacts().subscribe(data => {
+      this.contacts = data;
+    });
+  }
+
+  loadTemplates(): void {
+    this.api.getTemplates().subscribe(data => {
+      this.templates = data;
+    });
+  }
+
+  // =====================================================
+  // SELECTION HANDLING
+  // =====================================================
+
+  onToggleSelection(event: Event, contactId: number): void {
+    const input = event.target as HTMLInputElement;
+    this.toggleSelection(contactId, input.checked);
+  }
+
+  toggleSelection(id: number, checked: boolean): void {
+    if (checked) {
+      if (!this.selectedContactIds.includes(id)) {
+        this.selectedContactIds.push(id);
+      }
+    } else {
+      this.selectedContactIds =
+        this.selectedContactIds.filter(c => c !== id);
+    }
+  }
+
+  toggleSelectAll(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedContactIds =
+      input.checked ? this.contacts.map(c => c.id) : [];
+  }
+
+  // =====================================================
+  // SEND MASSIVE
+  // =====================================================
+
+  sendMassive(): void {
+
+    if (!this.selectedTemplateId || this.selectedContactIds.length === 0) {
+      this.showMessage('❌ Select at least one contact and one template');
       return;
     }
 
     const payload: any = {
-      contactos: this.seleccionados,
-      plantilla_id: this.plantillaSeleccionada
+      template_id: this.selectedTemplateId,
+      contact_ids: this.selectedContactIds
     };
 
-    if (this.fechaProgramada) {
-      const seleccion = new Date(this.fechaProgramada);
-      const ahora = new Date();
-      const diferencia = (seleccion.getTime() - ahora.getTime()) / 1000;
+    if (this.scheduledAt) {
 
-      if (diferencia < 60) {
-        this.mostrarMensaje('⚠️ La hora programada debe ser al menos 1 minuto en el futuro');
+      const selectedDate = new Date(this.scheduledAt);
+      const now = new Date();
+
+      const diffSeconds =
+        (selectedDate.getTime() - now.getTime()) / 1000;
+
+      if (diffSeconds < 60) {
+        this.showMessage('⚠️ Scheduled time must be at least 1 minute in the future');
         return;
       }
 
-      payload.fecha_programada = this.fechaProgramada;
+      payload.scheduled_at = this.scheduledAt;
     }
 
-    this.api.sendMassiveMail(payload).subscribe(() => {
-      this.mostrarMensaje('✅ Correos enviados correctamente');
-      this.seleccionados = [];
-      this.plantillaSeleccionada = null;
-      this.fechaProgramada = null;
-    }, err => {
-      console.error(err);
-      this.mostrarMensaje('❌ Error al enviar correos');
+    this.api.sendMassiveMail(payload).subscribe({
+      next: () => {
+        this.showMessage('✅ Emails processed successfully');
+
+        this.selectedContactIds = [];
+        this.selectedTemplateId = null;
+        this.scheduledAt = null;
+      },
+      error: (err) => {
+        console.error(err);
+        this.showMessage('❌ Error sending emails');
+      }
     });
   }
 
-  mostrarMensaje(msg: string) {
-    this.mensaje = msg;
-    this.mensajeVisible = true;
-    setTimeout(() => this.mensajeVisible = false, 3000);
+  // =====================================================
+  // UI MESSAGE
+  // =====================================================
+
+  showMessage(msg: string): void {
+    this.message = msg;
+    this.messageVisible = true;
+
+    setTimeout(() => {
+      this.messageVisible = false;
+    }, 3000);
   }
 }

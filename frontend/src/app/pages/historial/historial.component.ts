@@ -4,48 +4,71 @@ import { ApiService } from '../../services/api.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-historial',
+  selector: 'app-history',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './historial.component.html',
   styleUrls: ['./historial.component.css']
 })
 export class HistorialComponent implements OnInit {
-  historial: any[] = [];
-  mostrarHistorial: boolean = true;
-  mostrarTodo: boolean = false;
 
-  filtroAsunto: string = '';
-  filtroFechaMin: string = '';
-  filtroFechaMax: string = '';
+  history: any[] = [];
 
-  constructor(private api: ApiService) { }
+  showHistory = true;
+  showAll = false;
+
+  subjectFilter = '';
+  minDateFilter = '';
+  maxDateFilter = '';
+
+  constructor(private api: ApiService) {}
 
   ngOnInit(): void {
-    this.api.getHistorial().subscribe((response: any) => {
-      if (response.success) {
-        this.historial = response.data;
+
+    this.api.getHistory().subscribe((response: any) => {
+
+      if (response?.success) {
+        this.history = response.data;
       }
+
     });
   }
 
-  get historialVisible() {
-    return this.mostrarTodo ? this.historial : this.historial.slice(0, 5);
+  // Mostrar solo 5 o todos
+  get visibleHistory() {
+    return this.showAll
+      ? this.history
+      : this.history.slice(0, 5);
   }
 
-  historialFiltrado() {
-    return this.historialVisible.filter(envio => {
-      const asuntoMatch = envio.asunto.toLowerCase().includes(this.filtroAsunto.toLowerCase());
+  // Filtro dinámico
+  filteredHistory() {
 
-      const fechaEnvio = new Date(envio.enviado_en);
-      const fechaMin = this.filtroFechaMin ? new Date(this.filtroFechaMin) : null;
-      const fechaMax = this.filtroFechaMax ? new Date(this.filtroFechaMax) : null;
+    return this.visibleHistory.filter((campaign: any) => {
 
-      const fechaMatch =
-        (!fechaMin || fechaEnvio >= fechaMin) &&
-        (!fechaMax || fechaEnvio <= fechaMax);
+      const subjectMatch =
+        campaign.subject?.toLowerCase()
+          .includes(this.subjectFilter.toLowerCase());
 
-      return asuntoMatch && fechaMatch;
+      const sentDate = campaign.sent_at
+        ? new Date(campaign.sent_at)
+        : null;
+
+      const minDate =
+        this.minDateFilter
+          ? new Date(this.minDateFilter)
+          : null;
+
+      const maxDate =
+        this.maxDateFilter
+          ? new Date(this.maxDateFilter)
+          : null;
+
+      const dateMatch =
+        (!minDate || (sentDate && sentDate >= minDate)) &&
+        (!maxDate || (sentDate && sentDate <= maxDate));
+
+      return subjectMatch && dateMatch;
     });
   }
 }

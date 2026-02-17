@@ -1,15 +1,14 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { Router } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [
-    CommonModule,   
+    CommonModule,
     FormsModule,
     RouterModule
   ],
@@ -18,10 +17,13 @@ import { ApiService } from '../../services/api.service';
 })
 export class RegisterComponent {
 
-  user = '';
+  username = '';
+  email = '';
   password = '';
+
   message = '';
   loading = false;
+  isError = false;
 
   constructor(
     private api: ApiService,
@@ -30,38 +32,60 @@ export class RegisterComponent {
 
   onRegister(): void {
 
-    if (!this.user || !this.password) {
-      alert(this.message = 'Completa todos los campos');
+    // =========================
+    // Validaciones básicas
+    // =========================
+
+    if (!this.username || !this.email || !this.password) {
+      this.showMessage('Todos los campos son obligatorios', true);
       return;
     }
 
-    if (this.password.length < 4) {
-      this.message = 'Contraseña demasiado corta';
-      alert(this.message);
+    if (this.password.length < 6) {
+      alert(this.showMessage('La contraseña debe tener al menos 6 caracteres', true));
       return;
     }
-    
 
     this.loading = true;
     this.message = '';
 
+    // =========================
+    // Llamada API
+    // =========================
+
     this.api.register({
-      user: this.user,
+      username: this.username,
+      email: this.email,
       password: this.password
     }).subscribe({
       next: () => {
-        this.loading = false;
-        this.message = 'Usuario creado correctamente';
 
-        // Redirigir al login tras 1 segundo
+        this.loading = false;
+        this.showMessage('Usuario creado correctamente', false);
+
         setTimeout(() => {
           this.router.navigate(['/login']);
         }, 1000);
+
       },
-      error: (err) => {
+      error: (err: any) => {
+
         this.loading = false;
-        this.message = err.error?.error || 'Error en el registro';
+
+        const backendMessage =
+          err?.error?.error || 'Error en el registro';
+
+        this.showMessage(backendMessage, true);
       }
     });
+  }
+
+  // =========================
+  // UI Message helper
+  // =========================
+
+  private showMessage(msg: string, isError: boolean): void {
+    this.message = msg;
+    this.isError = isError;
   }
 }

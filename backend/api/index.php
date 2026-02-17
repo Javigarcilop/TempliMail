@@ -27,6 +27,7 @@ try {
     // Routing
     // =======================
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
     $uri = str_replace(
         ['/TempliMail/backend/api/index.php', '/TempliMail/backend/api'],
         '',
@@ -48,27 +49,27 @@ try {
         (new AuthController())->register();
         exit;
     }
-    
+
     // =======================
-    // MAIL
+    // EMAIL
     // =======================
     if ($request === '/send-mail' && $method === 'POST') {
-        (new MailController())->send();
+        (new MailController())->sendSingle();
         exit;
     }
 
-    if ($request === '/templates/mass-send' && $method === 'POST') {
+    if ($request === '/send-massive' && $method === 'POST') {
         (new MailController())->sendMassive();
         exit;
     }
 
-    if ($request === '/mail/ejecutar-programados' && $method === 'GET') {
-        (new MailController())->ejecutarProgramados();
+    if ($request === '/process-scheduled' && $method === 'GET') {
+        (new MailController())->processScheduled();
         exit;
     }
 
     if ($request === '/history' && $method === 'GET') {
-        (new MailController())->getHistorial();
+        (new MailController())->getHistory();
         exit;
     }
 
@@ -76,30 +77,32 @@ try {
     // CONTACTS
     // =======================
     if ($request === '/contacts') {
-        $contactController = new ContactController();
+
+        $controller = new ContactController();
 
         if ($method === 'GET') {
-            $contactController->getAll();
+            $controller->getAll();
             exit;
         }
 
         if ($method === 'POST') {
-            $contactController->create();
+            $controller->create();
             exit;
         }
     }
 
     if (preg_match('#^/contacts/(\d+)$#', $request, $matches)) {
-        $contactController = new ContactController();
+
+        $controller = new ContactController();
         $id = (int) $matches[1];
 
         if ($method === 'PUT') {
-            $contactController->update($id);
+            $controller->update($id);
             exit;
         }
 
         if ($method === 'DELETE') {
-            $contactController->delete($id);
+            $controller->delete($id);
             exit;
         }
     }
@@ -108,6 +111,7 @@ try {
     // TEMPLATES
     // =======================
     if ($request === '/templates') {
+
         $controller = new TemplateController();
 
         if ($method === 'GET') {
@@ -122,6 +126,7 @@ try {
     }
 
     if (preg_match('#^/templates/(\d+)$#', $request, $matches)) {
+
         $controller = new TemplateController();
         $id = (int) $matches[1];
 
@@ -148,13 +153,17 @@ try {
     // 404
     // =======================
     http_response_code(404);
-    echo json_encode(['error' => 'Endpoint not found']);
+    echo json_encode([
+        'success' => false,
+        'error'   => 'Endpoint not found'
+    ]);
 
 } catch (Throwable $e) {
 
     http_response_code(500);
     echo json_encode([
-        'error' => 'Internal error',
-        'detail' => $e->getMessage() // quitar en producción
+        'success' => false,
+        'error'   => 'Internal server error',
+        'detail'  => $e->getMessage() 
     ]);
 }

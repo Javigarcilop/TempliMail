@@ -1,18 +1,19 @@
 import { Component } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router'
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterModule], // 👈 AQUÍ
+  imports: [FormsModule, RouterModule, CommonModule], 
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
 
-  user = '';
+  username = '';
   password = '';
 
   constructor(
@@ -22,13 +23,13 @@ export class LoginComponent {
 
   onLogin(): void {
 
-    if (!this.user || !this.password) {
+    if (!this.username || !this.password) {
       alert('Completa todos los campos');
       return;
     }
 
     this.api.login({
-      user: this.user,
+      username: this.username,
       password: this.password
     }).subscribe({
       next: () => {
