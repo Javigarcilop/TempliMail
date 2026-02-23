@@ -4,25 +4,34 @@ namespace TempliMail\Models;
 
 use TempliMail\Utils\DB;
 use PDO;
+use Exception;
 
 class EmailDeliveryModel
 {
     public static function insertBatch(int $campaignId, array $contactIds): void
     {
+        if (empty($contactIds)) {
+            return;
+        }
+
         $db = DB::get();
 
-        $stmt = $db->prepare("
-            INSERT INTO email_deliveries
-            (campaign_id, contact_id, status)
-            VALUES (:campaign_id, :contact_id, 'pending')
-        ");
+        $placeholders = [];
+        $params = [];
 
-        foreach ($contactIds as $contactId) {
-            $stmt->execute([
-                'campaign_id' => $campaignId,
-                'contact_id' => $contactId
-            ]);
+        foreach ($contactIds as $index => $contactId) {
+            $placeholders[] = "(:campaign_id, :contact_id_$index, 'pending')";
+            $params["contact_id_$index"] = $contactId;
         }
+
+        $params['campaign_id'] = $campaignId;
+
+        $sql = "
+            INSERT INTO email_deliveries (campaign_id, contact_id, status)
+            VALUES " . implode(',', $placeholders);
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
     }
 
     public static function getPendingByCampaign(int $campaignId): array
@@ -35,6 +44,7 @@ class EmailDeliveryModel
             JOIN contacts c ON ed.contact_id = c.id
             WHERE ed.campaign_id = :campaign_id
               AND ed.status = 'pending'
+              AND c.deleted_at IS NULL
         ");
 
         $stmt->execute(['campaign_id' => $campaignId]);
@@ -54,6 +64,10 @@ class EmailDeliveryModel
         ");
 
         $stmt->execute(['id' => $deliveryId]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new Exception('Delivery not found');
+        }
     }
 
     public static function markFailed(int $deliveryId, string $error): void
@@ -72,5 +86,9 @@ class EmailDeliveryModel
             'id' => $deliveryId,
             'error' => $error
         ]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new Exception('Delivery not found');
+        }
     }
 }

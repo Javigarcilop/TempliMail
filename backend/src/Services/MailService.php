@@ -10,12 +10,13 @@ use Exception;
 
 class MailService
 {
-    public static function sendSingle(array $data): void
+    public static function sendSingle(int $userId, array $data): void
     {
         if (!isset($data['to'], $data['subject'], $data['body'])) {
             throw new Exception('Missing required data');
         }
 
+        // Aquí podrías registrar envío individual en BD si quieres trazabilidad
         Mailer::send($data['to'], $data['subject'], $data['body']);
     }
 
@@ -32,7 +33,6 @@ class MailService
         }
 
         $scheduled = !empty($data['scheduled_at']);
-
         $status = $scheduled ? 'scheduled' : 'processing';
 
         $campaignId = EmailCampaignModel::create(
@@ -50,37 +50,46 @@ class MailService
         );
 
         if (!$scheduled) {
-            self::processCampaign($campaignId);
+            self::processCampaign($userId, $campaignId);
         }
 
         return ['scheduled' => $scheduled];
     }
 
-    public static function processCampaign(int $campaignId): void
-    {
-        EmailCampaignModel::setProcessing($campaignId);
+    public static function processCampaign(int $userId, int $campaignId): void
+{
+    // 🔐 Validar ownership
+    $campaign = EmailCampaignModel::getById($userId, $campaignId);
 
-        $deliveries = EmailDeliveryModel::getPendingByCampaign($campaignId);
-
-        foreach ($deliveries as $delivery) {
-            try {
-                Mailer::send(
-                    $delivery['email'],
-                    'Subject',
-                    'Body'
-                );
-
-                EmailDeliveryModel::markSent($delivery['id']);
-
-            } catch (Exception $e) {
-
-                EmailDeliveryModel::markFailed(
-                    $delivery['id'],
-                    $e->getMessage()
-                );
-            }
-        }
-
-        EmailCampaignModel::markCompleted($campaignId);
+    if (!$campaign) {
+        throw new Exception('Campaign not found');
     }
+
+    // Marcar como processing (protegido por user_id)
+    EmailCampaignModel::setProcessing($userId, $campaignId);
+
+    $deliveries = EmailDeliveryModel::getPendingByCampaign($campaignId);
+
+    foreach ($deliveries as $delivery) {
+        try {
+            Mailer::send(
+                $delivery['email'],
+                $campaign['subject'],
+                $campaign['content_html']
+            );
+
+            EmailDeliveryModel::markSent($delivery['id']);
+
+        } catch (Exception $e) {
+
+            EmailDeliveryModel::markFailed(
+                $delivery['id'],
+                $e->getMessage()
+            );
+        }
+    }
+
+    // Marcar como completed (protegido por user_id)
+    EmailCampaignModel::markCompleted($userId, $campaignId);
+}
 }

@@ -12,21 +12,21 @@ class MailController
     public function sendSingle(): void
     {
         try {
+            $userId = (int) $_SERVER['AUTH_USER_ID'];
             $data = json_decode(file_get_contents('php://input'), true);
 
-            MailService::sendSingle($data);
+            MailService::sendSingle($userId, $data);
 
             http_response_code(200);
             echo json_encode([
                 'success' => true
             ]);
-
         } catch (Exception $e) {
 
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ]);
         }
     }
@@ -49,7 +49,6 @@ class MailController
                 'success'   => true,
                 'scheduled' => $result['scheduled']
             ]);
-
         } catch (Exception $e) {
 
             http_response_code(400);
@@ -66,14 +65,15 @@ class MailController
     public function getHistory(): void
     {
         try {
-            $campaigns = EmailCampaignModel::getScheduled(); // puedes mejorar esto luego
+            $userId = (int) $_SERVER['AUTH_USER_ID'];
+
+            $campaigns = EmailCampaignModel::getScheduledByUser($userId);
 
             http_response_code(200);
             echo json_encode([
                 'success' => true,
                 'data'    => $campaigns
             ]);
-
         } catch (Exception $e) {
 
             http_response_code(500);
@@ -91,12 +91,14 @@ class MailController
     public function processScheduled(): void
     {
         try {
-            $campaigns = EmailCampaignModel::getScheduled();
+            $userId = (int) $_SERVER['AUTH_USER_ID'];
+
+            $campaigns = EmailCampaignModel::getScheduledByUser($userId);
 
             $processed = 0;
 
             foreach ($campaigns as $campaign) {
-                MailService::processCampaign((int)$campaign['id']);
+                MailService::processCampaign($userId, (int)$campaign['id']);
                 $processed++;
             }
 
@@ -105,7 +107,6 @@ class MailController
                 'success'   => true,
                 'processed' => $processed
             ]);
-
         } catch (Exception $e) {
 
             http_response_code(500);

@@ -4,6 +4,7 @@ namespace TempliMail\Models;
 
 use TempliMail\Utils\DB;
 use PDO;
+use Exception;
 
 class TemplateModel
 {
@@ -12,7 +13,7 @@ class TemplateModel
         $db = DB::get();
 
         $stmt = $db->prepare("
-            SELECT *
+            SELECT id, name, subject, content_html, created_at, updated_at
             FROM templates
             WHERE user_id = :user_id
               AND deleted_at IS NULL
@@ -29,13 +30,13 @@ class TemplateModel
         $db = DB::get();
 
         $stmt = $db->prepare("
-        SELECT *
-        FROM templates
-        WHERE id = :id
-          AND user_id = :user_id
-          AND deleted_at IS NULL
-        LIMIT 1
-    ");
+            SELECT id, name, subject, content_html, created_at, updated_at
+            FROM templates
+            WHERE id = :id
+              AND user_id = :user_id
+              AND deleted_at IS NULL
+            LIMIT 1
+        ");
 
         $stmt->execute([
             'id' => $id,
@@ -44,7 +45,6 @@ class TemplateModel
 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
-
 
     public static function create(int $userId, array $data): void
     {
@@ -75,6 +75,7 @@ class TemplateModel
                 updated_at = NOW()
             WHERE id = :id
               AND user_id = :user_id
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([
@@ -84,6 +85,10 @@ class TemplateModel
             'subject' => $data['subject'],
             'content_html' => $data['content_html']
         ]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new Exception('Template not found or not owned by user');
+        }
     }
 
     public static function softDelete(int $userId, int $id): void
@@ -95,11 +100,16 @@ class TemplateModel
             SET deleted_at = NOW()
             WHERE id = :id
               AND user_id = :user_id
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([
             'id' => $id,
             'user_id' => $userId
         ]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new Exception('Template not found or already deleted');
+        }
     }
 }

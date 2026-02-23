@@ -4,6 +4,7 @@ namespace TempliMail\Models;
 
 use TempliMail\Utils\DB;
 use PDO;
+use Exception;
 
 class ContactModel
 {
@@ -12,7 +13,7 @@ class ContactModel
         $db = DB::get();
 
         $stmt = $db->prepare("
-            SELECT *
+            SELECT id, first_name, last_name, email, phone, company, position, created_at, updated_at
             FROM contacts
             WHERE user_id = :user_id
               AND deleted_at IS NULL
@@ -60,18 +61,23 @@ class ContactModel
                 updated_at = NOW()
             WHERE id = :id
               AND user_id = :user_id
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([
             'id'         => $id,
             'user_id'    => $userId,
-            'first_name' => $data['first_name'],
-            'last_name'  => $data['last_name'],
+            'first_name' => $data['first_name'] ?? null,
+            'last_name'  => $data['last_name'] ?? null,
             'email'      => $data['email'],
-            'phone'      => $data['phone'],
-            'company'    => $data['company'],
-            'position'   => $data['position']
+            'phone'      => $data['phone'] ?? null,
+            'company'    => $data['company'] ?? null,
+            'position'   => $data['position'] ?? null
         ]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new Exception('Contact not found or not owned by user');
+        }
     }
 
     public static function softDelete(int $userId, int $id): void
@@ -83,11 +89,16 @@ class ContactModel
             SET deleted_at = NOW()
             WHERE id = :id
               AND user_id = :user_id
+              AND deleted_at IS NULL
         ");
 
         $stmt->execute([
             'id' => $id,
             'user_id' => $userId
         ]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new Exception('Contact not found or already deleted');
+        }
     }
 }

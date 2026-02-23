@@ -7,27 +7,27 @@ use Exception;
 
 class ContactService
 {
-    public static function getAll(): array
+    public static function getAll(int $userId): array
     {
-        return ContactModel::getAll();
+        return ContactModel::getAllByUser($userId);
     }
 
-    public static function create(array $data): void
+    public static function create(int $userId, array $data): void
     {
-        if (!isset($data['nombre'], $data['email'])) {
-            throw new Exception('Faltan campos obligatorios');
+        if (empty($data['email'])) {
+            throw new Exception('El email es obligatorio');
         }
 
-        ContactModel::create($data);
+        ContactModel::create($userId, $data);
     }
 
-    public static function update(int $id, array $data): void
+    public static function update(int $userId, int $id, array $data): void
     {
-        ContactModel::update($id, $data);
+        ContactModel::update($userId, $id, $data);
     }
 
-    public static function delete(int $id): void
-    {
-        ContactModel::delete($id);
-    }
+    public static function delete(int $userId, int $id): void
+{
+    ContactModel::softDelete($userId, $id);
+}
 }

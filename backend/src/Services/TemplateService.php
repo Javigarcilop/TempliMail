@@ -7,42 +7,36 @@ use Exception;
 
 class TemplateService
 {
-    
-    private static function getUserId(): int
+    public static function getAll(int $userId): array
     {
-        return 1; 
+        return TemplateModel::getAllByUser($userId);
     }
 
-    public static function getAll(): array
-    {
-        return TemplateModel::getAllByUser(self::getUserId());
-    }
-
-    public static function create(array $data): void
+    public static function create(int $userId, array $data): void
     {
         if (!isset($data['name'], $data['subject'], $data['content_html'])) {
             throw new Exception('Missing required fields');
         }
 
-        TemplateModel::create(self::getUserId(), $data);
+        TemplateModel::create($userId, $data);
     }
 
-    public static function update(int $id, array $data): void
+    public static function update(int $userId, int $id, array $data): void
     {
         if (!isset($data['name'], $data['subject'], $data['content_html'])) {
             throw new Exception('Missing required fields');
         }
 
-        TemplateModel::update(self::getUserId(), $id, $data);
+        TemplateModel::update($userId, $id, $data);
     }
 
-    public static function delete(int $id): void
+    public static function delete(int $userId, int $id): void
     {
-        TemplateModel::softDelete(self::getUserId(), $id);
+        TemplateModel::softDelete($userId, $id);
     }
 
-    public static function getById(int $id): ?array
+    public static function getById(int $userId, int $id): ?array
     {
-        return TemplateModel::getById(self::getUserId(), $id);
+        return TemplateModel::getById($userId, $id);
     }
 }
