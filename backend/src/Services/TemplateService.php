@@ -7,12 +7,10 @@ use Exception;
 
 class TemplateService
 {
-    /**
-     * ⚠️ Provisional hasta tener autenticación real
-     */
+    
     private static function getUserId(): int
     {
-        return 1; // TODO: sustituir por ID real del usuario autenticado
+        return 1; 
     }
 
     public static function getAll(): array
