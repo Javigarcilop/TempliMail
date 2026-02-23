@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use TempliMail\Controllers\AuthController;
@@ -7,6 +9,8 @@ use TempliMail\Controllers\MailController;
 use TempliMail\Controllers\ContactController;
 use TempliMail\Controllers\TemplateController;
 use TempliMail\Controllers\UploadTemplateController;
+use TempliMail\Auth\JwtService;
+use TempliMail\Middleware\AuthMiddleware;
 
 // =======================
 // CORS
@@ -24,6 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
 
     // =======================
+    // Inicializar JWT + Middleware
+    // =======================
+    $jwtSecret = $_ENV['JWT_SECRET'] ?? 'dev_secret_change_this';
+    $jwtService = new JwtService($jwtSecret);
+    $authMiddleware = new AuthMiddleware($jwtService);
+
+    // =======================
     // Routing
     // =======================
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -36,6 +47,18 @@ try {
 
     $request = rtrim($uri, '/');
     $method  = $_SERVER['REQUEST_METHOD'];
+
+    // =======================
+    // Rutas públicas
+    // =======================
+    $publicRoutes = [
+        '/login',
+        '/register'
+    ];
+
+    if (!in_array($request, $publicRoutes)) {
+        $authMiddleware->handle();
+    }
 
     // =======================
     // AUTH
@@ -163,7 +186,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error'   => 'Internal server error',
-        'detail'  => $e->getMessage() 
+        'error'   => 'Internal server error'
     ]);
 }
