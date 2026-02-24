@@ -28,9 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
 
     // =======================
-    // Inicializar JWT + Middleware
+    // JWT CONFIG (CLAVE SEGURA)
     // =======================
-    $jwtSecret = $_ENV['JWT_SECRET'] ?? 'dev_secret_change_this';
+    $jwtSecret = '06e8f28d0819a3fd36ba1fd9a5853db595c4361b29af18acd47a064b51464c4c';
+
     $jwtService = new JwtService($jwtSecret);
     $authMiddleware = new AuthMiddleware($jwtService);
 
@@ -49,7 +50,7 @@ try {
     $method  = $_SERVER['REQUEST_METHOD'];
 
     // =======================
-    // Rutas públicas
+    // Public Routes
     // =======================
     $publicRoutes = [
         '/login',
