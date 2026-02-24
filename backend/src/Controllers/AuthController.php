@@ -3,7 +3,7 @@
 namespace TempliMail\Controllers;
 
 use TempliMail\Auth\JwtService;
-use TempliMail\Models\AuthModel;
+use TempliMail\Services\AuthService;
 use Exception;
 
 class AuthController
@@ -23,7 +23,7 @@ class AuthController
 
             if (
                 !$data ||
-                empty($data['email']) ||
+                empty($data['username']) ||
                 empty($data['password'])
             ) {
                 http_response_code(400);
@@ -34,17 +34,11 @@ class AuthController
                 return;
             }
 
-            $user = AuthModel::findByEmail($data['email']);
-
-            if (!$user || !password_verify($data['password'], $user['password_hash'])) {
-                throw new Exception('Invalid credentials');
-            }
-
-            if ($user['deleted_at'] !== null) {
-                throw new Exception('User inactive');
-            }
-
-            $token = $this->jwtService->generate($user);
+            $token = AuthService::login(
+                $data['username'],
+                $data['password'],
+                $this->jwtService
+            );
 
             http_response_code(200);
             echo json_encode([
@@ -81,7 +75,7 @@ class AuthController
                 return;
             }
 
-            AuthModel::create(
+            AuthService::register(
                 $data['username'],
                 $data['email'],
                 $data['password']

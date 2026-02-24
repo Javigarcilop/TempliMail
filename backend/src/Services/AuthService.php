@@ -3,13 +3,12 @@
 namespace TempliMail\Services;
 
 use TempliMail\Models\AuthModel;
+use TempliMail\Auth\JwtService;
 use Exception;
+use DomainException;
 
 class AuthService
 {
-    /**
-     * Register new user
-     */
     public static function register(string $username, string $email, string $password): void
     {
         if (trim($username) === '' || trim($email) === '' || trim($password) === '') {
@@ -24,44 +23,28 @@ class AuthService
             throw new Exception('Password must be at least 6 characters');
         }
 
-        $existingUser = AuthModel::findByUsername($username);
-
-        if ($existingUser !== null) {
+        if (AuthModel::findByUsername($username) !== null) {
             throw new Exception('Username already exists');
         }
 
         AuthModel::create($username, $email, $password);
     }
 
-    /**
-     * Login user
-     */
-    public static function login(string $username, string $password): array
+    public static function login(string $username, string $password, JwtService $jwtService): string
     {
-        if (trim($username) === '' || trim($password) === '') {
-            throw new Exception('Invalid credentials');
-        }
-
         $user = AuthModel::findByUsername($username);
 
-        if (!$user) {
-            throw new Exception('Invalid credentials');
+        if (!$user || !password_verify($password, $user['password_hash'])) {
+            throw new DomainException('Invalid credentials');
         }
 
-        if (!password_verify($password, $user['password_hash'])) {
-            throw new Exception('Invalid credentials');
+        if ($user['deleted_at'] !== null) {
+            throw new DomainException('User inactive');
         }
 
-        return [
-            'id'       => $user['id'],
-            'username' => $user['username'],
-            'email'    => $user['email']
-        ];
+        return $jwtService->generate($user);
     }
 
-    /**
-     * Change password
-     */
     public static function changePassword(int $userId, string $newPassword): void
     {
         if (strlen($newPassword) < 6) {
@@ -71,9 +54,6 @@ class AuthService
         AuthModel::updatePassword($userId, $newPassword);
     }
 
-    /**
-     * Delete account (soft delete)
-     */
     public static function deleteAccount(int $userId): void
     {
         AuthModel::softDelete($userId);

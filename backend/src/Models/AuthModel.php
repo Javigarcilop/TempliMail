@@ -7,19 +7,19 @@ use PDO;
 
 class AuthModel
 {
-    public static function findByEmail(string $email): ?array
+    public static function findByUsername(string $username): ?array
     {
         $db = DB::get();
 
         $stmt = $db->prepare("
             SELECT id, username, email, password_hash, token_version, deleted_at
             FROM users
-            WHERE email = :email
+            WHERE username = :username
             LIMIT 1
         ");
 
         $stmt->execute([
-            'email' => $email
+            'username' => $username
         ]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
