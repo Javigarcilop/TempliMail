@@ -27,13 +27,15 @@ export class LoginComponent {
       alert('Completa todos los campos');
       return;
     }
-
+  
     this.api.login({
       username: this.username,
       password: this.password
     }).subscribe({
-      next: () => {
-        localStorage.setItem('loggedIn', 'true');
+      next: (response) => {
+  
+        localStorage.setItem('token', response.token);
+  
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {

@@ -12,7 +12,8 @@ class AuthController
 
     public function __construct()
     {
-        $secret = $_ENV['JWT_SECRET'] ?? 'dev_secret_change_this';
+        // 🔐 MISMA CLAVE EXACTA QUE EN index.php
+        $secret = '06e8f28d0819a3fd36ba1fd9a5853db595c4361b29af18acd47a064b51464c4c';
         $this->jwtService = new JwtService($secret);
     }
 
