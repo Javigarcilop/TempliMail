@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace TempliMail\Middleware;
 
-use TempliMail\Auth\JwtService;
+use TempliMail\Services\JwtService;
 use TempliMail\Models\AuthModel;
 use Throwable;
 
@@ -28,7 +28,6 @@ class AuthMiddleware
         try {
             $decoded = $this->jwtService->validate($matches[1]);
 
-            // 🔥 Ahora usamos AuthModel estático
             $user = AuthModel::findById((int) $decoded->sub);
 
             if (
@@ -39,7 +38,6 @@ class AuthMiddleware
                 $this->unauthorized();
             }
 
-            // Inyectamos el usuario autenticado
             $_SERVER['AUTH_USER_ID'] = (int) $user['id'];
 
             return (int) $user['id'];

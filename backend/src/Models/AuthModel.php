@@ -55,7 +55,7 @@ class AuthModel
         $stmt->execute([
             'username'      => $username,
             'email'         => $email,
-            'password_hash' => password_hash($password, PASSWORD_DEFAULT)
+            'password_hash' => password_hash($password, PASSWORD_ARGON2ID) 
         ]);
     }
 
@@ -74,7 +74,7 @@ class AuthModel
 
         $stmt->execute([
             'id' => $userId,
-            'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT)
+            'password_hash' => password_hash($newPassword, PASSWORD_ARGON2ID)
         ]);
     }
 

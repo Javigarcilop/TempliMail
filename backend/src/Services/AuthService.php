@@ -3,7 +3,7 @@
 namespace TempliMail\Services;
 
 use TempliMail\Models\AuthModel;
-use TempliMail\Auth\JwtService;
+use TempliMail\Services\JwtService;
 use Exception;
 use DomainException;
 

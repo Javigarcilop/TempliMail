@@ -9,7 +9,7 @@ use TempliMail\Controllers\MailController;
 use TempliMail\Controllers\ContactController;
 use TempliMail\Controllers\TemplateController;
 use TempliMail\Controllers\UploadTemplateController;
-use TempliMail\Auth\JwtService;
+use TempliMail\Services\JwtService;
 use TempliMail\Middleware\AuthMiddleware;
 
 // =======================

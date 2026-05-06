@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TempliMail\Auth;
+namespace TempliMail\Services;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -11,7 +11,7 @@ class JwtService
     private string $secret;
     private int $ttl;
 
-    public function __construct(string $secret, int $ttl = 3600)
+    public function __construct(string $secret, int $ttl = 900)
     {
         $this->secret = $secret;
         $this->ttl = $ttl;

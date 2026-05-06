@@ -2,7 +2,7 @@
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Auth\JwtService;
+use TempliMail\Services\JwtService;
 use TempliMail\Services\AuthService;
 use Exception;
 
@@ -12,7 +12,6 @@ class AuthController
 
     public function __construct()
     {
-        // 🔐 MISMA CLAVE EXACTA QUE EN index.php
         $secret = '06e8f28d0819a3fd36ba1fd9a5853db595c4361b29af18acd47a064b51464c4c';
         $this->jwtService = new JwtService($secret);
     }
