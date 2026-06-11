@@ -35,8 +35,8 @@ export class TemplatesComponent implements OnInit {
   }
 
   loadTemplates(): void {
-    this.api.getTemplates().subscribe((data: any[]) => {
-      this.templates = data;
+    this.api.getTemplates().subscribe((response: any) => {
+      this.templates = response.data;
     });
   }
 
