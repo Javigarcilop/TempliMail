@@ -17,7 +17,25 @@
 
 </form>
 
+<p *ngIf="successMessage" class="success-message">
+  {{ successMessage }}
+</p>
+
+<p *ngIf="errorMessage" class="error-message">
+  {{ errorMessage }}
+</p>
+
 <table>
+  <tr>
+    <th>Nombre</th>
+    <th>Apellidos</th>
+    <th>Email</th>
+    <th>Teléfono</th>
+    <th>Empresa</th>
+    <th>Cargo</th>
+    <th>Acciones</th>
+  </tr>
+
   <tr *ngFor="let c of contacts">
     <td>{{ c.first_name }}</td>
     <td>{{ c.last_name }}</td>
@@ -26,8 +44,8 @@
     <td>{{ c.company }}</td>
     <td>{{ c.position }}</td>
     <td>
-      <button (click)="editContact(c)">Editar</button>
-      <button (click)="deleteContact(c.id)">Eliminar</button>
+      <button type="button" (click)="editContact(c)">Editar</button>
+      <button type="button" (click)="deleteContact(c.id)">Eliminar</button>
     </td>
   </tr>
 </table>

@@ -14,7 +14,6 @@ export class ContactsComponent implements OnInit {
 
   contacts: any[] = [];
 
-  // Estructura alineada con backend nuevo
   newContact = {
     first_name: '',
     last_name: '',
@@ -25,6 +24,8 @@ export class ContactsComponent implements OnInit {
   };
 
   editingId: number | null = null;
+  errorMessage = '';
+  successMessage = '';
 
   constructor(private api: ApiService) {}
 
@@ -32,43 +33,61 @@ export class ContactsComponent implements OnInit {
     this.loadContacts();
   }
 
-  // =========================
-  // Cargar contactos
-  // =========================
   loadContacts(): void {
-    this.api.getContacts().subscribe((data: any[]) => {
-      this.contacts = data;
+    this.api.getContacts().subscribe({
+      next: (response: any) => {
+        this.contacts = response.data ?? [];
+      },
+      error: (error) => {
+        console.error('Error cargando contactos:', error);
+        this.contacts = [];
+        this.errorMessage = 'No se pudieron cargar los contactos.';
+      }
     });
   }
 
-  // =========================
-  // Crear o actualizar
-  // =========================
   saveContact(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
 
     if (this.editingId) {
-
-      this.api.updateContact(this.editingId, this.newContact)
-        .subscribe(() => {
+      this.api.updateContact(this.editingId, this.newContact).subscribe({
+        next: () => {
+          this.successMessage = 'Contacto actualizado correctamente.';
           this.cancelEdit();
           this.loadContacts();
-        });
+        },
+        error: (error) => {
+          console.error('Error actualizando contacto:', error);
+          this.errorMessage = error.error?.error ?? 'Error al actualizar el contacto.';
+        }
+      });
 
     } else {
-
-      this.api.addContact(this.newContact)
-        .subscribe(() => {
+      this.api.addContact(this.newContact).subscribe({
+        next: () => {
+          this.successMessage = 'Contacto creado correctamente.';
           this.loadContacts();
           this.resetForm();
-        });
+        },
+        error: (error) => {
+          console.error('Error creando contacto:', error);
+          this.errorMessage = error.error?.error ?? 'Error al crear el contacto.';
+        }
+      });
     }
   }
 
-  // =========================
-  // Editar
-  // =========================
   editContact(contact: any): void {
-    this.newContact = { ...contact };
+    this.newContact = {
+      first_name: contact.first_name ?? '',
+      last_name: contact.last_name ?? '',
+      email: contact.email ?? '',
+      phone: contact.phone ?? '',
+      company: contact.company ?? '',
+      position: contact.position ?? ''
+    };
+
     this.editingId = contact.id;
   }
 
@@ -77,13 +96,17 @@ export class ContactsComponent implements OnInit {
     this.editingId = null;
   }
 
-  // =========================
-  // Eliminar
-  // =========================
   deleteContact(id: number): void {
     if (confirm('¿Eliminar contacto?')) {
-      this.api.deleteContact(id).subscribe(() => {
-        this.loadContacts();
+      this.api.deleteContact(id).subscribe({
+        next: () => {
+          this.successMessage = 'Contacto eliminado correctamente.';
+          this.loadContacts();
+        },
+        error: (error) => {
+          console.error('Error eliminando contacto:', error);
+          this.errorMessage = error.error?.error ?? 'Error al eliminar el contacto.';
+        }
       });
     }
   }

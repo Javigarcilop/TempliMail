@@ -39,8 +39,7 @@ class MailController
         try {
             $data = json_decode(file_get_contents('php://input'), true);
 
-            // 🔐 TEMPORAL (hasta implementar JWT)
-            $userId = 1;
+            $userId = (int) $_SERVER['AUTH_USER_ID'];
 
             $result = MailService::sendMassive($userId, $data);
 

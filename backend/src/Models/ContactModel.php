@@ -20,7 +20,9 @@ class ContactModel
             ORDER BY created_at DESC
         ");
 
-        $stmt->execute(['user_id' => $userId]);
+        $stmt->execute([
+            'user_id' => $userId
+        ]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -28,6 +30,16 @@ class ContactModel
     public static function create(int $userId, array $data): void
     {
         $db = DB::get();
+
+        $email = trim($data['email'] ?? '');
+
+        if ($email === '') {
+            throw new Exception('El email es obligatorio');
+        }
+
+        if (self::emailExists($userId, $email)) {
+            throw new Exception('Ya existe un contacto con ese email');
+        }
 
         $stmt = $db->prepare("
             INSERT INTO contacts 
@@ -39,7 +51,7 @@ class ContactModel
             'user_id'    => $userId,
             'first_name' => $data['first_name'] ?? null,
             'last_name'  => $data['last_name'] ?? null,
-            'email'      => $data['email'],
+            'email'      => $email,
             'phone'      => $data['phone'] ?? null,
             'company'    => $data['company'] ?? null,
             'position'   => $data['position'] ?? null
@@ -49,6 +61,16 @@ class ContactModel
     public static function update(int $userId, int $id, array $data): void
     {
         $db = DB::get();
+
+        $email = trim($data['email'] ?? '');
+
+        if ($email === '') {
+            throw new Exception('El email es obligatorio');
+        }
+
+        if (self::emailExistsForAnotherContact($userId, $email, $id)) {
+            throw new Exception('Ya existe otro contacto con ese email');
+        }
 
         $stmt = $db->prepare("
             UPDATE contacts
@@ -69,36 +91,76 @@ class ContactModel
             'user_id'    => $userId,
             'first_name' => $data['first_name'] ?? null,
             'last_name'  => $data['last_name'] ?? null,
-            'email'      => $data['email'],
+            'email'      => $email,
             'phone'      => $data['phone'] ?? null,
             'company'    => $data['company'] ?? null,
             'position'   => $data['position'] ?? null
         ]);
 
         if ($stmt->rowCount() === 0) {
-            throw new Exception('Contact not found or not owned by user');
+            throw new Exception('Contacto no encontrado o sin permisos');
         }
     }
 
     public static function softDelete(int $userId, int $id): void
+{
+    $db = DB::get();
+
+    $stmt = $db->prepare("
+        DELETE FROM contacts
+        WHERE id = :id
+          AND user_id = :user_id
+    ");
+
+    $stmt->execute([
+        'id'      => $id,
+        'user_id' => $userId
+    ]);
+
+    if ($stmt->rowCount() === 0) {
+        throw new Exception('Contacto no encontrado o sin permisos');
+    }
+}
+
+    private static function emailExists(int $userId, string $email): bool
     {
         $db = DB::get();
 
         $stmt = $db->prepare("
-            UPDATE contacts
-            SET deleted_at = NOW()
-            WHERE id = :id
-              AND user_id = :user_id
-              AND deleted_at IS NULL
+            SELECT id
+            FROM contacts
+            WHERE user_id = :user_id
+              AND email = :email
+            LIMIT 1
         ");
 
         $stmt->execute([
-            'id' => $id,
-            'user_id' => $userId
+            'user_id' => $userId,
+            'email'   => $email
         ]);
 
-        if ($stmt->rowCount() === 0) {
-            throw new Exception('Contact not found or already deleted');
-        }
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private static function emailExistsForAnotherContact(int $userId, string $email, int $contactId): bool
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare("
+            SELECT id
+            FROM contacts
+            WHERE user_id = :user_id
+              AND email = :email
+              AND id != :id
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            'user_id' => $userId,
+            'email'   => $email,
+            'id'      => $contactId
+        ]);
+
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }

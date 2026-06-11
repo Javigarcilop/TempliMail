@@ -26,8 +26,7 @@ export class SendMailComponent {
     private api: ApiService,
     private router: Router
   ) {
-    // Protección básica (provisional hasta JWT)
-    if (localStorage.getItem('loggedIn') !== 'true') {
+    if (!localStorage.getItem('token')) {
       this.router.navigate(['/login']);
     }
   }
@@ -57,6 +56,13 @@ export class SendMailComponent {
       },
       error: (err: any) => {
         this.loading = false;
+
+        if (err?.status === 401) {
+          localStorage.removeItem('token');
+          this.showMessage('Sesión expirada. Vuelve a iniciar sesión.', true);
+          this.router.navigate(['/login']);
+          return;
+        }
 
         const backendMessage =
           err?.error?.error || 'Error al enviar el correo';

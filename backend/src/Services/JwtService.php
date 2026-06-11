@@ -11,7 +11,7 @@ class JwtService
     private string $secret;
     private int $ttl;
 
-    public function __construct(string $secret, int $ttl = 900)
+    public function __construct(string $secret, int $ttl = 28800)
     {
         $this->secret = $secret;
         $this->ttl = $ttl;

@@ -15,13 +15,13 @@ class AuthMiddleware
 
     public function handle(): int
     {
-        $headers = getallheaders();
+        $authHeader = $this->getAuthorizationHeader();
 
-        if (!isset($headers['Authorization'])) {
+        if ($authHeader === null) {
             $this->unauthorized();
         }
 
-        if (!preg_match('/Bearer\s(\S+)/', $headers['Authorization'], $matches)) {
+        if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
             $this->unauthorized();
         }
 
@@ -45,6 +45,29 @@ class AuthMiddleware
         } catch (Throwable) {
             $this->unauthorized();
         }
+    }
+
+    private function getAuthorizationHeader(): ?string
+    {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+
+        if (is_array($headers)) {
+            foreach ($headers as $key => $value) {
+                if (strtolower((string) $key) === 'authorization' && is_string($value) && $value !== '') {
+                    return $value;
+                }
+            }
+        }
+
+        if (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+            return (string) $_SERVER['HTTP_AUTHORIZATION'];
+        }
+
+        if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            return (string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+
+        return null;
     }
 
     private function unauthorized(): never

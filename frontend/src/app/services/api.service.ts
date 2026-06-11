@@ -15,12 +15,17 @@ export class ApiService {
   // 🔐 Helper para enviar JWT
   // =====================================
 
-  private getAuthHeaders(): HttpHeaders {
+  private getAuthHeaders(json = true): HttpHeaders {
     const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token ?? ''}`
+    };
 
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token ?? ''}`
-    });
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return new HttpHeaders(headers);
   }
 
   // =====================================
@@ -39,8 +44,8 @@ export class ApiService {
   // CONTACTS
   // =====================================
 
-  getContacts(): Observable<any[]> {
-    return this.http.get<any[]>(
+  getContacts(): Observable<any> {
+    return this.http.get<any>(
       `${this.baseUrl}/contacts`,
       { headers: this.getAuthHeaders() }
     );
@@ -107,7 +112,7 @@ export class ApiService {
     return this.http.post(
       `${this.baseUrl}/upload-template-file`,
       formData,
-      { headers: this.getAuthHeaders() }
+      { headers: this.getAuthHeaders(false) }
     );
   }
 

@@ -33,9 +33,14 @@ export class LoginComponent {
       password: this.password
     }).subscribe({
       next: (response) => {
-  
+        if (!response?.success || !response?.token) {
+          alert('❌ Respuesta de login inválida');
+          return;
+        }
+
         localStorage.setItem('token', response.token);
-  
+        localStorage.removeItem('loggedIn');
+
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
