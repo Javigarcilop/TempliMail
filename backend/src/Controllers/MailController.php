@@ -66,7 +66,7 @@ class MailController
         try {
             $userId = (int) $_SERVER['AUTH_USER_ID'];
 
-            $campaigns = EmailCampaignModel::getScheduledByUser($userId);
+            $campaigns = EmailCampaignModel::getAllByUser($userId);
 
             http_response_code(200);
             echo json_encode([

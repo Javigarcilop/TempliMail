@@ -61,14 +61,14 @@ export class MassMailComponent implements OnInit, OnDestroy {
   // =====================================================
 
   loadContacts(): void {
-    this.api.getContacts().subscribe(data => {
-      this.contacts = data;
+    this.api.getContacts().subscribe((data: any) => {
+      this.contacts = data.data;
     });
   }
 
   loadTemplates(): void {
-    this.api.getTemplates().subscribe(data => {
-      this.templates = data;
+    this.api.getTemplates().subscribe((data: any) => {
+      this.templates = data.data;
     });
   }
 

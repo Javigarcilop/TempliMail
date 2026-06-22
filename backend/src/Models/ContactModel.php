@@ -102,7 +102,7 @@ class ContactModel
         }
     }
 
-    public static function softDelete(int $userId, int $id): void
+    public static function delete(int $userId, int $id): void
 {
     $db = DB::get();
 

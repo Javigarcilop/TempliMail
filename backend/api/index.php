@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
+use Dotenv\Dotenv;
 use TempliMail\Controllers\AuthController;
+use TempliMail\Controllers\DashboardController;
 use TempliMail\Controllers\MailController;
 use TempliMail\Controllers\ContactController;
 use TempliMail\Controllers\TemplateController;
 use TempliMail\Controllers\UploadTemplateController;
 use TempliMail\Services\JwtService;
 use TempliMail\Middleware\AuthMiddleware;
+
+// =======================
+// ENV
+// =======================
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv->load();
 
 // =======================
 // CORS
@@ -28,11 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
 
     // =======================
-    // JWT CONFIG (CLAVE SEGURA)
+    // JWT
     // =======================
-    $jwtSecret = '06e8f28d0819a3fd36ba1fd9a5853db595c4361b29af18acd47a064b51464c4c';
-
-    $jwtService = new JwtService($jwtSecret);
+    $jwtService    = new JwtService($_ENV['JWT_SECRET']);
     $authMiddleware = new AuthMiddleware($jwtService);
 
     // =======================
@@ -71,6 +77,19 @@ try {
 
     if ($request === '/register' && $method === 'POST') {
         (new AuthController())->register();
+        exit;
+    }
+
+    // =======================
+    // DASHBOARD
+    // =======================
+    if ($request === '/dashboard/stats' && $method === 'GET') {
+        (new DashboardController())->stats();
+        exit;
+    }
+
+    if ($request === '/dashboard/summary' && $method === 'GET') {
+        (new DashboardController())->summary();
         exit;
     }
 

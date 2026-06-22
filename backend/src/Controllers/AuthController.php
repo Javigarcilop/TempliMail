@@ -12,8 +12,7 @@ class AuthController
 
     public function __construct()
     {
-        $secret = '06e8f28d0819a3fd36ba1fd9a5853db595c4361b29af18acd47a064b51464c4c';
-        $this->jwtService = new JwtService($secret);
+        $this->jwtService = new JwtService($_ENV['JWT_SECRET']);
     }
 
     public function login(): void

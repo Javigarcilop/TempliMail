@@ -119,4 +119,33 @@ class EmailCampaignModel
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public static function getAllByUser(int $userId): array
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare("
+            SELECT
+                ec.id,
+                ec.subject,
+                ec.status,
+                ec.scheduled_at,
+                ec.updated_at AS sent_at,
+                t.name        AS template_name,
+                COUNT(ed.id)  AS total_recipients
+            FROM email_campaigns ec
+            LEFT JOIN templates t
+                   ON ec.template_id = t.id
+            LEFT JOIN email_deliveries ed
+                   ON ed.campaign_id = ec.id
+            WHERE ec.user_id = :user_id
+            GROUP BY ec.id, ec.subject, ec.status,
+                     ec.scheduled_at, ec.updated_at, t.name
+            ORDER BY ec.created_at DESC
+        ");
+
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

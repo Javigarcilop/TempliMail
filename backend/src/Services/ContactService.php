@@ -28,6 +28,6 @@ class ContactService
 
     public static function delete(int $userId, int $id): void
 {
-    ContactModel::softDelete($userId, $id);
+    ContactModel::delete($userId, $id);
 }
 }
