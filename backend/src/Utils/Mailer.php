@@ -4,32 +4,33 @@ namespace TempliMail\Utils;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-require_once __DIR__ . '/smtp_config.php';
-
-
+use Dotenv\Dotenv;
 
 class Mailer
 {
     public static function send(string $to, string $subject, string $body): void
     {
+        $dotenv = Dotenv::createImmutable(__DIR__ . '/../../../');
+        $dotenv->load();
+
         $mail = new PHPMailer(true);
 
         try {
-            $mail->SMTPDebug  = 0; 
+            $mail->SMTPDebug  = 0;
             $mail->Debugoutput = 'error_log';
 
             $mail->isSMTP();
-            $mail->Host       = SMTP_HOST;
+            $mail->Host       = $_ENV['SMTP_HOST'];
             $mail->SMTPAuth   = true;
-            $mail->Username   = SMTP_USER;
-            $mail->Password   = SMTP_PASS;
-            $mail->SMTPSecure = SMTP_SECURE;
-            $mail->Port       = SMTP_PORT;
+            $mail->Username   = $_ENV['SMTP_USER'];
+            $mail->Password   = $_ENV['SMTP_PASSWORD'];
+            $mail->SMTPSecure = $_ENV['SMTP_SECURE'];
+            $mail->Port       = (int) $_ENV['SMTP_PORT'];
 
             $mail->CharSet  = 'UTF-8';
             $mail->Encoding = 'base64';
 
-            $mail->setFrom(SMTP_FROM, SMTP_FROM_NAME);
+            $mail->setFrom($_ENV['SMTP_FROM'], $_ENV['SMTP_FROM_NAME']);
             $mail->addAddress($to);
 
             $mail->isHTML(true);
