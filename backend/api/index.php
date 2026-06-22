@@ -17,7 +17,7 @@ use TempliMail\Middleware\AuthMiddleware;
 // =======================
 // ENV
 // =======================
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 // =======================

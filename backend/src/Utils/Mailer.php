@@ -10,7 +10,7 @@ class Mailer
 {
     public static function send(string $to, string $subject, string $body): void
     {
-        $dotenv = Dotenv::createImmutable(__DIR__ . '/../../../');
+        $dotenv = Dotenv::createImmutable(__DIR__ . '/../../');
         $dotenv->load();
 
         $mail = new PHPMailer(true);
