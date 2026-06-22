@@ -55,7 +55,7 @@
               Cargando entregas...
             </div>
 
-            <table class="delivery-table" *ngIf="deliveries[campaign.id]?.length > 0">
+            <table class="delivery-table" *ngIf="(deliveries[campaign.id]?.length ?? 0) > 0">
               <thead>
                 <tr>
                   <th>Nombre</th>
