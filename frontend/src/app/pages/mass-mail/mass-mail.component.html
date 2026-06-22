@@ -98,8 +98,10 @@
     <button
       class="btn btn-primary"
       (click)="sendMassive()"
+      [disabled]="loading"
     >
-      Enviar a seleccionado
+      <span *ngIf="loading">Enviando...</span>
+      <span *ngIf="!loading">Enviar a seleccionado</span>
     </button>
   </div>
 

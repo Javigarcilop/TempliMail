@@ -4,6 +4,7 @@ namespace TempliMail\Controllers;
 
 use TempliMail\Services\MailService;
 use TempliMail\Models\EmailCampaignModel;
+use TempliMail\Models\EmailDeliveryModel;
 use Exception;
 
 class MailController
@@ -112,6 +113,27 @@ class MailController
             echo json_encode([
                 'success' => false,
                 'error'   => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getCampaignDeliveries(int $campaignId): void
+    {
+        try {
+            $userId = (int) $_SERVER['AUTH_USER_ID'];
+
+            $deliveries = EmailDeliveryModel::getByCampaign($campaignId, $userId);
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'data'    => $deliveries,
+            ]);
+        } catch (Exception) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error'   => 'Internal server error',
             ]);
         }
     }

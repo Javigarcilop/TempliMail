@@ -70,6 +70,35 @@ class EmailDeliveryModel
         }
     }
 
+    public static function getByCampaign(int $campaignId, int $userId): array
+    {
+        $db = DB::get();
+
+        $stmt = $db->prepare("
+            SELECT
+                ed.id,
+                ed.status,
+                ed.sent_at,
+                ed.error_message,
+                c.first_name,
+                c.last_name,
+                c.email
+            FROM email_deliveries ed
+            JOIN contacts c         ON ed.contact_id  = c.id
+            JOIN email_campaigns ec ON ed.campaign_id = ec.id
+            WHERE ed.campaign_id = :campaign_id
+              AND ec.user_id     = :user_id
+            ORDER BY ed.id ASC
+        ");
+
+        $stmt->execute([
+            'campaign_id' => $campaignId,
+            'user_id'     => $userId,
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public static function markFailed(int $deliveryId, string $error): void
     {
         $db = DB::get();

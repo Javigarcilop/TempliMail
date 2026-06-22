@@ -20,6 +20,7 @@ export class MassMailComponent implements OnInit, OnDestroy {
 
   message: string = '';
   messageVisible = false;
+  loading = false;
 
   private intervalId: any;
 
@@ -130,15 +131,18 @@ export class MassMailComponent implements OnInit, OnDestroy {
       payload.scheduled_at = this.scheduledAt;
     }
 
+    this.loading = true;
+
     this.api.sendMassiveMail(payload).subscribe({
       next: () => {
+        this.loading = false;
         this.showMessage('✅ Emails processed successfully');
-
         this.selectedContactIds = [];
         this.selectedTemplateId = null;
         this.scheduledAt = null;
       },
       error: (err) => {
+        this.loading = false;
         console.error(err);
         this.showMessage('❌ Error sending emails');
       }

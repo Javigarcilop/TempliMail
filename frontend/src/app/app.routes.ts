@@ -1,30 +1,34 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './guards/auth.guard';
+import { guestGuard } from './guards/guest.guard';
 
 export const routes: Routes = [
 
-  // 🔓 RUTAS PÚBLICAS (sin layout)
+  // Rutas públicas (redirige a dashboard si ya hay sesión)
   {
     path: 'login',
+    canActivate: [guestGuard],
     loadComponent: () =>
       import('./pages/login/login.component')
         .then(m => m.LoginComponent)
   },
   {
     path: 'register',
+    canActivate: [guestGuard],
     loadComponent: () =>
       import('./pages/register/register.component')
         .then(m => m.RegisterComponent)
   },
 
-  // 🔐 RUTAS PRIVADAS (con layout + sidebar)
+  // Rutas privadas (redirige a login si no hay sesión)
   {
     path: '',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./layout/layout.component')
         .then(m => m.LayoutComponent),
     children: [
 
-      // Redirección inicial
       {
         path: '',
         redirectTo: 'dashboard',
@@ -75,7 +79,6 @@ export const routes: Routes = [
     ]
   },
 
-  // Fallback
   {
     path: '**',
     redirectTo: 'login'

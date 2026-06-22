@@ -150,6 +150,13 @@ export class ApiService {
     );
   }
 
+  getCampaignDeliveries(campaignId: number): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/history/${campaignId}/deliveries`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
   getDashboardStats(): Observable<any> {
     return this.http.get(
       `${this.baseUrl}/dashboard/stats`,

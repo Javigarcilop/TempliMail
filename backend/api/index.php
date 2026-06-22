@@ -116,6 +116,11 @@ try {
         exit;
     }
 
+    if (preg_match('#^/history/(\d+)/deliveries$#', $request, $matches) && $method === 'GET') {
+        (new MailController())->getCampaignDeliveries((int) $matches[1]);
+        exit;
+    }
+
     // =======================
     // CONTACTS
     // =======================
