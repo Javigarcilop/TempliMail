@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Dotenv\Dotenv;
+use TempliMail\Controllers\AiController;
 use TempliMail\Controllers\AuthController;
 use TempliMail\Controllers\DashboardController;
 use TempliMail\Controllers\MailController;
@@ -77,6 +78,14 @@ try {
 
     if ($request === '/register' && $method === 'POST') {
         (new AuthController())->register();
+        exit;
+    }
+
+    // =======================
+    // AI
+    // =======================
+    if ($request === '/ai/suggest-subject' && $method === 'POST') {
+        (new AiController())->suggestSubjects();
         exit;
     }
 

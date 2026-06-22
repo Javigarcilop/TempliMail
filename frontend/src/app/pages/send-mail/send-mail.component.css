@@ -77,5 +77,98 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background-color: #132f4c;
+  background-color: #1a4a7a;
+}
+
+/* Bloque IA */
+.ai-box {
+  margin-top: 8px;
+  padding: 14px 16px;
+  background-color: #f0f4ff;
+  border: 1px solid #c7d4f0;
+  border-radius: 10px;
+}
+
+.ai-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ai-topic-input {
+  flex: 1;
+  padding: 10px 12px;
+  height: 40px;
+  border: 1px solid #b0b8c1;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #ffffff;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.ai-topic-input:focus {
+  outline: none;
+  border-color: #132f4c;
+}
+
+.ai-btn {
+  white-space: nowrap;
+  padding: 10px 16px;
+  background-color: #5c4dd6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: inherit;
+}
+
+.ai-btn:hover:not(:disabled) {
+  background-color: #4a3dbf;
+}
+
+.ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-error {
+  color: #c0392b;
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.ai-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.ai-suggestions-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2c44;
+  width: 100%;
+}
+
+.suggestion-chip {
+  padding: 7px 14px;
+  background-color: #ffffff;
+  border: 1px solid #5c4dd6;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #5c4dd6;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.suggestion-chip:hover {
+  background-color: #5c4dd6;
+  color: #ffffff;
 }

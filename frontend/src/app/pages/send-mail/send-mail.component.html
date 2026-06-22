@@ -22,7 +22,45 @@
     required
   />
 
-  <br /><br />
+  <!-- Generador de asuntos con IA -->
+  <div class="ai-box">
+    <div class="ai-input-row">
+      <input
+        type="text"
+        class="ai-topic-input"
+        placeholder="Describe el tema del correo..."
+        [(ngModel)]="aiTopic"
+        name="aiTopic"
+        [ngModelOptions]="{ standalone: true }"
+        (keyup.enter)="suggestSubjects()"
+        maxlength="300"
+      />
+      <button
+        type="button"
+        class="ai-btn"
+        (click)="suggestSubjects()"
+        [disabled]="aiLoading || !aiTopic.trim()"
+      >
+        {{ aiLoading ? 'Generando...' : '✨ Sugerir asunto' }}
+      </button>
+    </div>
+
+    <p class="ai-error" *ngIf="aiError">{{ aiError }}</p>
+
+    <div class="ai-suggestions" *ngIf="aiSuggestions.length > 0">
+      <span class="ai-suggestions-label">Elige un asunto:</span>
+      <button
+        type="button"
+        class="suggestion-chip"
+        *ngFor="let s of aiSuggestions"
+        (click)="selectSuggestion(s)"
+      >
+        {{ s }}
+      </button>
+    </div>
+  </div>
+
+  <br />
 
   <label for="body">Mensaje:</label>
   <br />
@@ -49,13 +87,9 @@
 
 </form>
 
-<!-- Message -->
 <p
   *ngIf="message"
-  [ngClass]="{
-    'text-danger': isError,
-    'text-success': !isError
-  }"
+  [ngClass]="{ 'text-danger': isError, 'text-success': !isError }"
 >
   {{ message }}
 </p>

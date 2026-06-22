@@ -150,6 +150,14 @@ export class ApiService {
     );
   }
 
+  suggestSubjects(topic: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/ai/suggest-subject`,
+      { topic },
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
   getCampaignDeliveries(campaignId: number): Observable<any> {
     return this.http.get(
       `${this.baseUrl}/history/${campaignId}/deliveries`,
