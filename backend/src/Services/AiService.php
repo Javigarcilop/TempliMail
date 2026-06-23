@@ -8,15 +8,15 @@ use Exception;
 
 class AiService
 {
-    private const MODEL   = 'claude-haiku-4-5-20251001';
-    private const API_URL = 'https://api.anthropic.com/v1/messages';
+    private const MODEL   = 'llama-3.3-70b-versatile';
+    private const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
     public static function suggestSubjects(string $topic): array
     {
-        $apiKey = $_ENV['ANTHROPIC_API_KEY'] ?? '';
+        $apiKey = $_ENV['GROQ_API_KEY'] ?? '';
 
         if ($apiKey === '' || $apiKey === 'your-api-key-here') {
-            throw new Exception('ANTHROPIC_API_KEY not configured');
+            throw new Exception('GROQ_API_KEY not configured');
         }
 
         $prompt = <<<PROMPT
@@ -30,9 +30,8 @@ Rules:
 PROMPT;
 
         $payload = json_encode([
-            'model'      => self::MODEL,
-            'max_tokens' => 256,
-            'messages'   => [
+            'model'    => self::MODEL,
+            'messages' => [
                 ['role' => 'user', 'content' => $prompt]
             ],
         ]);
@@ -45,8 +44,7 @@ PROMPT;
             CURLOPT_TIMEOUT        => 15,
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
-                'x-api-key: ' . $apiKey,
-                'anthropic-version: 2023-06-01',
+                'Authorization: Bearer ' . $apiKey,
             ],
         ]);
 
@@ -55,11 +53,11 @@ PROMPT;
         curl_close($ch);
 
         if ($response === false || $httpCode !== 200) {
-            throw new Exception('Claude API error (HTTP ' . $httpCode . ')');
+            throw new Exception('Groq API error (HTTP ' . $httpCode . '): ' . $response);
         }
 
         $data = json_decode($response, true);
-        $text = $data['content'][0]['text'] ?? '';
+        $text = $data['choices'][0]['message']['content'] ?? '';
 
         $lines = array_values(array_filter(
             array_map('trim', explode("\n", $text)),

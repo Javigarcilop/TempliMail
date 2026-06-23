@@ -22,6 +22,7 @@ class AiController
                     'error'   => 'Topic is required',
                 ]);
                 return;
+                
             }
 
             if (mb_strlen($topic) > 300) {
