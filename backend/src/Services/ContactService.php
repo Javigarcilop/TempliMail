@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Services;
 
 use TempliMail\Models\ContactModel;
-use Exception;
 
 class ContactService
 {
@@ -14,10 +15,6 @@ class ContactService
 
     public static function create(int $userId, array $data): void
     {
-        if (empty($data['email'])) {
-            throw new Exception('El email es obligatorio');
-        }
-
         ContactModel::create($userId, $data);
     }
 
@@ -27,7 +24,12 @@ class ContactService
     }
 
     public static function delete(int $userId, int $id): void
-{
-    ContactModel::delete($userId, $id);
-}
+    {
+        ContactModel::delete($userId, $id);
+    }
+
+    public static function setSubscribed(int $userId, int $id, bool $subscribed): void
+    {
+        ContactModel::setSubscribed($userId, $id, $subscribed);
+    }
 }

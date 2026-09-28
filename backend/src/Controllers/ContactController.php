@@ -1,96 +1,54 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Controllers;
 
 use TempliMail\Services\ContactService;
-use Exception;
 
-class ContactController
+class ContactController extends BaseController
 {
     public function getAll(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $contacts = ContactService::getAll($userId);
-
-            echo json_encode([
-                'success' => true,
-                'data'    => $contacts
-            ]);
-
-        } catch (Exception $e) {
-
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+        $this->respond(fn(): array => ['data' => ContactService::getAll($this->userId())]);
     }
 
     public function create(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-            $data = json_decode(file_get_contents('php://input'), true);
+        $this->respond(function (): array {
+            ContactService::create($this->userId(), $this->body());
 
-            ContactService::create($userId, $data);
-
-            echo json_encode([
-                'success' => true
-            ]);
-
-        } catch (Exception $e) {
-
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        }, 201);
     }
 
     public function update(int $id): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-            $data = json_decode(file_get_contents('php://input'), true);
+        $this->respond(function () use ($id): array {
+            ContactService::update($this->userId(), $id, $this->body());
 
-            ContactService::update($userId, $id, $data);
-
-            echo json_encode([
-                'success' => true
-            ]);
-
-        } catch (Exception $e) {
-
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        });
     }
 
     public function delete(int $id): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
+        $this->respond(function () use ($id): array {
+            ContactService::delete($this->userId(), $id);
 
-            ContactService::delete($userId, $id);
+            return [];
+        });
+    }
 
-            echo json_encode([
-                'success' => true
-            ]);
+    /** PUT /contacts/{id}/subscription  {"subscribed": true|false} */
+    public function setSubscription(int $id): void
+    {
+        $this->respond(function () use ($id): array {
+            $subscribed = (bool) ($this->body()['subscribed'] ?? false);
 
-        } catch (Exception $e) {
+            ContactService::setSubscribed($this->userId(), $id, $subscribed);
 
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        });
     }
 }
