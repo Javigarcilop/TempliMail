@@ -50,6 +50,14 @@
       placeholder="Buscar contacto..."
       [(ngModel)]="search"
     />
+    @if (groups.length > 0) {
+      <select class="form-select group-select" [(ngModel)]="groupFilter" title="Filtrar por grupo">
+        <option [ngValue]="''">Todos los grupos</option>
+        @for (g of groups; track g.id) {
+          <option [ngValue]="g.id">{{ g.name }} ({{ g.member_count }})</option>
+        }
+      </select>
+    }
     <span class="counter">
       <strong>{{ selectedContactIds.size }}</strong> seleccionados de {{ contacts.length }}
       @if (unsubscribedCount > 0) {

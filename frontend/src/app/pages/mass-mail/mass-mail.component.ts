@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { MailPreviewComponent } from '../../shared/mail-preview/mail-preview.component';
-import { Contact, MailPreview, MassiveMailInput, Template } from '../../models/api.models';
+import { Contact, Group, MailPreview, MassiveMailInput, Template } from '../../models/api.models';
 
 @Component({
   standalone: true,
@@ -19,6 +19,9 @@ export class MassMailComponent implements OnInit {
 
   contacts: Contact[] = [];
   templates: Template[] = [];
+  groups: Group[] = [];
+  /** '' = todos, o el id de un grupo */
+  groupFilter: '' | number = '';
 
   selectedContactIds = new Set<number>();
   selectedTemplateId: number | null = null;
@@ -42,6 +45,11 @@ export class MassMailComponent implements OnInit {
       error: () => this.toast.error('No se pudieron cargar los contactos.')
     });
 
+    this.api.getGroups().subscribe({
+      next: response => this.groups = response.data ?? [],
+      error: () => { /* el filtro por grupo es opcional */ }
+    });
+
     this.api.getTemplates().subscribe({
       next: response => this.templates = response.data ?? [],
       error: () => this.toast.error('No se pudieron cargar las plantillas.')
@@ -59,14 +67,14 @@ export class MassMailComponent implements OnInit {
   get filteredContacts(): Contact[] {
     const term = this.search.trim().toLowerCase();
 
-    if (!term) {
-      return this.contacts;
-    }
+    return this.contacts.filter(c => {
+      if (typeof this.groupFilter === 'number' && !c.group_ids.includes(this.groupFilter)) {
+        return false;
+      }
 
-    return this.contacts.filter(c =>
-      [c.first_name, c.last_name, c.email, c.company]
-        .some(value => value?.toLowerCase().includes(term))
-    );
+      return !term || [c.first_name, c.last_name, c.email, c.company]
+        .some(value => value?.toLowerCase().includes(term));
+    });
   }
 
   /** Contactos visibles que pueden recibir correo (los dados de baja no). */

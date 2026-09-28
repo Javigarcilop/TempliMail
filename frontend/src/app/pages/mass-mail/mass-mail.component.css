@@ -202,3 +202,7 @@ button.btn:disabled {
   cursor: not-allowed;
   transform: none;
 }
+
+.group-select { max-width: 220px; padding: 12px 14px; }
+.table-responsive { max-height: 420px; overflow-y: auto; }
+.table-responsive thead th { position: sticky; top: 0; z-index: 1; }

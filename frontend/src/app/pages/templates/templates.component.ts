@@ -120,6 +120,21 @@ export class TemplatesComponent implements OnInit {
     window.scrollTo?.({ top: 0 });
   }
 
+  duplicateTemplate(template: Template): void {
+    this.api.addTemplate({
+      name: `${template.name} (copia)`.slice(0, 255),
+      subject: template.subject,
+      content_html: template.content_html
+    }).subscribe({
+      next: () => {
+        this.toast.success('Plantilla duplicada.');
+        this.loadTemplates();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo duplicar la plantilla.')
+    });
+  }
+
   deleteTemplate(template: Template): void {
     if (!confirm(`¿Eliminar la plantilla "${template.name}"?`)) {
       return;

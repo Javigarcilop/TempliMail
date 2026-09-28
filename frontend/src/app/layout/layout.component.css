@@ -8,6 +8,7 @@
 /* Contenido principal */
 .app-content {
   flex: 1;
+  min-width: 0;
   padding: 40px;
   overflow-y: auto;
 }

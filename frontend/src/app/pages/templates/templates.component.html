@@ -114,7 +114,7 @@
       <tr>
         <th>Nombre</th>
         <th>Asunto</th>
-        <th style="width: 180px;">Acciones</th>
+        <th style="width: 260px;">Acciones</th>
       </tr>
     </thead>
 
@@ -127,6 +127,10 @@
         <td class="acciones">
           <button (click)="editTemplate(template)">
             Editar
+          </button>
+
+          <button (click)="duplicateTemplate(template)">
+            Duplicar
           </button>
 
           <button (click)="deleteTemplate(template)">

@@ -7,6 +7,23 @@
   <input [(ngModel)]="newContact.company" name="company" placeholder="Empresa" />
   <input [(ngModel)]="newContact.position" name="position" placeholder="Cargo" />
 
+  @if (groups.length > 0) {
+    <div class="form-groups">
+      <span class="form-groups-label">Grupos:</span>
+      @for (g of groups; track g.id) {
+        <label class="group-check">
+          <input
+            type="checkbox"
+            [name]="'group_' + g.id"
+            [checked]="selectedGroupIds.has(g.id)"
+            (change)="toggleGroup(g.id, $any($event.target).checked)"
+          />
+          {{ g.name }}
+        </label>
+      }
+    </div>
+  }
+
   <button type="submit">
     {{ editingId ? 'Actualizar' : 'Añadir' }}
   </button>
@@ -17,17 +34,141 @@
 
 </form>
 
+<!-- Barra de herramientas -->
 <div class="table-toolbar">
   <input
     type="search"
     class="search-input"
     placeholder="Buscar por nombre, email, empresa..."
     [(ngModel)]="search"
+    (ngModelChange)="resetPage()"
     name="search"
   />
-  <span class="counter">{{ filteredContacts.length }} de {{ contacts.length }} contactos</span>
+
+  <select class="group-filter" [(ngModel)]="groupFilter" (ngModelChange)="resetPage()" name="groupFilter">
+    <option [ngValue]="''">Todos los grupos</option>
+    <option [ngValue]="'none'">Sin grupo</option>
+    @for (g of groups; track g.id) {
+      <option [ngValue]="g.id">{{ g.name }} ({{ g.member_count }})</option>
+    }
+  </select>
+
+  <div class="toolbar-actions">
+    <button type="button" class="btn-tool" (click)="groupsPanelOpen = !groupsPanelOpen">
+      Grupos {{ groupsPanelOpen ? '▲' : '▼' }}
+    </button>
+    <label class="btn-tool file-btn">
+      Importar CSV
+      <input type="file" accept=".csv,text/csv" hidden (change)="onFileSelected($event)" />
+    </label>
+    <button type="button" class="btn-tool" [disabled]="filteredContacts.length === 0" (click)="exportCsv()">
+      Exportar CSV
+    </button>
+  </div>
 </div>
 
+<!-- Panel de grupos -->
+@if (groupsPanelOpen) {
+  <div class="panel">
+    <h3>Grupos de contactos</h3>
+
+    <div class="new-group">
+      <input
+        type="text"
+        placeholder="Nombre del nuevo grupo"
+        maxlength="100"
+        [(ngModel)]="newGroupName"
+        name="newGroupName"
+        (keyup.enter)="createGroup()"
+      />
+      <button type="button" class="btn-accion" [disabled]="!newGroupName.trim()" (click)="createGroup()">
+        Crear grupo
+      </button>
+    </div>
+
+    @if (groups.length === 0) {
+      <p class="empty-text">Todavía no hay grupos. Crea uno para segmentar tus contactos.</p>
+    }
+
+    <ul class="group-list">
+      @for (g of groups; track g.id) {
+        <li>
+          <span class="group-name">{{ g.name }}</span>
+          <span class="badge badge-blue">{{ g.member_count }} contacto(s)</span>
+          <span class="group-actions">
+            <button type="button" class="btn-accion" (click)="renameGroup(g)">Renombrar</button>
+            <button type="button" class="btn-accion peligro" (click)="deleteGroup(g)">Eliminar</button>
+          </span>
+        </li>
+      }
+    </ul>
+  </div>
+}
+
+<!-- Vista previa de la importación -->
+@if (importPreview) {
+  <div class="panel">
+    <h3>Importar «{{ importPreview.fileName }}»</h3>
+    <p>
+      Se han leído <strong>{{ importPreview.contacts.length }}</strong> filas.
+      Los emails ya existentes se omiten y los no válidos se te indicarán.
+      @if (importPreview.ignoredColumns.length > 0) {
+        <br /><small class="empty-text">Columnas ignoradas: {{ importPreview.ignoredColumns.join(', ') }}</small>
+      }
+    </p>
+
+    @if (groups.length > 0) {
+      <label class="import-group">
+        Añadir al grupo:
+        <select [(ngModel)]="importGroupId" name="importGroupId">
+          <option [ngValue]="''">(ninguno)</option>
+          @for (g of groups; track g.id) {
+            <option [ngValue]="g.id">{{ g.name }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    <div class="panel-actions">
+      <button type="button" class="btn-accion" [disabled]="importing" (click)="confirmImport()">
+        {{ importing ? 'Importando...' : 'Importar ' + importPreview.contacts.length + ' contactos' }}
+      </button>
+      <button type="button" class="btn-accion" [disabled]="importing" (click)="cancelImport()">Cancelar</button>
+    </div>
+  </div>
+}
+
+<!-- Resultado de la importación -->
+@if (importResult) {
+  <div class="panel">
+    <h3>Resultado de la importación</h3>
+    <p>
+      <span class="badge badge-green">{{ importResult.created }} creados</span>
+      <span class="badge badge-gray">{{ importResult.duplicates }} duplicados omitidos</span>
+      <span class="badge" [class.badge-red]="importResult.invalid.length > 0" [class.badge-gray]="importResult.invalid.length === 0">
+        {{ importResult.invalid.length }} no válidos
+      </span>
+    </p>
+
+    @if (importResult.invalid.length > 0) {
+      <ul class="invalid-list">
+        @for (row of importResult.invalid; track row.row) {
+          <li>Fila {{ row.row }}: «{{ row.email || '(vacío)' }}» — {{ row.reason }}</li>
+        }
+      </ul>
+    }
+
+    <div class="panel-actions">
+      <button type="button" class="btn-accion" (click)="cancelImport()">Cerrar</button>
+    </div>
+  </div>
+}
+
+<div class="counter-line">
+  {{ filteredContacts.length }} de {{ contacts.length }} contactos
+</div>
+
+<div class="table-wrap">
 <table>
   <tr>
     <th>Nombre</th>
@@ -35,33 +176,52 @@
     <th>Teléfono</th>
     <th>Empresa</th>
     <th>Cargo</th>
+    <th>Grupos</th>
     <th>Estado</th>
     <th>Acciones</th>
   </tr>
 
-  <tr *ngFor="let c of filteredContacts" [class.unsubscribed]="c.unsubscribed_at">
-    <td>{{ c.first_name }} {{ c.last_name }}</td>
-    <td>{{ c.email }}</td>
-    <td>{{ c.phone }}</td>
-    <td>{{ c.company }}</td>
-    <td>{{ c.position }}</td>
-    <td>
-      <span *ngIf="!c.unsubscribed_at" class="badge badge-green">Suscrito</span>
-      <span *ngIf="c.unsubscribed_at" class="badge badge-gray"
-            [title]="'Baja el ' + (c.unsubscribed_at | date:'short')">De baja</span>
-    </td>
-    <td class="acciones">
-      <button type="button" class="btn-accion" (click)="editContact(c)">Editar</button>
-      <button type="button" class="btn-accion" (click)="toggleSubscription(c)">
-        {{ c.unsubscribed_at ? 'Reactivar' : 'Dar de baja' }}
-      </button>
-      <button type="button" class="btn-accion peligro" (click)="deleteContact(c)">Eliminar</button>
-    </td>
-  </tr>
-
-  <tr *ngIf="filteredContacts.length === 0">
-    <td colspan="7" class="empty">
-      {{ contacts.length === 0 ? 'Todavía no tienes contactos.' : 'Ningún contacto coincide con la búsqueda.' }}
-    </td>
-  </tr>
+  @for (c of pagedContacts; track c.id) {
+    <tr [class.unsubscribed]="c.unsubscribed_at">
+      <td>{{ c.first_name }} {{ c.last_name }}</td>
+      <td>{{ c.email }}</td>
+      <td>{{ c.phone }}</td>
+      <td>{{ c.company }}</td>
+      <td>{{ c.position }}</td>
+      <td>
+        @for (id of c.group_ids; track id) {
+          <span class="badge badge-blue chip">{{ groupName(id) }}</span>
+        }
+      </td>
+      <td>
+        @if (c.unsubscribed_at) {
+          <span class="badge badge-gray" [title]="'Baja el ' + (c.unsubscribed_at | date:'short')">De baja</span>
+        } @else {
+          <span class="badge badge-green">Suscrito</span>
+        }
+      </td>
+      <td class="acciones">
+        <button type="button" class="btn-accion" (click)="editContact(c)">Editar</button>
+        <button type="button" class="btn-accion" (click)="toggleSubscription(c)">
+          {{ c.unsubscribed_at ? 'Reactivar' : 'Dar de baja' }}
+        </button>
+        <button type="button" class="btn-accion peligro" (click)="deleteContact(c)">Eliminar</button>
+      </td>
+    </tr>
+  } @empty {
+    <tr>
+      <td colspan="8" class="empty">
+        {{ contacts.length === 0 ? 'Todavía no tienes contactos.' : 'Ningún contacto coincide con los filtros.' }}
+      </td>
+    </tr>
+  }
 </table>
+</div>
+
+@if (totalPages > 1) {
+  <div class="pagination">
+    <button type="button" class="btn-accion" [disabled]="page <= 1" (click)="goToPage(page - 1)">← Anterior</button>
+    <span>Página {{ page }} de {{ totalPages }}</span>
+    <button type="button" class="btn-accion" [disabled]="page >= totalPages" (click)="goToPage(page + 1)">Siguiente →</button>
+  </div>
+}
