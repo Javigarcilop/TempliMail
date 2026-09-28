@@ -13,7 +13,7 @@
 
   <div class="sidebar-footer">
     @if (username()) {
-      <span class="user">👤 {{ username() }}</span>
+      <a routerLink="/cuenta" routerLinkActive="active" class="user" title="Mi cuenta">👤 {{ username() }}</a>
     }
     <a href="/login" (click)="logout($event)">Salir</a>
   </div>

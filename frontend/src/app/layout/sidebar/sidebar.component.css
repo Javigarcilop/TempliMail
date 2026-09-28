@@ -54,8 +54,7 @@
 
 .sidebar-footer .user {
   font-size: 13px;
-  opacity: 0.8;
-  padding: 0 12px;
+  padding: 8px 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
