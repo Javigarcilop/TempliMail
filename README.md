@@ -1,92 +1,122 @@
-
 # 📬 TempliMail
 
-**TempliMail es una aplicación web profesional de email marketing.** Permite crear, gestionar y enviar correos electrónicos personalizados mediante plantillas visuales enriquecidas. 
+**TempliMail es una aplicación web de email marketing.** Permite gestionar contactos, crear plantillas visuales con variables de personalización y enviar campañas masivas (inmediatas o programadas) con seguimiento del progreso, reintentos y baja de suscriptores.
 
-TempliMail combina un frontend moderno desarrollado en Angular 19 con un backend robusto en PHP puro, conectados a una base de datos MySQL estructurada, eficiente y escalable. No es solo una solución funcional en su estado actual, sino que está pensada para evolucionar y escalar, incorporando en futuras versiones funcionalidades como estadísticas de apertura, gestión multicuenta, control de roles, exportación a PDF, e integración con plataformas externas.
-
----
-
-## 🛠️ Tecnologías Utilizadas
-
-- **Frontend**: Angular 19, Bootstrap, TinyMCE  
-- **Backend**: PHP (puro, sin frameworks), PHPMailer, PHPWord, PDFParser  
-- **Base de datos**: MySQL  
-- **Entorno local**: XAMPP  
+- **Frontend**: Angular 19 (standalone components, TinyMCE)
+- **Backend**: PHP 8.2 puro (sin frameworks), PHPMailer, PHPWord, PDFParser
+- **Base de datos**: MySQL 8
+- **Infraestructura**: Docker Compose (API, worker de envío, MySQL, phpMyAdmin, Mailpit opcional)
 
 ---
 
-## ✅ Funcionalidades Principales
+## ✅ Funcionalidades
 
-- Login de administrador  
-- Gestión avanzada de contactos (CRUD + búsqueda)  
-- Editor visual de plantillas (TinyMCE)  
-- Carga de plantillas desde archivos .docx y .pdf  
-- Envío de correos individual y masivo (SMTP real con PHPMailer)  
-- Envío programado automático por fecha y hora  
-- Historial de envíos  
-- Interfaz moderna y responsiva  
+- Registro / login con JWT, cierre de sesión que invalida el token y límite de intentos fallidos
+- Contactos: CRUD, búsqueda, baja y reactivación
+- Plantillas: editor visual (TinyMCE), importación desde `.docx` / `.pdf`, vista previa y correo de prueba
+- **Variables de personalización**: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{company}}`, `{{position}}`, `{{email}}`, con valor por defecto (`{{first_name|amigo}}`)
+- **Campañas masivas en cola**: las envía un worker en segundo plano (no dependen del navegador), con conexión SMTP reutilizada, pausa entre envíos y hasta 3 intentos por destinatario
+- Envío programado (las horas se guardan en UTC) y cancelación de campañas programadas
+- Historial con progreso en tiempo real, detalle por destinatario y **reintento de fallidos**
+- **Baja de suscriptores**: enlace firmado en cada correo, cabeceras `List-Unsubscribe` (baja *one-click*) y exclusión automática de los dados de baja
+- Envío individual (queda registrado en el historial) y sugerencia de asuntos con IA (Groq)
 
 ---
 
-## 📁 Estructura del Proyecto
+## 🚀 Puesta en marcha (Docker)
+
+Requisitos: Docker Desktop y Node.js 20+.
+
+```bash
+# 1. Configuración (rellena SMTP, JWT_SECRET y, opcionalmente, GROQ_API_KEY)
+cp backend/.env.example backend/.env
+
+# 2. Dependencias PHP (una vez)
+composer install
+
+# 3. Backend + base de datos + worker + phpMyAdmin
+docker compose up -d
+
+# 4. Frontend
+cd frontend
+npm install
+npm start
+```
+
+| Servicio | URL |
+|---|---|
+| Aplicación | http://localhost:4200 |
+| API | http://localhost:8080/backend/api/index.php |
+| phpMyAdmin | http://localhost:8081 (usuario `root`, sin contraseña) |
+| Mailpit (opcional) | http://localhost:8025 |
+
+**Usuario de desarrollo:** `admin` / `123456` (definido en `database/seed.sql`; cámbialo fuera de desarrollo).
+
+La base de datos se crea sola la primera vez (`database/schema.sql` + `database/seed.sql`). Si ya tenías una base de datos anterior, aplica la migración:
+
+```bash
+docker compose exec -T db mysql -uroot templimail_db < database/migrations/001_email_queue.sql
+```
+
+### El worker
+`docker compose up -d` arranca el servicio `worker` (`backend/bin/worker.php`), que envía las campañas en cola y las programadas cuando les toca. **Sin él, las campañas se quedan en "En cola".** Ver su actividad: `docker compose logs -f worker`.
+
+### Probar sin enviar correos reales
+Mailpit captura todo lo que se envía:
+
+```bash
+docker compose --profile dev up -d mailpit
+```
+
+y en `backend/.env`: `SMTP_HOST=mailpit`, `SMTP_PORT=1025`, `SMTP_SECURE=none`, `SMTP_USER=` y `SMTP_PASSWORD=` vacíos. Bandeja en http://localhost:8025.
+
+### Frontend en Docker (opcional)
+`docker compose --profile frontend up -d frontend` (en lugar de `npm start`).
+
+### Con XAMPP
+Copia el proyecto en `htdocs/TempliMail`, usa `DB_HOST=localhost` en `backend/.env` y cambia `apiUrl` en `frontend/src/environments/environment.development.ts`. Como XAMPP no tiene worker, ejecútalo a mano: `php backend/bin/worker.php`.
+
+---
+
+## 🧪 Pruebas
+
+```bash
+bash tests/e2e.sh          # 70+ comprobaciones de la API (requiere Docker y Mailpit)
+cd frontend && npm run build
+```
+
+⚠️ `tests/e2e.sh` borra contactos, plantillas y campañas de la base de datos: se niega a ejecutarse si detecta datos reales.
+
+---
+
+## 📁 Estructura
 
 ```
 TempliMail/
-├── frontend/           --> Proyecto Angular 19
-├── backend/            --> Backend PHP (API REST modular)
-├── templimail_db.sql   --> Base de datos MySQL exportada
-└── README.md           --> Este archivo
+├── backend/
+│   ├── api/index.php       # Router (tabla de rutas)
+│   ├── bin/                # worker.php, test_mail.php
+│   ├── src/                # Controllers → Services → Models (PSR-4: TempliMail\)
+│   └── .env.example
+├── database/               # schema.sql, seed.sql, migrations/
+├── frontend/               # Angular 19
+├── tests/e2e.sh
+└── docker-compose.yml
 ```
 
 ---
 
-## ⚙️ Requisitos del Sistema
- 
-- XAMPP instalado (PHP 8.x + MySQL + Apache)  
-- Node.js y Angular CLI  
+## 🔒 Seguridad
+
+- Solo `backend/api/` es accesible por HTTP (Apache bloquea `.env`, código y SQL).
+- Todas las consultas están acotadas al usuario autenticado; los contactos de una campaña se validan contra su propietario.
+- Los errores internos se registran en el log y nunca se muestran al cliente.
+- CORS limitado al origen configurado en `CORS_ORIGIN`.
+- La vista previa de correos se renderiza en un `iframe` con `sandbox`.
 
 ---
 
-## 🚀 Guía de Instalación y Despliegue (Local)
+## 📝 Información del proyecto
 
-### 1. Clonar o descomprimir el proyecto en `C:/xampp/htdocs/TempliMail`
-
-### 2. Importar la base de datos:
-
-- Abrir phpMyAdmin  
-- Crear base de datos: `templimail_db`  
-- Importar `templimail_db.sql`  
-
-### 3. Backend (PHP)
-
-- Ubicar en `C:/xampp/htdocs/TempliMail/backend/`  
-- Acceder vía navegador a: `http://localhost/TempliMail/backend/api/`  
-
-### 4. Frontend (Angular)
-
-```bash
-cd frontend
-npm install
-ng serve --open
-```
-
-Acceso vía navegador: `http://localhost:4200`
-
----
-
-## 📝 Información del Proyecto
-
-- **Nombre**: TempliMail  
-- **Autor**: Francisco Javier García López   
-- **Fecha de inicio**: Abril 2025  
-
----
-
-## 🔧 Notas adicionales
-
-- El envío programado se ejecuta automáticamente desde frontend.  
-- No es necesario cron ni tareas del sistema.  
-- Preparado para futuras ampliaciones: estadísticas, multicuenta, roles.  
-
----
+- **Autor**: Francisco Javier García López
+- **Inicio**: Abril 2025
