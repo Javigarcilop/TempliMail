@@ -43,6 +43,24 @@ class AuthModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function findWithPasswordById(int $id): ?array
+    {
+        $stmt = DB::get()->prepare("
+            SELECT id, username, email, password_hash, token_version, deleted_at
+            FROM users WHERE id = :id LIMIT 1
+        ");
+        $stmt->execute(['id' => $id]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public static function updateEmail(int $userId, string $email): void
+    {
+        DB::get()
+            ->prepare("UPDATE users SET email = :email WHERE id = :id AND deleted_at IS NULL")
+            ->execute(['email' => $email, 'id' => $userId]);
+    }
+
     public static function findByEmail(string $email): ?array
     {
         $stmt = DB::get()->prepare("SELECT id FROM users WHERE email = :email LIMIT 1");

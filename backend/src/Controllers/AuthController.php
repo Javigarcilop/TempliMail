@@ -50,6 +50,31 @@ class AuthController extends BaseController
         $this->respond(fn(): array => ['data' => AuthService::currentUser($this->userId())]);
     }
 
+    /** PUT /me  {"email": "..."} */
+    public function updateProfile(): void
+    {
+        $this->respond(fn(): array => [
+            'data' => AuthService::updateProfile($this->userId(), (string) ($this->body()['email'] ?? '')),
+        ]);
+    }
+
+    /** PUT /me/password  {"current_password": "...", "new_password": "..."} */
+    public function changePassword(): void
+    {
+        $this->respond(function (): array {
+            $data = $this->body();
+
+            $token = AuthService::changePassword(
+                $this->userId(),
+                (string) ($data['current_password'] ?? ''),
+                (string) ($data['new_password'] ?? ''),
+                new JwtService(Env::get('JWT_SECRET', ''))
+            );
+
+            return ['token' => $token];
+        });
+    }
+
     public function logout(): void
     {
         $this->respond(function (): array {

@@ -10,7 +10,14 @@ class DashboardController extends BaseController
 {
     public function stats(): void
     {
-        $this->respond(fn(): array => ['data' => DashboardModel::getStats($this->userId())]);
+        $this->respond(fn(): array => [
+            'data' => DashboardModel::getStats($this->userId()) + DashboardModel::getDeliveryTotals($this->userId()),
+        ]);
+    }
+
+    public function activity(): void
+    {
+        $this->respond(fn(): array => ['data' => DashboardModel::getActivity($this->userId())]);
     }
 
     public function summary(): void

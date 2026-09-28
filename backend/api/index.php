@@ -8,6 +8,7 @@ use TempliMail\Controllers\AiController;
 use TempliMail\Controllers\AuthController;
 use TempliMail\Controllers\ContactController;
 use TempliMail\Controllers\DashboardController;
+use TempliMail\Controllers\GroupController;
 use TempliMail\Controllers\MailController;
 use TempliMail\Controllers\TemplateController;
 use TempliMail\Controllers\UnsubscribeController;
@@ -53,6 +54,8 @@ $routes = [
 
     // Sesion
     ['GET',  '#^/me$#',                                 AuthController::class,           'me',                 false],
+    ['PUT',  '#^/me$#',                                 AuthController::class,           'updateProfile',      false],
+    ['PUT',  '#^/me/password$#',                        AuthController::class,           'changePassword',     false],
     ['POST', '#^/logout$#',                             AuthController::class,           'logout',             false],
 
     // IA
@@ -60,6 +63,7 @@ $routes = [
 
     // Dashboard
     ['GET',  '#^/dashboard/stats$#',                    DashboardController::class,      'stats',              false],
+    ['GET',  '#^/dashboard/activity$#',                 DashboardController::class,      'activity',           false],
     ['GET',  '#^/dashboard/summary$#',                  DashboardController::class,      'summary',            false],
 
     // Correo
@@ -79,6 +83,14 @@ $routes = [
     ['PUT',    '#^/contacts/(\d+)$#',                   ContactController::class,        'update',             false],
     ['DELETE', '#^/contacts/(\d+)$#',                   ContactController::class,        'delete',             false],
     ['PUT',    '#^/contacts/(\d+)/subscription$#',      ContactController::class,        'setSubscription',    false],
+    ['PUT',    '#^/contacts/(\d+)/groups$#',            ContactController::class,        'setGroups',          false],
+    ['POST',   '#^/contacts/import$#',                  ContactController::class,        'import',             false],
+
+    // Grupos de contactos
+    ['GET',    '#^/groups$#',                           GroupController::class,          'getAll',             false],
+    ['POST',   '#^/groups$#',                           GroupController::class,          'create',             false],
+    ['PUT',    '#^/groups/(\d+)$#',                     GroupController::class,          'update',             false],
+    ['DELETE', '#^/groups/(\d+)$#',                     GroupController::class,          'delete',             false],
 
     // Plantillas
     ['GET',    '#^/templates$#',                        TemplateController::class,       'getAll',             false],

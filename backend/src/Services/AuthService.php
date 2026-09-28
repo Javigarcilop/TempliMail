@@ -83,6 +83,51 @@ class AuthService
         AuthModel::incrementTokenVersion($userId);
     }
 
+    /** Cambia el email de la cuenta. */
+    public static function updateProfile(int $userId, string $email): array
+    {
+        $email = trim($email);
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 255) {
+            throw new ApiException('El formato del email no es valido');
+        }
+
+        $existing = AuthModel::findByEmail($email);
+
+        if ($existing !== null && (int) $existing['id'] !== $userId) {
+            throw ApiException::conflict('Ya existe una cuenta con ese email');
+        }
+
+        AuthModel::updateEmail($userId, $email);
+
+        return self::currentUser($userId);
+    }
+
+    /**
+     * Cambia la contrasena y devuelve un token nuevo: el cambio invalida los
+     * tokens anteriores (otras sesiones), pero esta sesion sigue abierta.
+     */
+    public static function changePassword(int $userId, string $current, string $new, JwtService $jwtService): string
+    {
+        $user = AuthModel::findWithPasswordById($userId);
+
+        if (!$user || !password_verify($current, $user['password_hash'])) {
+            throw new ApiException('La contraseña actual no es correcta', 403);
+        }
+
+        if (strlen($new) < self::MIN_PASSWORD_LENGTH) {
+            throw new ApiException('La nueva contraseña debe tener al menos ' . self::MIN_PASSWORD_LENGTH . ' caracteres');
+        }
+
+        if ($new === $current) {
+            throw new ApiException('La nueva contraseña debe ser distinta de la actual');
+        }
+
+        AuthModel::updatePassword($userId, $new);
+
+        return $jwtService->generate(AuthModel::findById($userId));
+    }
+
     public static function currentUser(int $userId): array
     {
         $user = AuthModel::findById($userId);

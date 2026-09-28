@@ -36,6 +36,57 @@ class DashboardModel
         ];
     }
 
+    /** Correos enviados / fallidos (campañas masivas e individuales). */
+    public static function getDeliveryTotals(int $userId): array
+    {
+        $stmt = DB::get()->prepare("
+            SELECT
+                COALESCE(SUM(ed.status = 'sent'),   0) AS total_sent,
+                COALESCE(SUM(ed.status = 'failed'), 0) AS total_failed
+            FROM email_deliveries ed
+            JOIN email_campaigns ec ON ec.id = ed.campaign_id
+            WHERE ec.user_id = :user_id
+        ");
+        $stmt->execute(['user_id' => $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return ['total_sent' => (int) $row['total_sent'], 'total_failed' => (int) $row['total_failed']];
+    }
+
+    /**
+     * Correos enviados por dia (UTC) en los ultimos $days dias, rellenando con 0 los dias vacios.
+     *
+     * @return array<int,array{date:string,sent:int}>
+     */
+    public static function getActivity(int $userId, int $days = 14): array
+    {
+        $stmt = DB::get()->prepare("
+            SELECT DATE(ed.sent_at) AS day, COUNT(*) AS sent
+            FROM email_deliveries ed
+            JOIN email_campaigns ec ON ec.id = ed.campaign_id
+            WHERE ec.user_id = :user_id
+              AND ed.status = 'sent'
+              AND ed.sent_at >= UTC_DATE() - INTERVAL " . ($days - 1) . " DAY
+            GROUP BY DATE(ed.sent_at)
+        ");
+        $stmt->execute(['user_id' => $userId]);
+
+        $perDay = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $perDay[$row['day']] = (int) $row['sent'];
+        }
+
+        $result = [];
+        $today  = new \DateTimeImmutable('today', new \DateTimeZone('UTC'));
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $day      = $today->modify("-{$i} day")->format('Y-m-d');
+            $result[] = ['date' => $day, 'sent' => $perDay[$day] ?? 0];
+        }
+
+        return $result;
+    }
+
     public static function getTopTemplate(int $userId): ?array
     {
         $db = DB::get();
