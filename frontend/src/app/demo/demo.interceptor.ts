@@ -35,7 +35,17 @@ const contacts: any[] = [
   { id: 6, first_name: 'Pablo', last_name: 'Serrano', email: 'pablo.serrano@example.com', phone: '600 111 206', company: 'Serrano Fitness', position: 'Fundador' },
   { id: 7, first_name: 'Irene', last_name: 'Castillo', email: 'irene.castillo@example.com', phone: '600 111 207', company: 'Clínica Alba', position: 'Coordinadora' },
   { id: 8, first_name: 'Diego', last_name: 'Vargas', email: 'diego.vargas@example.com', phone: '600 111 208', company: 'Vargas Motor', position: 'Director comercial', unsubscribed_at: daysAgo(2) }
-].map(c => ({ unsubscribed_at: null, created_at: daysAgo(30), ...c }));
+].map(c => ({ unsubscribed_at: null, created_at: daysAgo(30), group_ids: [] as number[], ...c }));
+
+const groups: { id: number; name: string }[] = [
+  { id: 1, name: 'Clientes' },
+  { id: 2, name: 'Newsletter' }
+];
+[1, 2, 3, 4].forEach(id => contacts.find(c => c.id === id)!.group_ids.push(1));
+[1, 2, 3, 4, 5, 6].forEach(id => contacts.find(c => c.id === id)!.group_ids.push(2));
+
+let account = { id: 1, username: 'demo', email: 'demo@example.com' };
+let accountPassword = 'demo1234';
 
 const templates: any[] = [
   {
@@ -95,7 +105,7 @@ buildDeliveries(2, [1, 2, 3, 4, 5], campaigns[1].created_at);
 buildDeliveries(3, [2, 5, 6, 7], campaigns[2].created_at, [7]);
 buildDeliveries(4, [1, 2, 3, 4, 5, 6], null);
 
-let nextId = { contact: 100, template: 100, campaign: 100 };
+let nextId = { contact: 100, template: 100, campaign: 100, group: 100 };
 
 const ok = (body: any) => of(new HttpResponse({ status: 200, body })).pipe(delay(350));
 const fail = (status: number, message: string) =>
@@ -169,8 +179,52 @@ const simulateWorker = (campaignId: number): void => {
 const handle = (method: string, path: string, body: any) => {
   if (path === '/login' && method === 'POST') return ok({ success: true, token: demoToken() });
   if (path === '/register' && method === 'POST') return ok({ success: true });
-  if (path === '/me' && method === 'GET') return ok({ success: true, data: { id: 1, username: 'demo', email: 'demo@example.com' } });
+  if (path === '/me' && method === 'GET') return ok({ success: true, data: { ...account } });
+  if (path === '/me' && method === 'PUT') {
+    const email = String(body?.email ?? '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(400, 'El formato del email no es valido');
+    account = { ...account, email };
+    return ok({ success: true, data: { ...account } });
+  }
+  if (path === '/me/password' && method === 'PUT') {
+    if (body?.current_password !== accountPassword) return fail(403, 'La contraseña actual no es correcta');
+    if (String(body?.new_password ?? '').length < 8) return fail(400, 'La nueva contraseña debe tener al menos 8 caracteres');
+    if (body.new_password === body.current_password) return fail(400, 'La nueva contraseña debe ser distinta de la actual');
+    accountPassword = body.new_password;
+    return ok({ success: true, token: demoToken() });
+  }
   if (path === '/logout' && method === 'POST') return ok({ success: true });
+
+  // GRUPOS
+  if (path === '/groups' && method === 'GET') {
+    const data = groups.map(g => ({ ...g, member_count: contacts.filter(c => c.group_ids.includes(g.id)).length }));
+    return ok({ success: true, data });
+  }
+  if (path === '/groups' && method === 'POST') {
+    const name = String(body?.name ?? '').trim();
+    if (!name) return fail(400, 'El nombre del grupo es obligatorio');
+    if (groups.some(g => g.name.toLowerCase() === name.toLowerCase())) return fail(409, 'Ya existe un grupo con ese nombre');
+    const group = { id: nextId.group++, name };
+    groups.push(group);
+    return of(new HttpResponse({ status: 201, body: { success: true, id: group.id } })).pipe(delay(350));
+  }
+  let g = path.match(/^\/groups\/(\d+)$/);
+  if (g && method === 'PUT') {
+    const group = groups.find(x => x.id === +g![1]);
+    const name = String(body?.name ?? '').trim();
+    if (!group) return fail(404, 'Grupo no encontrado');
+    if (!name) return fail(400, 'El nombre del grupo es obligatorio');
+    if (groups.some(x => x.id !== group.id && x.name.toLowerCase() === name.toLowerCase())) return fail(409, 'Ya existe un grupo con ese nombre');
+    group.name = name;
+    return ok({ success: true });
+  }
+  if (g && method === 'DELETE') {
+    const i = groups.findIndex(x => x.id === +g![1]);
+    if (i < 0) return fail(404, 'Grupo no encontrado');
+    const [removed] = groups.splice(i, 1);
+    contacts.forEach(c => { c.group_ids = c.group_ids.filter((id: number) => id !== removed.id); });
+    return ok({ success: true });
+  }
 
   // CONTACTS
   if (path === '/contacts' && method === 'GET') return ok({ success: true, data: [...contacts].reverse() });
@@ -179,17 +233,55 @@ const handle = (method: string, path: string, body: any) => {
     if (contacts.some(c => c.email.toLowerCase() === String(body.email).toLowerCase())) {
       return fail(409, 'Ya existe un contacto con ese email');
     }
-    const contact = { unsubscribed_at: null, created_at: new Date().toISOString(), ...body, id: nextId.contact++ };
+    const contact = { created_at: new Date().toISOString(), ...body, id: nextId.contact++, unsubscribed_at: null, group_ids: [] as number[] };
     contacts.push(contact);
-    return ok({ success: true });
+    return of(new HttpResponse({ status: 201, body: { success: true, id: contact.id } })).pipe(delay(350));
+  }
+  if (path === '/contacts/import' && method === 'POST') {
+    const rows: any[] = Array.isArray(body?.contacts) ? body.contacts : [];
+    if (rows.length === 0) return fail(400, 'No hay contactos que importar');
+    if (body?.group_id && !groups.some(x => x.id === +body.group_id)) return fail(404, 'Grupo no encontrado');
+
+    let created = 0;
+    let duplicates = 0;
+    const invalid: { row: number; email: string; reason: string }[] = [];
+
+    rows.forEach((row, index) => {
+      const email = String(row?.email ?? '').trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        invalid.push({ row: index + 1, email, reason: email ? 'Email no válido' : 'Email vacío' });
+      } else if (contacts.some(c => c.email.toLowerCase() === email.toLowerCase())) {
+        duplicates++;
+      } else {
+        contacts.push({
+          id: nextId.contact++, unsubscribed_at: null, created_at: new Date().toISOString(),
+          first_name: row.first_name || null, last_name: row.last_name || null, email,
+          phone: row.phone || null, company: row.company || null, position: row.position || null,
+          group_ids: body?.group_id ? [+body.group_id] : []
+        });
+        created++;
+      }
+    });
+
+    return of(new HttpResponse({ status: 201, body: { success: true, created, duplicates, invalid } })).pipe(delay(350));
   }
   let m = path.match(/^\/contacts\/(\d+)$/);
   if (m && method === 'PUT') {
     const c = contacts.find(x => x.id === +m![1]);
     if (!c) return fail(404, 'Contacto no encontrado');
-    Object.assign(c, body, { id: c.id, unsubscribed_at: c.unsubscribed_at });
+    Object.assign(c, body, { id: c.id, unsubscribed_at: c.unsubscribed_at, group_ids: c.group_ids });
     return ok({ success: true });
   }
+  m = path.match(/^\/contacts\/(\d+)\/groups$/);
+  if (m && method === 'PUT') {
+    const c = contacts.find(x => x.id === +m![1]);
+    if (!c) return fail(404, 'Contacto no encontrado');
+    const ids: number[] = (body?.group_ids ?? []).map(Number);
+    if (ids.some(id => !groups.some(x => x.id === id))) return fail(404, 'Grupo no encontrado');
+    c.group_ids = [...new Set(ids)];
+    return ok({ success: true });
+  }
+  m = path.match(/^\/contacts\/(\d+)$/);
   if (m && method === 'DELETE') {
     const i = contacts.findIndex(x => x.id === +m![1]);
     if (i < 0) return fail(404, 'Contacto no encontrado');
@@ -322,10 +414,28 @@ const handle = (method: string, path: string, body: any) => {
 
   // DASHBOARD
   if (path === '/dashboard/stats' && method === 'GET') {
+    const all = Object.values(deliveries).flat();
     return ok({
       success: true,
-      data: { total_campaigns: campaigns.filter(c => c.type === 'mass').length, total_contacts: contacts.length, total_templates: templates.length }
+      data: {
+        total_campaigns: campaigns.filter(c => c.type === 'mass').length,
+        total_contacts: contacts.length,
+        total_templates: templates.length,
+        total_sent: all.filter(d => d.status === 'sent').length,
+        total_failed: all.filter(d => d.status === 'failed').length
+      }
     });
+  }
+  if (path === '/dashboard/activity' && method === 'GET') {
+    const days: { date: string; sent: number }[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - i);
+      const date = d.toISOString().slice(0, 10);
+      const sent = Object.values(deliveries).flat().filter(x => x.status === 'sent' && x.sent_at?.slice(0, 10) === date).length;
+      days.push({ date, sent });
+    }
+    return ok({ success: true, data: days });
   }
   if (path === '/dashboard/summary' && method === 'GET') {
     const byTemplate = new Map<string, number>();
