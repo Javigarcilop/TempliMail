@@ -1,6 +1,8 @@
 
 # 📬 TempliMail
 
+> **Demo en vivo:** https://javigarcilop.github.io/TempliMail/ (datos simulados en el navegador, sin backend; no envía correos reales).
+
 **TempliMail es una aplicación web profesional de email marketing.** Permite crear, gestionar y enviar correos electrónicos personalizados mediante plantillas visuales enriquecidas. 
 
 TempliMail combina un frontend moderno desarrollado en Angular 19 con un backend robusto en PHP puro, conectados a una base de datos MySQL estructurada, eficiente y escalable. No es solo una solución funcional en su estado actual, sino que está pensada para evolucionar y escalar, incorporando en futuras versiones funcionalidades como estadísticas de apertura, gestión multicuenta, control de roles, exportación a PDF, e integración con plataformas externas.
@@ -90,3 +92,17 @@ Acceso vía navegador: `http://localhost:4200`
 - Preparado para futuras ampliaciones: estadísticas, multicuenta, roles.  
 
 ---
+
+
+---
+
+## 🌐 Demo pública
+
+La demo es el mismo frontend Angular compilado con `ng build --configuration demo`. Sustituye las llamadas a la API PHP por un backend simulado en memoria (`frontend/src/app/demo/demo.interceptor.ts`), así que se puede alojar como web estática en GitHub Pages. Se despliega sola con cada push a `main` (`.github/workflows/demo.yml`).
+
+Para probarla en local:
+
+```bash
+cd frontend
+npx ng serve --configuration demo
+```

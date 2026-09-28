@@ -3,6 +3,7 @@ import { Router, RouterModule } from '@angular/router'
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
+import { DEMO_MODE } from '../../demo/demo-mode';
 
 @Component({
   selector: 'app-login',
@@ -13,8 +14,9 @@ import { ApiService } from '../../services/api.service';
 })
 export class LoginComponent {
 
-  username = '';
-  password = '';
+  demo = DEMO_MODE;
+  username = DEMO_MODE ? 'demo' : '';
+  password = DEMO_MODE ? 'demo1234' : '';
 
   constructor(
     private api: ApiService,

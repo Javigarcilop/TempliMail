@@ -5,6 +5,8 @@
   </div>
 
   <div class="login-box">
+    <p class="demo-note" *ngIf="demo">Demo con datos simulados. Pulsa «Iniciar sesión» para entrar.</p>
+
     <form (ngSubmit)="onLogin()" #loginForm="ngForm" class="login-form">
 
       <label for="username">Usuario</label>
