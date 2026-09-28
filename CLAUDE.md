@@ -42,6 +42,12 @@ docker compose logs -f worker              # actividad del worker de envío
 - Estados de campaña: `scheduled → processing → completed | cancelled`. Entregas: `pending | sent | failed | skipped`.
 - Envíos individuales también quedan en el historial (`type = 'single'`, `contact_id` NULL).
 
+### Grupos, importación y cuenta
+- Grupos: `contact_groups` + `contact_group_members` (N:M, cascada). `GroupModel::setContactGroups` valida que contacto y grupos sean del usuario. `GET /contacts` devuelve `group_ids` de cada contacto.
+- `POST /contacts/import` (máx. 2000 filas, transacción): omite emails existentes o repetidos (sin distinguir mayúsculas) e informa de los inválidos. El CSV se parsea en el navegador (`utils/csv.ts`, con `csv.spec.ts`).
+- `PUT /me/password` exige la contraseña actual y devuelve un token nuevo (el cambio incrementa `token_version` y cierra las demás sesiones).
+- Dashboard: `GET /dashboard/stats` incluye `total_sent`/`total_failed`; `GET /dashboard/activity` devuelve 14 días (UTC) rellenando con 0.
+
 ### Frontend (`frontend/src/app/`)
 - Componentes standalone con lazy loading (`app.routes.ts`); nuevo control flow (`@if`/`@for`) en el código nuevo.
 - `services/api.service.ts`: único punto de acceso HTTP, tipado con `models/api.models.ts`. La URL viene de `environments/` (`environment.development.ts` con `ng serve`).
@@ -52,10 +58,11 @@ docker compose logs -f worker              # actividad del worker de envío
 
 ### Endpoints
 Públicos: `POST /login`, `POST /register`, `GET|POST /unsubscribe/{id}/{firma}`.
-Con JWT: `GET /me`, `POST /logout`, contactos (`/contacts`, `/contacts/{id}`, `PUT /contacts/{id}/subscription`), plantillas (`/templates`, `/templates/{id}`, `POST /upload-template-file`), correo (`POST /send-mail`, `/send-massive`, `/mail/preview`, `/mail/test`, `GET /process-scheduled`), historial (`GET /history`, `/history/{id}/deliveries`, `POST /history/{id}/cancel`, `/history/{id}/retry-failed`), `POST /ai/suggest-subject`, `GET /dashboard/stats|summary`.
+Con JWT: `GET|PUT /me`, `PUT /me/password`, `POST /logout`, contactos (`/contacts`, `/contacts/{id}`, `PUT /contacts/{id}/subscription`, `PUT /contacts/{id}/groups`, `POST /contacts/import`), grupos (`/groups`, `/groups/{id}`), plantillas (`/templates`, `/templates/{id}`, `POST /upload-template-file`), correo (`POST /send-mail`, `/send-massive`, `/mail/preview`, `/mail/test`, `GET /process-scheduled`), historial (`GET /history`, `/history/{id}/deliveries`, `POST /history/{id}/cancel`, `/history/{id}/retry-failed`), `POST /ai/suggest-subject`, `GET /dashboard/stats|summary|activity`.
 
 ## Convenciones y trampas
 - En Apache solo `backend/api/` es accesible (`backend/docker/templimail.conf`); no mover secretos ni código a esa carpeta.
 - En plantillas Angular, `{{` es interpolación: los textos con llaves literales se exponen desde el componente.
+- La **demo pública** (`ng build --configuration demo`, GitHub Pages) usa `demo/demo.interceptor.ts`, un backend simulado en memoria: al añadir o cambiar un endpoint hay que reflejarlo también ahí.
 - Con `curl.exe` en Windows, `\"` dentro del JSON se rompe: enviar el cuerpo desde un fichero (`--data-binary @f.json`).
 - El `.env` real contiene credenciales SMTP: no imprimirlo ni commitearlo.

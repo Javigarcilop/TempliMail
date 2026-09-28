@@ -14,7 +14,9 @@
 ## ✅ Funcionalidades
 
 - Registro / login con JWT, cierre de sesión que invalida el token y límite de intentos fallidos
-- Contactos: CRUD, búsqueda, baja y reactivación
+- Contactos: CRUD, búsqueda, paginación, baja y reactivación
+- **Grupos de contactos** (un contacto puede estar en varios) y filtro por grupo al preparar una campaña
+- **Importar / exportar CSV**: reconoce cabeceras en español e inglés, separadores `,` `;` y tabulador, omite duplicados e informa de las filas no válidas
 - Plantillas: editor visual (TinyMCE), importación desde `.docx` / `.pdf`, vista previa y correo de prueba
 - **Variables de personalización**: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{company}}`, `{{position}}`, `{{email}}`, con valor por defecto (`{{first_name|amigo}}`)
 - **Campañas masivas en cola**: las envía un worker en segundo plano (no dependen del navegador), con conexión SMTP reutilizada, pausa entre envíos y hasta 3 intentos por destinatario
@@ -22,6 +24,8 @@
 - Historial con progreso en tiempo real, detalle por destinatario y **reintento de fallidos**
 - **Baja de suscriptores**: enlace firmado en cada correo, cabeceras `List-Unsubscribe` (baja *one-click*) y exclusión automática de los dados de baja
 - Envío individual (queda registrado en el historial) y sugerencia de asuntos con IA (Groq)
+- **Dashboard** con totales, tasa de entrega y gráfica de correos enviados en los últimos 14 días
+- **Mi cuenta**: cambio de email y de contraseña (cierra las demás sesiones)
 
 ---
 
@@ -58,6 +62,7 @@ La base de datos se crea sola la primera vez (`database/schema.sql` + `database/
 
 ```bash
 docker compose exec -T db mysql -uroot templimail_db < database/migrations/001_email_queue.sql
+docker compose exec -T db mysql -uroot templimail_db < database/migrations/002_contact_groups.sql
 ```
 
 ### El worker
@@ -83,7 +88,7 @@ Copia el proyecto en `htdocs/TempliMail`, usa `DB_HOST=localhost` en `backend/.e
 ## 🧪 Pruebas
 
 ```bash
-bash tests/e2e.sh          # 70+ comprobaciones de la API (requiere Docker y Mailpit)
+bash tests/e2e.sh          # 100+ comprobaciones de la API (requiere Docker y Mailpit)
 cd frontend && npm run build
 ```
 
