@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
+  ActivityDay,
   ApiResponse,
   Campaign,
   Contact,
@@ -11,6 +12,8 @@ import {
   DashboardSummary,
   DataResponse,
   Delivery,
+  Group,
+  ImportResult,
   MailPreview,
   MailPreviewInput,
   MassiveMailInput,
@@ -49,6 +52,18 @@ export class ApiService {
     return this.http.get<DataResponse<User>>(`${this.baseUrl}/me`);
   }
 
+  updateProfile(email: string): Observable<DataResponse<User>> {
+    return this.http.put<DataResponse<User>>(`${this.baseUrl}/me`, { email });
+  }
+
+  /** Devuelve un token nuevo: el cambio invalida las demás sesiones. */
+  changePassword(currentPassword: string, newPassword: string): Observable<ApiResponse & { token: string }> {
+    return this.http.put<ApiResponse & { token: string }>(`${this.baseUrl}/me/password`, {
+      current_password: currentPassword,
+      new_password: newPassword
+    });
+  }
+
   /** Invalida en el servidor todos los tokens del usuario. */
   logout(): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/logout`, {});
@@ -62,8 +77,8 @@ export class ApiService {
     return this.http.get<DataResponse<Contact[]>>(`${this.baseUrl}/contacts`);
   }
 
-  addContact(data: ContactInput): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.baseUrl}/contacts`, data);
+  addContact(data: ContactInput): Observable<ApiResponse & { id: number }> {
+    return this.http.post<ApiResponse & { id: number }>(`${this.baseUrl}/contacts`, data);
   }
 
   updateContact(id: number, data: ContactInput): Observable<ApiResponse> {
@@ -76,6 +91,37 @@ export class ApiService {
 
   setContactSubscription(id: number, subscribed: boolean): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/contacts/${id}/subscription`, { subscribed });
+  }
+
+  importContacts(contacts: Partial<ContactInput>[], groupId?: number): Observable<ApiResponse & ImportResult> {
+    return this.http.post<ApiResponse & ImportResult>(`${this.baseUrl}/contacts/import`, {
+      contacts,
+      ...(groupId ? { group_id: groupId } : {})
+    });
+  }
+
+  setContactGroups(id: number, groupIds: number[]): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.baseUrl}/contacts/${id}/groups`, { group_ids: groupIds });
+  }
+
+  // =====================================
+  // GROUPS
+  // =====================================
+
+  getGroups(): Observable<DataResponse<Group[]>> {
+    return this.http.get<DataResponse<Group[]>>(`${this.baseUrl}/groups`);
+  }
+
+  createGroup(name: string): Observable<ApiResponse & { id: number }> {
+    return this.http.post<ApiResponse & { id: number }>(`${this.baseUrl}/groups`, { name });
+  }
+
+  renameGroup(id: number, name: string): Observable<ApiResponse> {
+    return this.http.put<ApiResponse>(`${this.baseUrl}/groups/${id}`, { name });
+  }
+
+  deleteGroup(id: number): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.baseUrl}/groups/${id}`);
   }
 
   // =====================================
@@ -155,6 +201,10 @@ export class ApiService {
 
   getDashboardStats(): Observable<DataResponse<DashboardStats>> {
     return this.http.get<DataResponse<DashboardStats>>(`${this.baseUrl}/dashboard/stats`);
+  }
+
+  getDashboardActivity(): Observable<DataResponse<ActivityDay[]>> {
+    return this.http.get<DataResponse<ActivityDay[]>>(`${this.baseUrl}/dashboard/activity`);
   }
 
   getDashboardSummary(): Observable<DataResponse<DashboardSummary>> {

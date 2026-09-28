@@ -24,6 +24,19 @@ export interface Contact {
   /** ISO 8601 (UTC) si el contacto se dio de baja */
   unsubscribed_at: string | null;
   created_at: string;
+  group_ids: number[];
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  member_count: number;
+}
+
+export interface ImportResult {
+  created: number;
+  duplicates: number;
+  invalid: { row: number; email: string; reason: string }[];
 }
 
 export interface ContactInput {
@@ -114,6 +127,14 @@ export interface DashboardStats {
   total_campaigns: number;
   total_contacts: number;
   total_templates: number;
+  total_sent: number;
+  total_failed: number;
+}
+
+export interface ActivityDay {
+  /** YYYY-MM-DD (UTC) */
+  date: string;
+  sent: number;
 }
 
 export interface DashboardSummary {

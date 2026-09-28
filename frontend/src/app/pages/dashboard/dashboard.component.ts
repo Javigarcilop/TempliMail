@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
-import { DashboardStats } from '../../models/api.models';
+import { ActivityDay, DashboardStats } from '../../models/api.models';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  imports: [DatePipe],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -16,8 +18,12 @@ export class DashboardComponent implements OnInit {
   stats: DashboardStats = {
     total_campaigns: 0,
     total_contacts: 0,
-    total_templates: 0
+    total_templates: 0,
+    total_sent: 0,
+    total_failed: 0
   };
+
+  activity: ActivityDay[] = [];
 
   summary = {
     most_used_template: 'Ninguna',
@@ -37,6 +43,12 @@ export class DashboardComponent implements OnInit {
       }
     });
 
+    this.api.getDashboardActivity().subscribe(response => {
+      if (response?.success) {
+        this.activity = response.data;
+      }
+    });
+
     this.api.getDashboardSummary().subscribe(response => {
       if (response?.success) {
         const data = response.data;
@@ -49,6 +61,31 @@ export class DashboardComponent implements OnInit {
         };
       }
     });
+  }
+
+  /** Porcentaje de correos entregados sobre los intentados (null si aún no hay envíos). */
+  get deliveryRate(): number | null {
+    const attempted = this.stats.total_sent + this.stats.total_failed;
+
+    return attempted === 0 ? null : Math.round((this.stats.total_sent / attempted) * 100);
+  }
+
+  get maxDaily(): number {
+    return Math.max(1, ...this.activity.map(day => day.sent));
+  }
+
+  get totalLast14Days(): number {
+    return this.activity.reduce((sum, day) => sum + day.sent, 0);
+  }
+
+  /** Altura de la barra (%), con un mínimo visible para los días con envíos. */
+  barHeight(day: ActivityDay): number {
+    return day.sent === 0 ? 0 : Math.max(4, Math.round((day.sent / this.maxDaily) * 100));
+  }
+
+  /** 'YYYY-MM-DD' -> Date en UTC, para que el pipe no lo desplace de día. */
+  asDate(day: ActivityDay): Date {
+    return new Date(day.date + 'T12:00:00Z');
   }
 
   goTo(path: string): void {

@@ -22,8 +22,53 @@
 
   </div>
 
+  <div class="dashboard-cards">
+
+    <div class="card">
+      <h3>Correos enviados</h3>
+      <p>{{ stats.total_sent }}</p>
+    </div>
+
+    <div class="card">
+      <h3>Correos fallidos</h3>
+      <p [class.bad]="stats.total_failed > 0">{{ stats.total_failed }}</p>
+    </div>
+
+    <div class="card">
+      <h3>Tasa de entrega</h3>
+      <p [class.good]="deliveryRate !== null && deliveryRate >= 95">
+        {{ deliveryRate === null ? '—' : deliveryRate + '%' }}
+      </p>
+    </div>
+
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <h4>Correos enviados · últimos 14 días</h4>
+      <span class="chart-total">{{ totalLast14Days }} en total</span>
+    </div>
+
+    @if (totalLast14Days === 0) {
+      <p class="chart-empty">Todavía no hay envíos en este periodo.</p>
+    } @else {
+      <div class="chart" role="img" [attr.aria-label]="'Correos enviados por día: ' + totalLast14Days + ' en total'">
+        @for (day of activity; track day.date) {
+          <div class="bar-col" [title]="(asDate(day) | date:'d MMM':'UTC') + ': ' + day.sent + ' enviados'">
+            <span class="bar-value">{{ day.sent > 0 ? day.sent : '' }}</span>
+            <div class="bar-track">
+              <div class="bar" [style.height.%]="barHeight(day)"></div>
+            </div>
+            <span class="bar-label">{{ asDate(day) | date:'dd/MM':'UTC' }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
   <div class="dashboard-actions">
     <button (click)="goTo('send')" class="dashboard-btn">Enviar correo</button>
+    <button (click)="goTo('mass-mail')" class="dashboard-btn">Campaña masiva</button>
     <button (click)="goTo('templates')" class="dashboard-btn">Crear plantilla</button>
     <button (click)="goTo('contactos')" class="dashboard-btn">Ver contactos</button>
   </div>
