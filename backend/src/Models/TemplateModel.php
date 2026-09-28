@@ -2,9 +2,9 @@
 
 namespace TempliMail\Models;
 
+use TempliMail\Exceptions\ApiException;
 use TempliMail\Utils\DB;
 use PDO;
-use Exception;
 
 class TemplateModel
 {
@@ -13,7 +13,9 @@ class TemplateModel
         $db = DB::get();
 
         $stmt = $db->prepare("
-            SELECT id, name, subject, content_html, created_at, updated_at
+            SELECT id, name, subject, content_html,
+                   DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%sZ') AS created_at,
+                   DATE_FORMAT(updated_at, '%Y-%m-%dT%H:%i:%sZ') AS updated_at
             FROM templates
             WHERE user_id = :user_id
               AND deleted_at IS NULL
@@ -30,7 +32,9 @@ class TemplateModel
         $db = DB::get();
 
         $stmt = $db->prepare("
-            SELECT id, name, subject, content_html, created_at, updated_at
+            SELECT id, name, subject, content_html,
+                   DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%sZ') AS created_at,
+                   DATE_FORMAT(updated_at, '%Y-%m-%dT%H:%i:%sZ') AS updated_at
             FROM templates
             WHERE id = :id
               AND user_id = :user_id
@@ -71,8 +75,7 @@ class TemplateModel
             UPDATE templates
             SET name = :name,
                 subject = :subject,
-                content_html = :content_html,
-                updated_at = NOW()
+                content_html = :content_html
             WHERE id = :id
               AND user_id = :user_id
               AND deleted_at IS NULL
@@ -86,8 +89,9 @@ class TemplateModel
             'content_html' => $data['content_html']
         ]);
 
-        if ($stmt->rowCount() === 0) {
-            throw new Exception('Template not found or not owned by user');
+        // rowCount() vale 0 si no cambio nada: se comprueba la existencia aparte
+        if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
+            throw ApiException::notFound('Plantilla no encontrada');
         }
     }
 
@@ -109,7 +113,7 @@ class TemplateModel
         ]);
 
         if ($stmt->rowCount() === 0) {
-            throw new Exception('Template not found or already deleted');
+            throw ApiException::notFound('Plantilla no encontrada');
         }
     }
 }

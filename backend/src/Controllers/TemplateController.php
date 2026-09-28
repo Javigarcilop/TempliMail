@@ -1,96 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Controllers;
 
 use TempliMail\Services\TemplateService;
-use Exception;
 
-class TemplateController
+class TemplateController extends BaseController
 {
     public function getAll(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $templates = TemplateService::getAll($userId);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'data'    => $templates
-            ]);
-
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+        $this->respond(fn(): array => ['data' => TemplateService::getAll($this->userId())]);
     }
 
     public function create(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-            $data = json_decode(file_get_contents('php://input'), true);
+        $this->respond(function (): array {
+            TemplateService::create($this->userId(), $this->body());
 
-            TemplateService::create($userId, $data);
-
-            http_response_code(201);
-            echo json_encode([
-                'success' => true
-            ]);
-
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        }, 201);
     }
 
     public function update(int $id): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-            $data = json_decode(file_get_contents('php://input'), true);
+        $this->respond(function () use ($id): array {
+            TemplateService::update($this->userId(), $id, $this->body());
 
-            TemplateService::update($userId, $id, $data);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true
-            ]);
-
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        });
     }
 
     public function delete(int $id): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
+        $this->respond(function () use ($id): array {
+            TemplateService::delete($this->userId(), $id);
 
-            TemplateService::delete($userId, $id);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true
-            ]);
-
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        });
     }
 }

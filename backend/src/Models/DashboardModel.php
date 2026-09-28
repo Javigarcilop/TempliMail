@@ -16,7 +16,7 @@ class DashboardModel
         $stmt = $db->prepare("
             SELECT
                 (SELECT COUNT(*) FROM email_campaigns
-                  WHERE user_id = :uid1)                             AS total_campaigns,
+                  WHERE user_id = :uid1 AND type = 'mass')           AS total_campaigns,
                 (SELECT COUNT(*) FROM contacts
                   WHERE user_id = :uid2 AND deleted_at IS NULL)      AS total_contacts,
                 (SELECT COUNT(*) FROM templates
@@ -45,6 +45,7 @@ class DashboardModel
             FROM email_campaigns ec
             JOIN templates t ON ec.template_id = t.id
             WHERE ec.user_id = :user_id
+              AND ec.type = 'mass'
             GROUP BY t.id, t.name
             ORDER BY total DESC
             LIMIT 1
@@ -61,14 +62,15 @@ class DashboardModel
 
         $stmt = $db->prepare("
             SELECT
-                CONCAT(c.first_name, ' ', c.last_name) AS name,
+                COALESCE(NULLIF(TRIM(CONCAT_WS(' ', c.first_name, c.last_name)), ''), c.email) AS name,
                 COUNT(ed.id) AS total
             FROM email_deliveries ed
-            JOIN contacts c        ON ed.contact_id  = c.id
+            JOIN contacts c         ON ed.contact_id  = c.id
             JOIN email_campaigns ec ON ed.campaign_id = ec.id
             WHERE ec.user_id = :user_id
+              AND ec.type = 'mass'
               AND ed.status   = 'sent'
-            GROUP BY c.id, c.first_name, c.last_name
+            GROUP BY c.id, c.first_name, c.last_name, c.email
             ORDER BY total DESC
             LIMIT 1
         ");

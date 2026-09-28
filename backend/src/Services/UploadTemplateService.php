@@ -2,7 +2,7 @@
 
 namespace TempliMail\Services;
 
-use Exception;
+use TempliMail\Exceptions\ApiException;
 use PhpOffice\PhpWord\IOFactory;
 use Smalot\PdfParser\Parser;
 
@@ -13,15 +13,19 @@ class UploadTemplateService
     public static function process(array $file): string
     {
         if (!isset($file['tmp_name'], $file['name'], $file['size'])) {
-            throw new Exception('Archivo inválido.');
+            throw new ApiException('Archivo inválido.');
+        }
+
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            throw new ApiException('No se pudo subir el archivo (error ' . $file['error'] . ').');
         }
 
         if ($file['size'] === 0 || !file_exists($file['tmp_name'])) {
-            throw new Exception('Archivo vacío o no válido.');
+            throw new ApiException('Archivo vacío o no válido.');
         }
 
         if ($file['size'] > self::MAX_SIZE) {
-            throw new Exception('El archivo supera el tamaño máximo permitido.');
+            throw new ApiException('El archivo supera el tamaño máximo permitido.');
         }
 
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
@@ -33,7 +37,7 @@ class UploadTemplateService
         ];
 
         if (!in_array($mime, $allowedMimes)) {
-            throw new Exception('Tipo de archivo no permitido.');
+            throw new ApiException('Tipo de archivo no permitido.');
         }
 
         return match ($mime) {
@@ -74,7 +78,7 @@ class UploadTemplateService
         $text = trim($pdf->getText());
 
         if ($text === '') {
-            throw new Exception('No se pudo extraer contenido del PDF.');
+            throw new ApiException('No se pudo extraer contenido del PDF.');
         }
 
         return '<p>' . nl2br(htmlentities($text)) . '</p>';

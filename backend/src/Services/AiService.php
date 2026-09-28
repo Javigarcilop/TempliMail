@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace TempliMail\Services;
 
-use Exception;
+use TempliMail\Exceptions\ApiException;
+use TempliMail\Utils\Env;
 
 class AiService
 {
@@ -13,10 +14,10 @@ class AiService
 
     public static function suggestSubjects(string $topic): array
     {
-        $apiKey = $_ENV['GROQ_API_KEY'] ?? '';
+        $apiKey = Env::get('GROQ_API_KEY', '');
 
         if ($apiKey === '' || $apiKey === 'your-api-key-here') {
-            throw new Exception('GROQ_API_KEY not configured');
+            throw new ApiException('La generación de asuntos con IA no está configurada', 503);
         }
 
         $prompt = <<<PROMPT
@@ -53,7 +54,8 @@ PROMPT;
         curl_close($ch);
 
         if ($response === false || $httpCode !== 200) {
-            throw new Exception('Groq API error (HTTP ' . $httpCode . '): ' . $response);
+            error_log('Groq API error (HTTP ' . $httpCode . '): ' . (string) $response);
+            throw new ApiException('No se pudo contactar con el servicio de IA. Inténtalo más tarde.', 502);
         }
 
         $data = json_decode($response, true);

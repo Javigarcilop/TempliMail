@@ -1,38 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Controllers;
 
+use TempliMail\Exceptions\ApiException;
 use TempliMail\Services\UploadTemplateService;
-use Exception;
 
-class UploadTemplateController
+class UploadTemplateController extends BaseController
 {
     public function handleUpload(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
+        $this->respond(function (): array {
+            if (!isset($_FILES['file']) || !is_array($_FILES['file'])) {
+                throw new ApiException('No se recibió ningún archivo.');
+            }
 
-        if (!isset($_FILES['file'])) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'No se recibió ningún archivo.'
-            ]);
-            return;
-        }
-
-        try {
-            $html = UploadTemplateService::process($_FILES['file']);
-
-            echo json_encode([
-                'success' => true,
-                'html' => $html
-            ]);
-        } catch (Exception $e) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
-        }
+            return ['html' => UploadTemplateService::process($_FILES['file'])];
+        });
     }
 }

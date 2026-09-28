@@ -5,52 +5,21 @@ declare(strict_types=1);
 namespace TempliMail\Controllers;
 
 use TempliMail\Models\DashboardModel;
-use Exception;
 
-class DashboardController
+class DashboardController extends BaseController
 {
     public function stats(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $data = DashboardModel::getStats($userId);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'data'    => $data,
-            ]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => 'Internal server error',
-            ]);
-        }
+        $this->respond(fn(): array => ['data' => DashboardModel::getStats($this->userId())]);
     }
 
     public function summary(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $data = [
-                'top_template' => DashboardModel::getTopTemplate($userId),
-                'top_contact'  => DashboardModel::getTopContact($userId),
-            ];
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'data'    => $data,
-            ]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => 'Internal server error',
-            ]);
-        }
+        $this->respond(fn(): array => [
+            'data' => [
+                'top_template' => DashboardModel::getTopTemplate($this->userId()),
+                'top_contact'  => DashboardModel::getTopContact($this->userId()),
+            ],
+        ]);
     }
 }

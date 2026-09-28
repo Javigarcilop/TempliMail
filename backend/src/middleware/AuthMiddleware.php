@@ -1,11 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TempliMail\Middleware;
 
-use TempliMail\Services\JwtService;
+use DomainException;
+use InvalidArgumentException;
 use TempliMail\Models\AuthModel;
-use Throwable;
+use TempliMail\Services\JwtService;
+use UnexpectedValueException;
 
 class AuthMiddleware
 {
@@ -17,34 +20,31 @@ class AuthMiddleware
     {
         $authHeader = $this->getAuthorizationHeader();
 
-        if ($authHeader === null) {
-            $this->unauthorized();
-        }
-
-        if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        if ($authHeader === null || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
             $this->unauthorized();
         }
 
         try {
             $decoded = $this->jwtService->validate($matches[1]);
-
-            $user = AuthModel::findById((int) $decoded->sub);
-
-            if (
-                !$user ||
-                $decoded->ver !== (int) $user['token_version'] ||
-                $user['deleted_at'] !== null
-            ) {
-                $this->unauthorized();
-            }
-
-            $_SERVER['AUTH_USER_ID'] = (int) $user['id'];
-
-            return (int) $user['id'];
-
-        } catch (Throwable) {
+        } catch (UnexpectedValueException | DomainException | InvalidArgumentException) {
+            // Token malformado, con firma invalida o caducado.
+            // (Otros errores, p. ej. la base de datos caida, NO son un 401: se propagan.)
             $this->unauthorized();
         }
+
+        $user = AuthModel::findById((int) $decoded->sub);
+
+        if (
+            !$user ||
+            (int) $decoded->ver !== (int) $user['token_version'] ||
+            $user['deleted_at'] !== null
+        ) {
+            $this->unauthorized();
+        }
+
+        $_SERVER['AUTH_USER_ID'] = (int) $user['id'];
+
+        return (int) $user['id'];
     }
 
     private function getAuthorizationHeader(): ?string
@@ -75,7 +75,7 @@ class AuthMiddleware
         http_response_code(401);
         echo json_encode([
             'success' => false,
-            'error'   => 'Unauthorized'
+            'error'   => 'No autorizado',
         ]);
         exit;
     }
