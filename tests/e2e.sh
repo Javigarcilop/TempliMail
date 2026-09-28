@@ -20,11 +20,15 @@ SQL()  { docker compose exec -T db mysql -uroot -N templimail_db -e "$1" 2>/dev/
 MP="-e SMTP_HOST=mailpit -e SMTP_PORT=1025 -e SMTP_SECURE=none -e SMTP_USER= -e SMTP_PASSWORD= -e MAIL_THROTTLE_MS=0"
 worker_once() { docker compose run --rm -T $MP "$@" worker php backend/bin/worker.php --once 2>&1 | grep -v "^$"; }
 
+# El worker real usaria tu SMTP: se para durante la prueba y se reactiva al terminar
+docker compose stop worker >/dev/null 2>&1
+trap 'docker compose up -d worker >/dev/null 2>&1' EXIT
+
 echo "== Limpieza previa =="
 # Seguridad: solo se ejecuta si no hay datos de negocio que perder
 BUSINESS=$(SQL "SELECT (SELECT COUNT(*) FROM contacts WHERE email NOT LIKE '%@test.local')+(SELECT COUNT(*) FROM templates WHERE name<>'Bienvenida')+(SELECT COUNT(*) FROM email_campaigns WHERE 1=0)")
 [ "$BUSINESS" = "0" ] || { echo "ABORTADO: hay datos reales en la BD"; exit 2; }
-SQL "DELETE FROM login_attempts; DELETE FROM email_campaigns; DELETE FROM contacts; DELETE FROM templates; DELETE FROM users WHERE username='otheruser';"
+SQL "DELETE FROM contact_groups; DELETE FROM login_attempts; DELETE FROM email_campaigns; DELETE FROM contacts; DELETE FROM templates; DELETE FROM users WHERE username='otheruser';"
 curl -s -X DELETE http://localhost:8025/api/v1/messages > /dev/null
 
 echo "== 1. Login =="
@@ -148,7 +152,54 @@ R=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/unsubscribe/$ANA/$SIG); 
 check "POST da de baja" "$(SQL "SELECT unsubscribed_at IS NOT NULL FROM contacts WHERE id=$ANA")" 1
 R=$(req POST /send-massive "{\"template_id\":$TPL,\"contact_ids\":[$ANA]}" "$TOKEN"); check "dado de baja no puede recibir campañas -> 400" "$(code "$R")" 400
 
-echo "== 12. Logout =="
+echo "== 12. Grupos de contactos =="
+R=$(req POST /groups '{"name":"Clientes"}' "$TOKEN"); check "crear grupo -> 201" "$(code "$R")" 201
+GRP=$(json "$(body "$R")" id)
+R=$(req POST /groups '{"name":"Clientes"}' "$TOKEN"); check "grupo duplicado -> 409" "$(code "$R")" 409
+R=$(req POST /groups '{"name":"  "}' "$TOKEN"); check "grupo sin nombre -> 400" "$(code "$R")" 400
+R=$(req POST /groups '{"name":"Clientes"}' "$OTOKEN"); check "otro usuario puede usar el mismo nombre -> 201" "$(code "$R")" 201
+OGRP=$(json "$(body "$R")" id)
+R=$(req PUT /contacts/$BETO/groups "{\"group_ids\":[$GRP]}" "$TOKEN"); check "asignar contacto a grupo -> 200" "$(code "$R")" 200
+R=$(req GET /contacts "" "$TOKEN"); has "el contacto devuelve sus group_ids" "$(body "$R")" "\"group_ids\":\[$GRP\]"
+R=$(req GET /groups "" "$TOKEN"); has "el grupo cuenta 1 miembro" "$(body "$R")" '"member_count":1'
+R=$(req PUT /contacts/$BETO/groups "{\"group_ids\":[$OGRP]}" "$TOKEN"); check "asignar a grupo AJENO -> 404" "$(code "$R")" 404
+R=$(req PUT /contacts/$VICTIMA/groups "{\"group_ids\":[$GRP]}" "$TOKEN"); check "asignar contacto AJENO -> 404" "$(code "$R")" 404
+R=$(req PUT /groups/$OGRP '{"name":"Hack"}' "$TOKEN"); check "renombrar grupo AJENO -> 404" "$(code "$R")" 404
+R=$(req DELETE /groups/$OGRP "" "$TOKEN"); check "borrar grupo AJENO -> 404" "$(code "$R")" 404
+R=$(req PUT /groups/$GRP '{"name":"VIP"}' "$TOKEN"); check "renombrar grupo -> 200" "$(code "$R")" 200
+
+echo "== 13. Importación de contactos =="
+R=$(req POST /contacts/import "{\"group_id\":$GRP,\"contacts\":[{\"email\":\"nuevo1@test.local\",\"first_name\":\"Nuevo\"},{\"email\":\"nuevo2@test.local\"},{\"email\":\"beto@test.local\"},{\"email\":\"no-valido\"},{\"email\":\"NUEVO1@test.local\"}]}" "$TOKEN"); check "importar -> 201" "$(code "$R")" 201
+check "2 creados" "$(json "$(body "$R")" created)" 2
+check "2 duplicados (existente + repetido en el fichero)" "$(json "$(body "$R")" duplicates)" 2
+has "1 fila inválida informada" "$(body "$R")" '"reason":"Email no v'
+check "los importados quedan en el grupo" "$(SQL "SELECT COUNT(*) FROM contact_group_members WHERE group_id=$GRP")" 3
+R=$(req POST /contacts/import "{\"group_id\":$OGRP,\"contacts\":[{\"email\":\"otro@test.local\"}]}" "$TOKEN"); check "importar a grupo AJENO -> 404" "$(code "$R")" 404
+check "…y no crea contactos" "$(SQL "SELECT COUNT(*) FROM contacts WHERE email='otro@test.local'")" 0
+R=$(req POST /contacts/import '{"contacts":[]}' "$TOKEN"); check "importación vacía -> 400" "$(code "$R")" 400
+R=$(req DELETE /groups/$GRP "" "$TOKEN"); check "borrar grupo -> 200" "$(code "$R")" 200
+check "borrar el grupo NO borra los contactos" "$(SQL "SELECT COUNT(*) FROM contacts WHERE email='nuevo1@test.local'")" 1
+
+echo "== 14. Cuenta =="
+R=$(req PUT /me '{"email":"no-es-email"}' "$OTOKEN"); check "email inválido -> 400" "$(code "$R")" 400
+R=$(req PUT /me '{"email":"admin@templimail.com"}' "$OTOKEN"); check "email de otra cuenta -> 409" "$(code "$R")" 409
+R=$(req PUT /me '{"email":"nuevo-other@test.local"}' "$OTOKEN"); check "cambiar email -> 200" "$(code "$R")" 200
+has "devuelve el usuario actualizado" "$(body "$R")" "nuevo-other@test.local"
+R=$(req PUT /me/password '{"current_password":"mala","new_password":"otraClave123"}' "$OTOKEN"); check "contraseña actual incorrecta -> 403" "$(code "$R")" 403
+R=$(req PUT /me/password '{"current_password":"passw0rd123","new_password":"corta"}' "$OTOKEN"); check "contraseña nueva corta -> 400" "$(code "$R")" 400
+R=$(req PUT /me/password '{"current_password":"passw0rd123","new_password":"passw0rd123"}' "$OTOKEN"); check "misma contraseña -> 400" "$(code "$R")" 400
+R=$(req PUT /me/password '{"current_password":"passw0rd123","new_password":"otraClave123"}' "$OTOKEN"); check "cambiar contraseña -> 200" "$(code "$R")" 200
+NEWTOKEN=$(json "$(body "$R")" token)
+R=$(req GET /me "" "$OTOKEN"); check "el token anterior queda invalidado -> 401" "$(code "$R")" 401
+R=$(req GET /me "" "$NEWTOKEN"); check "el token nuevo funciona -> 200" "$(code "$R")" 200
+R=$(req POST /login '{"username":"otheruser","password":"otraClave123"}'); check "login con la contraseña nueva -> 200" "$(code "$R")" 200
+
+echo "== 15. Dashboard =="
+R=$(req GET /dashboard/stats "" "$TOKEN"); has "stats incluye correos enviados" "$(body "$R")" '"total_sent":'
+has "stats incluye correos fallidos" "$(body "$R")" '"total_failed":'
+R=$(req GET /dashboard/activity "" "$TOKEN"); check "actividad: 14 días" "$(echo "$(body "$R")" | grep -o '"date"' | wc -l | tr -d ' ')" 14
+
+echo "== 16. Logout =="
 R=$(req POST /logout "" "$TOKEN"); check "logout -> 200" "$(code "$R")" 200
 R=$(req GET /me "" "$TOKEN"); check "token invalidado tras logout -> 401" "$(code "$R")" 401
 
