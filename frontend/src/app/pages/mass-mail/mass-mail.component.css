@@ -36,7 +36,8 @@ label {
   color: #1F2C44;
 }
 
-select.form-select {
+select.form-select,
+.form-input {
   width: 100%;
   max-width: 400px;
   padding: 12px 14px;
@@ -48,7 +49,8 @@ select.form-select {
   transition: border-color 0.2s ease;
 }
 
-select.form-select:focus {
+select.form-select:focus,
+.form-input:focus {
   outline: none;
   border-color: #132f4c;
   background-color: #ffffff;
@@ -123,3 +125,80 @@ button.btn-secondary:hover {
 }
 
 
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input.schedule {
+  max-width: 280px;
+}
+
+.hint {
+  display: block;
+  margin-top: 6px;
+  color: #7a8594;
+  font-size: 13px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar .search {
+  max-width: 320px;
+}
+
+.counter {
+  color: #5b6675;
+  font-size: 14px;
+}
+
+tr.unsub td {
+  color: #9aa3b0;
+  background: #fafbfc;
+}
+
+td.empty {
+  color: #7a8594;
+  padding: 28px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+button.btn-outline {
+  background: #fff;
+  color: #132f4c;
+  border: 1px solid #132f4c;
+  box-shadow: none;
+}
+
+button.btn-outline:hover {
+  background: #eef3f8;
+}
+
+button.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}

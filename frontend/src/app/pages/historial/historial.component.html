@@ -1,108 +1,164 @@
 <div class="history-wrapper">
 
-  <h2>Campaign History</h2>
+  <h2>Historial de campañas</h2>
 
   <div class="filters">
     <input
-      type="text"
-      placeholder="Search by subject..."
-      [(ngModel)]="subjectFilter"
+      type="search"
+      placeholder="Buscar por nombre o asunto..."
+      [(ngModel)]="textFilter"
     />
-    <input type="date" [(ngModel)]="minDateFilter" />
-    <input type="date" [(ngModel)]="maxDateFilter" />
+
+    <select [(ngModel)]="statusFilter">
+      <option value="">Todos los estados</option>
+      <option>En cola</option>
+      <option>Programada</option>
+      <option>Enviando</option>
+      <option>Completada</option>
+      <option>Con errores</option>
+      <option>Cancelada</option>
+    </select>
+
+    <input type="date" [(ngModel)]="minDateFilter" title="Desde" />
+    <input type="date" [(ngModel)]="maxDateFilter" title="Hasta" />
   </div>
 
-  <table class="history-table" *ngIf="filteredHistory().length > 0; else noResults">
-    <thead>
-      <tr>
-        <th>Subject</th>
-        <th>Template</th>
-        <th>Status</th>
-        <th>Sent at</th>
-        <th>Recipients</th>
-        <th></th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <ng-container *ngFor="let campaign of filteredHistory()">
-
+  @if (!loaded) {
+    <p class="muted">Cargando...</p>
+  } @else if (visibleHistory.length === 0) {
+    <p class="muted">
+      {{ history.length === 0 ? 'Todavía no has enviado ninguna campaña.' : 'No hay resultados con esos filtros.' }}
+    </p>
+  } @else {
+    <table class="history-table">
+      <thead>
         <tr>
-          <td>{{ campaign.subject }}</td>
-          <td>{{ campaign.template_name || 'Deleted' }}</td>
-          <td>
-            <span [ngClass]="{
-              'status-completed': campaign.status === 'completed',
-              'status-scheduled': campaign.status === 'scheduled',
-              'status-processing': campaign.status === 'processing'
-            }">
-              {{ campaign.status }}
-            </span>
-          </td>
-          <td>{{ campaign.sent_at | date:'short' }}</td>
-          <td>{{ campaign.total_recipients }}</td>
-          <td>
-            <button class="btn-expand" (click)="toggleDeliveries(campaign.id)">
-              {{ expandedCampaignId === campaign.id ? 'Ocultar ▲' : 'Ver entregas ▼' }}
-            </button>
-          </td>
+          <th>Campaña</th>
+          <th>Estado</th>
+          <th>Progreso</th>
+          <th>Fecha</th>
+          <th></th>
         </tr>
+      </thead>
 
-        <tr *ngIf="expandedCampaignId === campaign.id" class="delivery-row">
-          <td colspan="6">
+      <tbody>
+        @for (campaign of visibleHistory; track campaign.id) {
+          <tr>
+            <td>
+              <div class="campaign-name">
+                {{ campaign.name || campaign.subject }}
+                @if (campaign.type === 'single') {
+                  <span class="badge badge-gray">Individual</span>
+                }
+              </div>
+              @if (campaign.name) {
+                <small class="muted">{{ campaign.subject }}</small>
+              }
+              @if (campaign.template_name) {
+                <small class="muted"> · {{ campaign.template_name }}</small>
+              }
+            </td>
 
-            <div *ngIf="loadingDeliveries[campaign.id]" class="delivery-loading">
-              Cargando entregas...
-            </div>
+            <td>
+              <span class="badge" [ngClass]="statusInfo(campaign).badge">
+                {{ statusInfo(campaign).label }}
+              </span>
+            </td>
 
-            <table class="delivery-table" *ngIf="(deliveries[campaign.id]?.length ?? 0) > 0">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Estado</th>
-                  <th>Enviado</th>
-                  <th>Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let d of deliveries[campaign.id]">
-                  <td>{{ d.first_name }} {{ d.last_name }}</td>
-                  <td>{{ d.email }}</td>
-                  <td>
-                    <span [ngClass]="{
-                      'status-completed': d.status === 'sent',
-                      'status-processing': d.status === 'pending',
-                      'status-failed': d.status === 'failed'
-                    }">
-                      {{ d.status }}
-                    </span>
-                  </td>
-                  <td>{{ d.sent_at | date:'short' }}</td>
-                  <td class="error-msg">{{ d.error_message || '—' }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <td class="progress-cell">
+              <div class="progress" [attr.aria-label]="progress(campaign) + '%'">
+                <div class="progress-bar" [style.width.%]="progress(campaign)"></div>
+              </div>
+              <small>
+                {{ campaign.sent }}/{{ campaign.total_recipients }} enviados
+                @if (campaign.failed > 0) {
+                  · <span class="text-danger">{{ campaign.failed }} fallidos</span>
+                }
+                @if (campaign.skipped > 0) {
+                  · {{ campaign.skipped }} omitidos
+                }
+              </small>
+            </td>
 
-            <p *ngIf="deliveries[campaign.id]?.length === 0">
-              No hay entregas registradas.
-            </p>
+            <td>{{ displayDate(campaign) | date:'short' }}</td>
 
-          </td>
-        </tr>
+            <td class="row-actions">
+              <button class="btn-expand" (click)="toggleDeliveries(campaign.id)">
+                {{ expandedCampaignId === campaign.id ? 'Ocultar ▲' : 'Detalle ▼' }}
+              </button>
 
-      </ng-container>
-    </tbody>
-  </table>
+              @if (campaign.status === 'completed' && campaign.failed > 0) {
+                <button class="btn-expand" [disabled]="actionInProgress === campaign.id" (click)="retryFailed(campaign)">
+                  Reintentar fallidos
+                </button>
+              }
 
-  <ng-template #noResults>
-    <p>No results found.</p>
-  </ng-template>
+              @if (campaign.status === 'scheduled' && !isActive(campaign)) {
+                <button class="btn-expand danger" [disabled]="actionInProgress === campaign.id" (click)="cancel(campaign)">
+                  Cancelar
+                </button>
+              }
+            </td>
+          </tr>
 
-  <div class="show-more-wrapper" *ngIf="history.length > 5">
-    <button class="show-more-btn" (click)="showAll = !showAll">
-      {{ showAll ? 'Show less ▲' : 'Show more ▼' }}
-    </button>
-  </div>
+          @if (expandedCampaignId === campaign.id) {
+            <tr class="delivery-row">
+              <td colspan="5">
+
+                @if (loadingDeliveries[campaign.id]) {
+                  <div class="delivery-loading">Cargando entregas...</div>
+                }
+
+                @if ((deliveries[campaign.id]?.length ?? 0) > 0) {
+                  <table class="delivery-table">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Estado</th>
+                        <th>Enviado</th>
+                        <th>Detalle</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (d of deliveries[campaign.id]; track d.id) {
+                        <tr>
+                          <td>{{ d.first_name }} {{ d.last_name }}</td>
+                          <td>{{ d.email }}</td>
+                          <td>
+                            <span class="badge" [ngClass]="deliveryBadge(d.status)">
+                              {{ deliveryLabel(d.status) }}
+                            </span>
+                          </td>
+                          <td>{{ d.sent_at | date:'short' }}</td>
+                          <td class="error-msg">
+                            {{ d.error_message || '—' }}
+                            @if (d.retry_count > 0 && d.status === 'sent') {
+                              <span class="muted">(enviado tras {{ d.retry_count + 1 }} intentos)</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else if (deliveries[campaign.id] && !loadingDeliveries[campaign.id]) {
+                  <p>No hay entregas registradas.</p>
+                }
+
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+
+    @if (filteredHistory.length > visibleCount) {
+      <div class="show-more-wrapper">
+        <button class="show-more-btn" (click)="visibleCount = visibleCount + 10">
+          Mostrar más ({{ filteredHistory.length - visibleCount }} restantes) ▼
+        </button>
+      </div>
+    }
+  }
 
 </div>

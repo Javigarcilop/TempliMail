@@ -1,108 +1,146 @@
-<div class="container mt-4">
+<div class="container">
 
-  <h2>Email Marketing: Envio Masivo</h2>
+  <h2>Envío masivo</h2>
 
-  <!-- Alert message -->
-  <div *ngIf="messageVisible" class="alert alert-info">
-    {{ message }}
+  <div class="row">
+    <div class="field">
+      <label for="campaignName">Nombre de la campaña (opcional)</label>
+      <input
+        id="campaignName"
+        type="text"
+        class="form-input"
+        placeholder="Ej.: Newsletter de octubre"
+        maxlength="255"
+        [(ngModel)]="campaignName"
+      />
+    </div>
+
+    <div class="field">
+      <label for="template">Plantilla</label>
+      <select [(ngModel)]="selectedTemplateId" id="template" class="form-select">
+        <option [ngValue]="null">-- Elige plantilla --</option>
+        @for (t of templates; track t.id) {
+          <option [ngValue]="t.id">{{ t.name }}</option>
+        }
+      </select>
+      @if (selectedTemplate) {
+        <small class="hint">Asunto: {{ selectedTemplate.subject }}</small>
+      }
+    </div>
   </div>
 
-  <!-- Template selector -->
-  <div class="mb-3">
-    <label for="template" class="form-label">
-      Selecciona una plantilla:
-    </label>
-
-    <select
-      [(ngModel)]="selectedTemplateId"
-      id="template"
-      class="form-select"
-      required
-    >
-      <option [ngValue]="null">
-        -- Elige plantilla --
-      </option>
-
-      <option
-        *ngFor="let t of templates"
-        [ngValue]="t.id"
-      >
-        {{ t.name }}
-      </option>
-    </select>
-  </div>
-
-  <!-- Schedule -->
-  <div class="mb-3">
-    <label for="scheduledAt" class="form-label">
-      Programar envio (opcional):
-    </label>
-
+  <div class="field">
+    <label for="scheduledAt">Programar envío (opcional)</label>
     <input
       type="datetime-local"
-      [(ngModel)]="scheduledAt"
       id="scheduledAt"
-      class="form-control"
+      class="form-input schedule"
+      [min]="minSchedule"
+      [(ngModel)]="scheduledAt"
     />
+    <small class="hint">
+      Déjalo vacío para enviar de inmediato. Hora local de tu navegador.
+    </small>
   </div>
 
-  <!-- Contacts table -->
-  <div class="table-responsive">
-    <table class="table table-bordered table-hover mt-3">
+  <div class="toolbar">
+    <input
+      type="search"
+      class="form-input search"
+      placeholder="Buscar contacto..."
+      [(ngModel)]="search"
+    />
+    <span class="counter">
+      <strong>{{ selectedContactIds.size }}</strong> seleccionados de {{ contacts.length }}
+      @if (unsubscribedCount > 0) {
+        · {{ unsubscribedCount }} de baja
+      }
+    </span>
+  </div>
 
+  <div class="table-responsive">
+    <table>
       <thead>
         <tr>
           <th>
             <input
               type="checkbox"
-              (change)="toggleSelectAll($event)"
+              title="Seleccionar todos los visibles"
+              [checked]="allVisibleSelected"
+              (change)="toggleAllVisible($any($event.target).checked)"
             />
           </th>
           <th>Nombre</th>
           <th>Email</th>
           <th>Empresa</th>
+          <th>Estado</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr *ngFor="let contact of contacts">
-
-          <td>
-            <input
-              type="checkbox"
-              [checked]="selectedContactIds.includes(contact.id)"
-              (change)="onToggleSelection($event, contact.id)"
-            />
-          </td>
-
-          <td>
-            {{ contact.first_name }} {{ contact.last_name }}
-          </td>
-
-          <td>
-            {{ contact.email }}
-          </td>
-
-          <td>
-            {{ contact.company }}
-          </td>
-
-        </tr>
+        @for (contact of filteredContacts; track contact.id) {
+          <tr [class.unsub]="contact.unsubscribed_at">
+            <td>
+              <input
+                type="checkbox"
+                [disabled]="!!contact.unsubscribed_at"
+                [checked]="selectedContactIds.has(contact.id)"
+                (change)="toggleContact(contact, $any($event.target).checked)"
+              />
+            </td>
+            <td>{{ contact.first_name }} {{ contact.last_name }}</td>
+            <td>{{ contact.email }}</td>
+            <td>{{ contact.company }}</td>
+            <td>
+              @if (contact.unsubscribed_at) {
+                <span class="badge badge-gray">De baja</span>
+              } @else {
+                <span class="badge badge-green">Suscrito</span>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="empty">
+              {{ contacts.length === 0 ? 'Todavía no tienes contactos.' : 'Ningún contacto coincide.' }}
+            </td>
+          </tr>
+        }
       </tbody>
-
     </table>
   </div>
 
-  <!-- Send button -->
-  <div class="d-flex flex-wrap gap-2">
+  <div class="actions">
     <button
-      class="btn btn-primary"
-      (click)="sendMassive()"
-      [disabled]="loading"
+      type="button"
+      class="btn btn-outline"
+      [disabled]="!selectedTemplate"
+      (click)="showPreview()"
     >
-      <span *ngIf="loading">Enviando...</span>
-      <span *ngIf="!loading">Enviar a seleccionado</span>
+      Vista previa
+    </button>
+
+    <button
+      type="button"
+      class="btn btn-outline"
+      [disabled]="!selectedTemplate || busy"
+      (click)="sendTest()"
+    >
+      {{ busy ? 'Enviando...' : 'Enviarme una prueba' }}
+    </button>
+
+    <button
+      type="button"
+      class="btn"
+      [disabled]="loading || !selectedTemplate || selectedContactIds.size === 0"
+      (click)="sendMassive()"
+    >
+      {{ loading ? 'Creando campaña...' : (scheduledAt ? 'Programar campaña' : 'Enviar ahora') }}
     </button>
   </div>
 
 </div>
+
+@if (preview) {
+  <app-mail-preview [subject]="preview.subject" [html]="preview.body" (close)="preview = null" />
+}

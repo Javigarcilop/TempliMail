@@ -22,7 +22,8 @@ h2 {
   flex-wrap: wrap;
 }
 
-.filters input {
+.filters input,
+.filters select {
   padding: 8px 12px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -55,12 +56,6 @@ h2 {
 .history-table tr:hover {
   background-color: #f9f9f9;
 }
-
-/* Estado badges */
-.status-completed  { color: #2ecc71; font-weight: 600; }
-.status-scheduled  { color: #e67e22; font-weight: 600; }
-.status-processing { color: #3498db; font-weight: 600; }
-.status-failed     { color: #c0392b; font-weight: 600; }
 
 /* Botón expandir */
 .btn-expand {
@@ -134,3 +129,31 @@ h2 {
 .show-more-btn:hover {
   background-color: #007acc;
 }
+
+.muted { color: #7a8594; font-size: 13px; }
+
+.campaign-name { font-weight: 600; color: #1f2c44; }
+.campaign-name .badge { margin-left: 6px; }
+
+.progress-cell { min-width: 200px; }
+
+.progress {
+  height: 8px;
+  background: #e5e9ef;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #2ecc71;
+  transition: width 0.4s ease;
+}
+
+.row-actions { white-space: nowrap; }
+.row-actions .btn-expand { margin-right: 6px; }
+
+.btn-expand:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-expand.danger { color: #c0392b; border-color: #e6b8b3; }
+.btn-expand.danger:hover { background: #fcebea; }

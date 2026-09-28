@@ -194,3 +194,81 @@ button:hover {
   border-color: #132f4c;
   color: #132f4c;
 }
+
+/* Variables de plantilla */
+.variables-box {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: #f5f7fa;
+  border: 1px dashed #b0b8c1;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.variables-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2c44;
+  margin-right: 4px;
+}
+
+.variables-help {
+  flex-basis: 100%;
+  color: #7a8594;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.variables-help code {
+  background: #e8ecf1;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+button.var-chip {
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-family: monospace;
+  background: #fff;
+  color: #132f4c;
+  border: 1px solid #b0b8c1;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+button.var-chip:hover {
+  background: #e8f1fb;
+  border-color: #4a90e2;
+  transform: none;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-actions button {
+  margin-top: 20px;
+}
+
+button.btn-outline {
+  background: #fff;
+  color: #132f4c;
+  border: 1px solid #132f4c;
+  box-shadow: none;
+}
+
+button.btn-outline:hover {
+  background: #eef3f8;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

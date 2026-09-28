@@ -1,164 +1,236 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { MailPreviewComponent } from '../../shared/mail-preview/mail-preview.component';
+import { Contact, MailPreview, MassiveMailInput, Template } from '../../models/api.models';
 
 @Component({
   standalone: true,
   selector: 'app-mass-mail',
   templateUrl: './mass-mail.component.html',
   styleUrls: ['./mass-mail.component.css'],
-  imports: [CommonModule, FormsModule]
+  imports: [CommonModule, FormsModule, MailPreviewComponent]
 })
-export class MassMailComponent implements OnInit, OnDestroy {
+export class MassMailComponent implements OnInit {
 
-  contacts: any[] = [];
-  templates: any[] = [];
-  selectedContactIds: number[] = [];
+  contacts: Contact[] = [];
+  templates: Template[] = [];
+
+  selectedContactIds = new Set<number>();
   selectedTemplateId: number | null = null;
-  scheduledAt: string | null = null;
+  campaignName = '';
+  scheduledAt = '';
+  search = '';
 
-  message: string = '';
-  messageVisible = false;
   loading = false;
+  busy = false;
+  preview: MailPreview | null = null;
 
-  private intervalId: any;
-
-  constructor(private api: ApiService) {}
-
-  // =====================================================
-  // INIT
-  // =====================================================
+  constructor(
+    private api: ApiService,
+    private toast: ToastService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.loadContacts();
-    this.loadTemplates();
-    this.startAutoProcessor();
+    this.api.getContacts().subscribe({
+      next: response => this.contacts = response.data ?? [],
+      error: () => this.toast.error('No se pudieron cargar los contactos.')
+    });
+
+    this.api.getTemplates().subscribe({
+      next: response => this.templates = response.data ?? [],
+      error: () => this.toast.error('No se pudieron cargar las plantillas.')
+    });
   }
 
-  ngOnDestroy(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
+  // ---------------------------------------------------------------
+  // Datos derivados
+  // ---------------------------------------------------------------
+
+  get selectedTemplate(): Template | undefined {
+    return this.templates.find(t => t.id === this.selectedTemplateId);
+  }
+
+  get filteredContacts(): Contact[] {
+    const term = this.search.trim().toLowerCase();
+
+    if (!term) {
+      return this.contacts;
     }
+
+    return this.contacts.filter(c =>
+      [c.first_name, c.last_name, c.email, c.company]
+        .some(value => value?.toLowerCase().includes(term))
+    );
   }
 
-  // =====================================================
-  // AUTO PROCESS SCHEDULED CAMPAIGNS
-  // =====================================================
-
-  startAutoProcessor(): void {
-
-    // Ejecutar al cargar
-    this.api.processScheduledCampaigns().subscribe();
-
-    // Ejecutar cada 60s
-    this.intervalId = setInterval(() => {
-      this.api.processScheduledCampaigns().subscribe();
-    }, 60000);
+  /** Contactos visibles que pueden recibir correo (los dados de baja no). */
+  private get selectableVisible(): Contact[] {
+    return this.filteredContacts.filter(c => !c.unsubscribed_at);
   }
 
-  // =====================================================
-  // LOAD DATA
-  // =====================================================
+  get allVisibleSelected(): boolean {
+    const visible = this.selectableVisible;
 
-  loadContacts(): void {
-    this.api.getContacts().subscribe((data: any) => {
-      this.contacts = data.data;
-    });
+    return visible.length > 0 && visible.every(c => this.selectedContactIds.has(c.id));
   }
 
-  loadTemplates(): void {
-    this.api.getTemplates().subscribe((data: any) => {
-      this.templates = data.data;
-    });
+  get unsubscribedCount(): number {
+    return this.contacts.filter(c => c.unsubscribed_at).length;
   }
 
-  // =====================================================
-  // SELECTION HANDLING
-  // =====================================================
+  /** Mínimo permitido para programar (ahora + 1 min), en formato datetime-local. */
+  get minSchedule(): string {
+    const d = new Date(Date.now() + 60_000);
+    const pad = (n: number) => String(n).padStart(2, '0');
 
-  onToggleSelection(event: Event, contactId: number): void {
-    const input = event.target as HTMLInputElement;
-    this.toggleSelection(contactId, input.checked);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  toggleSelection(id: number, checked: boolean): void {
+  // ---------------------------------------------------------------
+  // Selección
+  // ---------------------------------------------------------------
+
+  toggleContact(contact: Contact, checked: boolean): void {
     if (checked) {
-      if (!this.selectedContactIds.includes(id)) {
-        this.selectedContactIds.push(id);
-      }
+      this.selectedContactIds.add(contact.id);
     } else {
-      this.selectedContactIds =
-        this.selectedContactIds.filter(c => c !== id);
+      this.selectedContactIds.delete(contact.id);
     }
   }
 
-  toggleSelectAll(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.selectedContactIds =
-      input.checked ? this.contacts.map(c => c.id) : [];
+  toggleAllVisible(checked: boolean): void {
+    for (const contact of this.selectableVisible) {
+      this.toggleContact(contact, checked);
+    }
   }
 
-  // =====================================================
-  // SEND MASSIVE
-  // =====================================================
+  // ---------------------------------------------------------------
+  // Vista previa y prueba
+  // ---------------------------------------------------------------
 
-  sendMassive(): void {
+  showPreview(): void {
+    const payload = this.previewPayload();
 
-    if (!this.selectedTemplateId || this.selectedContactIds.length === 0) {
-      this.showMessage('❌ Select at least one contact and one template');
+    if (!payload) {
       return;
     }
 
-    const payload: any = {
-      template_id: this.selectedTemplateId,
-      contact_ids: this.selectedContactIds
+    this.api.previewMail(payload).subscribe({
+      next: response => this.preview = response.data,
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo generar la vista previa.')
+    });
+  }
+
+  sendTest(): void {
+    const payload = this.previewPayload();
+
+    if (!payload) {
+      return;
+    }
+
+    this.busy = true;
+
+    this.api.sendTestMail(payload).subscribe({
+      next: response => {
+        this.busy = false;
+        this.toast.success(`Correo de prueba enviado a ${response.sent_to}.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.busy = false;
+        this.toast.error(err.error?.error ?? 'No se pudo enviar la prueba.');
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Envío
+  // ---------------------------------------------------------------
+
+  sendMassive(): void {
+    const template = this.selectedTemplate;
+
+    if (!template || this.selectedContactIds.size === 0) {
+      this.toast.error('Elige una plantilla y al menos un contacto.');
+      return;
+    }
+
+    const payload: MassiveMailInput = {
+      template_id: template.id,
+      contact_ids: [...this.selectedContactIds]
     };
 
+    if (this.campaignName.trim()) {
+      payload.name = this.campaignName.trim();
+    }
+
     if (this.scheduledAt) {
+      const date = new Date(this.scheduledAt); // hora local del navegador
 
-      const selectedDate = new Date(this.scheduledAt);
-      const now = new Date();
-
-      const diffSeconds =
-        (selectedDate.getTime() - now.getTime()) / 1000;
-
-      if (diffSeconds < 60) {
-        this.showMessage('⚠️ Scheduled time must be at least 1 minute in the future');
+      if (date.getTime() - Date.now() < 60_000) {
+        this.toast.error('La hora programada debe ser al menos 1 minuto posterior a la actual.');
         return;
       }
 
-      payload.scheduled_at = this.scheduledAt;
+      // Se envía en UTC: el servidor y su cola trabajan en UTC
+      payload.scheduled_at = date.toISOString();
+    }
+
+    const count = this.selectedContactIds.size;
+    const when = payload.scheduled_at
+      ? `programar para el ${new Date(payload.scheduled_at).toLocaleString()}`
+      : 'enviar ahora';
+
+    if (!confirm(`¿Quieres ${when} "${template.name}" a ${count} contacto(s)?`)) {
+      return;
     }
 
     this.loading = true;
 
     this.api.sendMassiveMail(payload).subscribe({
-      next: () => {
+      next: response => {
         this.loading = false;
-        this.showMessage('✅ Emails processed successfully');
-        this.selectedContactIds = [];
-        this.selectedTemplateId = null;
-        this.scheduledAt = null;
+
+        const excluded = response.excluded > 0 ? ` (${response.excluded} excluido/s por baja o no válido)` : '';
+
+        this.toast.success(
+          response.scheduled
+            ? `Campaña programada para ${response.recipients} contacto(s)${excluded}.`
+            : `Campaña en cola: ${response.recipients} contacto(s)${excluded}. Se enviará en unos segundos.`
+        );
+
+        this.router.navigate(['/historial']);
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         this.loading = false;
-        console.error(err);
-        this.showMessage('❌ Error sending emails');
+        this.toast.error(err.error?.error ?? 'Error al crear la campaña.');
       }
     });
   }
 
-  // =====================================================
-  // UI MESSAGE
-  // =====================================================
+  // ---------------------------------------------------------------
 
-  showMessage(msg: string): void {
-    this.message = msg;
-    this.messageVisible = true;
+  /** Datos para la vista previa / prueba: la plantilla con el primer contacto elegido. */
+  private previewPayload() {
+    const template = this.selectedTemplate;
 
-    setTimeout(() => {
-      this.messageVisible = false;
-    }, 3000);
+    if (!template) {
+      this.toast.error('Elige primero una plantilla.');
+      return null;
+    }
+
+    const firstContactId = this.selectedContactIds.values().next().value;
+
+    return {
+      subject: template.subject,
+      content_html: template.content_html,
+      ...(firstContactId !== undefined ? { contact_id: firstContactId } : {})
+    };
   }
 }

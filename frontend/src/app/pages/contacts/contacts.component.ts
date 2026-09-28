@@ -1,7 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { Contact, ContactInput } from '../../models/api.models';
+
+const EMPTY_CONTACT: ContactInput = {
+  first_name: '',
+  last_name: '',
+  email: '',
+  phone: '',
+  company: '',
+  position: ''
+};
 
 @Component({
   selector: 'app-contacts',
@@ -12,73 +24,63 @@ import { ApiService } from '../../services/api.service';
 })
 export class ContactsComponent implements OnInit {
 
-  contacts: any[] = [];
+  contacts: Contact[] = [];
+  search = '';
 
-  newContact = {
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    company: '',
-    position: ''
-  };
-
+  newContact: ContactInput = { ...EMPTY_CONTACT };
   editingId: number | null = null;
-  errorMessage = '';
-  successMessage = '';
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.loadContacts();
   }
 
+  get filteredContacts(): Contact[] {
+    const term = this.search.trim().toLowerCase();
+
+    if (!term) {
+      return this.contacts;
+    }
+
+    return this.contacts.filter(c =>
+      [c.first_name, c.last_name, c.email, c.company, c.position]
+        .some(value => value?.toLowerCase().includes(term))
+    );
+  }
+
   loadContacts(): void {
     this.api.getContacts().subscribe({
-      next: (response: any) => {
-        this.contacts = response.data ?? [];
-      },
-      error: (error) => {
-        console.error('Error cargando contactos:', error);
+      next: response => this.contacts = response.data ?? [],
+      error: () => {
         this.contacts = [];
-        this.errorMessage = 'No se pudieron cargar los contactos.';
+        this.toast.error('No se pudieron cargar los contactos.');
       }
     });
   }
 
   saveContact(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
+    const request = this.editingId
+      ? this.api.updateContact(this.editingId, this.newContact)
+      : this.api.addContact(this.newContact);
 
-    if (this.editingId) {
-      this.api.updateContact(this.editingId, this.newContact).subscribe({
-        next: () => {
-          this.successMessage = 'Contacto actualizado correctamente.';
-          this.cancelEdit();
-          this.loadContacts();
-        },
-        error: (error) => {
-          console.error('Error actualizando contacto:', error);
-          this.errorMessage = error.error?.error ?? 'Error al actualizar el contacto.';
-        }
-      });
+    const wasEditing = !!this.editingId;
 
-    } else {
-      this.api.addContact(this.newContact).subscribe({
-        next: () => {
-          this.successMessage = 'Contacto creado correctamente.';
-          this.loadContacts();
-          this.resetForm();
-        },
-        error: (error) => {
-          console.error('Error creando contacto:', error);
-          this.errorMessage = error.error?.error ?? 'Error al crear el contacto.';
-        }
-      });
-    }
+    request.subscribe({
+      next: () => {
+        this.toast.success(wasEditing ? 'Contacto actualizado.' : 'Contacto creado.');
+        this.cancelEdit();
+        this.loadContacts();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo guardar el contacto.')
+    });
   }
 
-  editContact(contact: any): void {
+  editContact(contact: Contact): void {
     this.newContact = {
       first_name: contact.first_name ?? '',
       last_name: contact.last_name ?? '',
@@ -92,33 +94,36 @@ export class ContactsComponent implements OnInit {
   }
 
   cancelEdit(): void {
-    this.resetForm();
+    this.newContact = { ...EMPTY_CONTACT };
     this.editingId = null;
   }
 
-  deleteContact(id: number): void {
-    if (confirm('¿Eliminar contacto?')) {
-      this.api.deleteContact(id).subscribe({
-        next: () => {
-          this.successMessage = 'Contacto eliminado correctamente.';
-          this.loadContacts();
-        },
-        error: (error) => {
-          console.error('Error eliminando contacto:', error);
-          this.errorMessage = error.error?.error ?? 'Error al eliminar el contacto.';
-        }
-      });
+  deleteContact(contact: Contact): void {
+    if (!confirm(`¿Eliminar a ${contact.email}?`)) {
+      return;
     }
+
+    this.api.deleteContact(contact.id).subscribe({
+      next: () => {
+        this.toast.success('Contacto eliminado.');
+        this.loadContacts();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo eliminar el contacto.')
+    });
   }
 
-  resetForm(): void {
-    this.newContact = {
-      first_name: '',
-      last_name: '',
-      email: '',
-      phone: '',
-      company: '',
-      position: ''
-    };
+  /** Baja / alta manual: un contacto dado de baja no recibe campañas. */
+  toggleSubscription(contact: Contact): void {
+    const subscribe = contact.unsubscribed_at !== null;
+
+    this.api.setContactSubscription(contact.id, subscribe).subscribe({
+      next: () => {
+        this.toast.success(subscribe ? 'Contacto reactivado.' : 'Contacto dado de baja.');
+        this.loadContacts();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo actualizar la suscripción.')
+    });
   }
 }

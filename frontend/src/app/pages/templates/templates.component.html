@@ -1,14 +1,3 @@
-<!-- Message -->
-<div *ngIf="messageVisible"
-     [ngClass]="{
-       'alert': true,
-       'alert-success': !message.startsWith('❌'),
-       'alert-danger': message.startsWith('❌')
-     }"
-     class="text-center">
-  {{ message }}
-</div>
-
 <!-- Form -->
 <form (ngSubmit)="saveTemplate()" #form="ngForm">
 
@@ -42,13 +31,25 @@
     />
   </div>
 
+  <div class="variables-box">
+    <span class="variables-label">Variables (clic para insertar en el contenido):</span>
+    <button type="button" class="var-chip" *ngFor="let v of variables" [title]="v.label" (click)="insertVariable(v.key)">
+      {{ v.tag }}
+    </button>
+    <small class="variables-help">
+      También funcionan en el asunto. Con valor por defecto: <code>{{ exampleDefault }}</code>.
+      Si la plantilla no incluye <code>{{ exampleUnsubscribe }}</code>, se añade un pie con el enlace de baja.
+    </small>
+  </div>
+
   <div class="editor-container mb-3">
     <label for="content" class="form-label">
       Contenido
     </label>
 
     <editor
-      apiKey="90fkwvwq8dyv54dm0438f6opzfzf2deaz8j3ss23vmw3gtoq"
+      [apiKey]="tinymceApiKey"
+      (onInit)="onEditorInit($event)"
       [(ngModel)]="templateForm.content_html"
       name="content_html"
       [init]="{
@@ -86,9 +87,16 @@
 
   </div>
 
-  <button type="submit" class="btn btn-primary">
-    {{ editing ? 'Update Template' : 'Guardar plantilla' }}
-  </button>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">
+      {{ editing ? "Actualizar plantilla" : "Guardar plantilla" }}
+    </button>
+    <button type="button" class="btn-outline" (click)="showPreview()">Vista previa</button>
+    <button type="button" class="btn-outline" [disabled]="busy" (click)="sendTest()">
+      {{ busy ? "Enviando..." : "Enviarme una prueba" }}
+    </button>
+    <button *ngIf="editing" type="button" class="btn-outline" (click)="resetForm()">Cancelar edición</button>
+  </div>
 
 </form>
 
@@ -121,7 +129,7 @@
             Editar
           </button>
 
-          <button (click)="deleteTemplate(template.id)">
+          <button (click)="deleteTemplate(template)">
             Eliminar
           </button>
         </td>
@@ -132,3 +140,10 @@
   </table>
 
 </div>
+
+<app-mail-preview
+  *ngIf="preview"
+  [subject]="preview.subject"
+  [html]="preview.body"
+  (close)="preview = null">
+</app-mail-preview>

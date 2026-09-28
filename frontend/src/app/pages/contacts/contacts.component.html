@@ -11,41 +11,57 @@
     {{ editingId ? 'Actualizar' : 'Añadir' }}
   </button>
 
-  <button *ngIf="editingId" type="button" (click)="cancelEdit()">
+  <button *ngIf="editingId" type="button" class="btn-cancelar" (click)="cancelEdit()">
     Cancelar
   </button>
 
 </form>
 
-<p *ngIf="successMessage" class="success-message">
-  {{ successMessage }}
-</p>
-
-<p *ngIf="errorMessage" class="error-message">
-  {{ errorMessage }}
-</p>
+<div class="table-toolbar">
+  <input
+    type="search"
+    class="search-input"
+    placeholder="Buscar por nombre, email, empresa..."
+    [(ngModel)]="search"
+    name="search"
+  />
+  <span class="counter">{{ filteredContacts.length }} de {{ contacts.length }} contactos</span>
+</div>
 
 <table>
   <tr>
     <th>Nombre</th>
-    <th>Apellidos</th>
     <th>Email</th>
     <th>Teléfono</th>
     <th>Empresa</th>
     <th>Cargo</th>
+    <th>Estado</th>
     <th>Acciones</th>
   </tr>
 
-  <tr *ngFor="let c of contacts">
-    <td>{{ c.first_name }}</td>
-    <td>{{ c.last_name }}</td>
+  <tr *ngFor="let c of filteredContacts" [class.unsubscribed]="c.unsubscribed_at">
+    <td>{{ c.first_name }} {{ c.last_name }}</td>
     <td>{{ c.email }}</td>
     <td>{{ c.phone }}</td>
     <td>{{ c.company }}</td>
     <td>{{ c.position }}</td>
     <td>
-      <button type="button" (click)="editContact(c)">Editar</button>
-      <button type="button" (click)="deleteContact(c.id)">Eliminar</button>
+      <span *ngIf="!c.unsubscribed_at" class="badge badge-green">Suscrito</span>
+      <span *ngIf="c.unsubscribed_at" class="badge badge-gray"
+            [title]="'Baja el ' + (c.unsubscribed_at | date:'short')">De baja</span>
+    </td>
+    <td class="acciones">
+      <button type="button" class="btn-accion" (click)="editContact(c)">Editar</button>
+      <button type="button" class="btn-accion" (click)="toggleSubscription(c)">
+        {{ c.unsubscribed_at ? 'Reactivar' : 'Dar de baja' }}
+      </button>
+      <button type="button" class="btn-accion peligro" (click)="deleteContact(c)">Eliminar</button>
+    </td>
+  </tr>
+
+  <tr *ngIf="filteredContacts.length === 0">
+    <td colspan="7" class="empty">
+      {{ contacts.length === 0 ? 'Todavía no tienes contactos.' : 'Ningún contacto coincide con la búsqueda.' }}
     </td>
   </tr>
 </table>

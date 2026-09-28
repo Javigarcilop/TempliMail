@@ -1,115 +1,187 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ApiService } from '../../services/api.service';
+import { HttpErrorResponse } from '@angular/common/http';
 import { EditorModule } from '@tinymce/tinymce-angular';
+import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { MailPreviewComponent } from '../../shared/mail-preview/mail-preview.component';
+import { MailPreview, Template, TemplateInput, TEMPLATE_VARIABLES } from '../../models/api.models';
+import { environment } from '../../../environments/environment';
+
+const EMPTY_TEMPLATE: TemplateInput = {
+  id: null,
+  name: '',
+  subject: '',
+  content_html: ''
+};
 
 @Component({
   selector: 'app-templates',
   standalone: true,
-  imports: [CommonModule, FormsModule, EditorModule],
+  imports: [CommonModule, FormsModule, EditorModule, MailPreviewComponent],
   templateUrl: './templates.component.html',
   styleUrls: ['./templates.component.css']
 })
 export class TemplatesComponent implements OnInit {
 
-  templates: any[] = [];
+  readonly tinymceApiKey = environment.tinymceApiKey;
+  // Las llaves se exponen desde aquí: en la plantilla, "{{" se interpretaría como interpolación
+  readonly variables = TEMPLATE_VARIABLES.map(v => ({ ...v, tag: `{{${v.key}}}` }));
+  readonly exampleDefault = "{{first_name|amigo}}";
+  readonly exampleUnsubscribe = "{{unsubscribe_url}}";
 
-  templateForm = {
-    id: null as number | null,
-    name: '',
-    subject: '',
-    content_html: ''
-  };
-
+  templates: Template[] = [];
+  templateForm: TemplateInput = { ...EMPTY_TEMPLATE };
   editing = false;
-  message = '';
-  messageVisible = false;
 
-  selectedFile: any = null;
+  selectedFile: Event | null = null;
 
-  constructor(private api: ApiService) {}
+  preview: MailPreview | null = null;
+  busy = false;
+
+  private editor: { insertContent(html: string): void } | null = null;
+
+  constructor(
+    private api: ApiService,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.loadTemplates();
   }
 
+  onEditorInit(event: { editor: { insertContent(html: string): void } }): void {
+    this.editor = event.editor;
+  }
+
   loadTemplates(): void {
-    this.api.getTemplates().subscribe((response: any) => {
-      this.templates = response.data;
+    this.api.getTemplates().subscribe({
+      next: response => this.templates = response.data ?? [],
+      error: () => this.toast.error('No se pudieron cargar las plantillas.')
     });
   }
 
   saveTemplate(): void {
-
-    if (this.editing && this.templateForm.id !== null) {
-
-      this.api.updateTemplate(this.templateForm.id, this.templateForm)
-        .subscribe(() => {
-          this.showMessage('✅ Template updated successfully');
-          this.loadTemplates();
-          this.resetForm();
-        });
-
-    } else {
-
-      this.api.addTemplate(this.templateForm)
-        .subscribe(() => {
-          this.showMessage('✅ Template saved successfully');
-          this.loadTemplates();
-          this.resetForm();
-        });
+    if (!this.templateForm.name.trim() || !this.templateForm.subject.trim()) {
+      this.toast.error('El nombre y el asunto son obligatorios.');
+      return;
     }
+
+    const wasEditing = this.editing && this.templateForm.id != null;
+
+    const request = wasEditing
+      ? this.api.updateTemplate(this.templateForm.id as number, this.templateForm)
+      : this.api.addTemplate(this.templateForm);
+
+    request.subscribe({
+      next: () => {
+        this.toast.success(wasEditing ? 'Plantilla actualizada.' : 'Plantilla guardada.');
+        this.loadTemplates();
+        this.resetForm();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo guardar la plantilla.')
+    });
   }
 
   uploadFile(): void {
+    const input = this.selectedFile?.target as HTMLInputElement | undefined;
+    const file = input?.files?.[0];
 
-    if (this.selectedFile?.target?.files?.length > 0) {
-
-      const file = this.selectedFile.target.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-
-      this.api.uploadTemplateFile(formData).subscribe({
-        next: (response: any) => {
-          if (response.success) {
-            this.templateForm.content_html = response.html;
-            this.showMessage('✅ File loaded into editor');
-          }
-        },
-        error: () => this.showMessage('❌ Upload error')
-      });
+    if (!file) {
+      this.toast.info('Selecciona primero un archivo .docx o .pdf.');
+      return;
     }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.api.uploadTemplateFile(formData).subscribe({
+      next: response => {
+        if (response.success) {
+          this.templateForm.content_html = response.html;
+          this.toast.success('Archivo cargado en el editor.');
+        }
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'Error al subir el archivo.')
+    });
   }
 
-  editTemplate(template: any): void {
-    this.templateForm = { ...template };
+  editTemplate(template: Template): void {
+    this.templateForm = {
+      id: template.id,
+      name: template.name,
+      subject: template.subject,
+      content_html: template.content_html
+    };
     this.editing = true;
+    window.scrollTo?.({ top: 0 });
   }
 
-  deleteTemplate(id: number): void {
-    if (confirm('¿Eliminar plantilla?')) {
-      this.api.deleteTemplate(id).subscribe(() => {
-        this.showMessage('🗑️ Template deleted');
-        this.loadTemplates();
-      });
+  deleteTemplate(template: Template): void {
+    if (!confirm(`¿Eliminar la plantilla "${template.name}"?`)) {
+      return;
     }
+
+    this.api.deleteTemplate(template.id).subscribe({
+      next: () => {
+        this.toast.success('Plantilla eliminada.');
+        this.loadTemplates();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo eliminar la plantilla.')
+    });
   }
 
   resetForm(): void {
-    this.templateForm = {
-      id: null,
-      name: '',
-      subject: '',
-      content_html: ''
-    };
+    this.templateForm = { ...EMPTY_TEMPLATE };
     this.editing = false;
     this.selectedFile = null;
   }
 
-  showMessage(text: string): void {
-    this.message = text;
-    this.messageVisible = true;
-    setTimeout(() => this.messageVisible = false, 3000);
+  // ---------------------------------------------------------------
+  // Variables, vista previa y prueba
+  // ---------------------------------------------------------------
+
+  insertVariable(key: string): void {
+    const tag = `{{${key}}}`;
+
+    if (this.editor) {
+      this.editor.insertContent(tag);
+    } else {
+      this.templateForm.content_html += tag;
+    }
+  }
+
+  showPreview(): void {
+    this.api.previewMail(this.mailPayload()).subscribe({
+      next: response => this.preview = response.data,
+      error: (err: HttpErrorResponse) =>
+        this.toast.error(err.error?.error ?? 'No se pudo generar la vista previa.')
+    });
+  }
+
+  sendTest(): void {
+    this.busy = true;
+
+    this.api.sendTestMail(this.mailPayload()).subscribe({
+      next: response => {
+        this.busy = false;
+        this.toast.success(`Correo de prueba enviado a ${response.sent_to}.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.busy = false;
+        this.toast.error(err.error?.error ?? 'No se pudo enviar la prueba.');
+      }
+    });
+  }
+
+  private mailPayload() {
+    return {
+      subject: this.templateForm.subject,
+      content_html: this.templateForm.content_html
+    };
   }
 }
