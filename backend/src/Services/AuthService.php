@@ -1,30 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Services;
 
+use TempliMail\Exceptions\ApiException;
 use TempliMail\Models\AuthModel;
-use TempliMail\Services\JwtService;
-use Exception;
-use DomainException;
 
 class AuthService
 {
+    private const MAX_FAILURES_PER_USER = 5;
+    private const MAX_FAILURES_PER_IP   = 30;
+    private const LOCK_MINUTES          = 15;
+    private const MIN_PASSWORD_LENGTH   = 8;
+
     public static function register(string $username, string $email, string $password): void
     {
-        if (trim($username) === '' || trim($email) === '' || trim($password) === '') {
-            throw new Exception('Invalid input data');
+        $username = trim($username);
+        $email    = trim($email);
+
+        if ($username === '' || $email === '' || $password === '') {
+            throw new ApiException('Datos incompletos');
+        }
+
+        if (mb_strlen($username) > 100 || !preg_match('/^[\p{L}\p{N}_.\-]+$/u', $username)) {
+            throw new ApiException('El usuario solo puede contener letras, numeros, punto, guion y guion bajo');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception('Invalid email format');
+            throw new ApiException('El formato del email no es valido');
         }
 
-        if (strlen($password) < 6) {
-            throw new Exception('Password must be at least 6 characters');
+        if (strlen($password) < self::MIN_PASSWORD_LENGTH) {
+            throw new ApiException('La contraseña debe tener al menos ' . self::MIN_PASSWORD_LENGTH . ' caracteres');
         }
 
         if (AuthModel::findByUsername($username) !== null) {
-            throw new Exception('Username already exists');
+            throw ApiException::conflict('Ese nombre de usuario ya existe');
+        }
+
+        if (AuthModel::findByEmail($email) !== null) {
+            throw ApiException::conflict('Ya existe una cuenta con ese email');
         }
 
         AuthModel::create($username, $email, $password);
@@ -32,30 +48,53 @@ class AuthService
 
     public static function login(string $username, string $password, JwtService $jwtService): string
     {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'cli';
+
+        if (
+            AuthModel::countRecentFailuresByUsername($username, self::LOCK_MINUTES) >= self::MAX_FAILURES_PER_USER ||
+            AuthModel::countRecentFailuresByIp($ip, self::LOCK_MINUTES) >= self::MAX_FAILURES_PER_IP
+        ) {
+            throw new ApiException(
+                'Demasiados intentos fallidos. Vuelve a intentarlo en ' . self::LOCK_MINUTES . ' minutos.',
+                429
+            );
+        }
+
         $user = AuthModel::findByUsername($username);
 
-        if (!$user || !password_verify($password, $user['password_hash'])) {
-            throw new DomainException('Invalid credentials');
+        // Mismo mensaje para usuario inexistente, contrasena erronea o cuenta desactivada
+        if (
+            !$user ||
+            $user['deleted_at'] !== null ||
+            !password_verify($password, $user['password_hash'])
+        ) {
+            AuthModel::recordFailedLogin($username, $ip);
+            throw new ApiException('Credenciales incorrectas', 401);
         }
 
-        if ($user['deleted_at'] !== null) {
-            throw new DomainException('User inactive');
-        }
+        AuthModel::clearFailedLogins($username);
 
         return $jwtService->generate($user);
     }
 
-    public static function changePassword(int $userId, string $newPassword): void
+    /** Invalida todos los tokens del usuario (cierre de sesion). */
+    public static function logout(int $userId): void
     {
-        if (strlen($newPassword) < 6) {
-            throw new Exception('Password must be at least 6 characters');
-        }
-
-        AuthModel::updatePassword($userId, $newPassword);
+        AuthModel::incrementTokenVersion($userId);
     }
 
-    public static function deleteAccount(int $userId): void
+    public static function currentUser(int $userId): array
     {
-        AuthModel::softDelete($userId);
+        $user = AuthModel::findById($userId);
+
+        if (!$user) {
+            throw ApiException::notFound('Usuario no encontrado');
+        }
+
+        return [
+            'id'       => (int) $user['id'],
+            'username' => $user['username'],
+            'email'    => $user['email'],
+        ];
     }
 }

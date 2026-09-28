@@ -43,6 +43,60 @@ class AuthModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public static function findByEmail(string $email): ?array
+    {
+        $stmt = DB::get()->prepare("SELECT id FROM users WHERE email = :email LIMIT 1");
+        $stmt->execute(['email' => $email]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    // -----------------------------------------------------------------
+    // Proteccion contra fuerza bruta
+    // -----------------------------------------------------------------
+
+    public static function recordFailedLogin(string $username, string $ip): void
+    {
+        $db = DB::get();
+
+        $db->prepare("INSERT INTO login_attempts (username, ip) VALUES (:username, :ip)")
+           ->execute(['username' => mb_substr($username, 0, 100), 'ip' => $ip]);
+
+        // Limpieza oportunista de registros antiguos
+        $db->exec("DELETE FROM login_attempts WHERE attempted_at < UTC_TIMESTAMP() - INTERVAL 1 DAY");
+    }
+
+    public static function countRecentFailuresByUsername(string $username, int $minutes): int
+    {
+        $stmt = DB::get()->prepare("
+            SELECT COUNT(*) FROM login_attempts
+            WHERE username = :username
+              AND attempted_at > UTC_TIMESTAMP() - INTERVAL $minutes MINUTE
+        ");
+        $stmt->execute(['username' => mb_substr($username, 0, 100)]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public static function countRecentFailuresByIp(string $ip, int $minutes): int
+    {
+        $stmt = DB::get()->prepare("
+            SELECT COUNT(*) FROM login_attempts
+            WHERE ip = :ip
+              AND attempted_at > UTC_TIMESTAMP() - INTERVAL $minutes MINUTE
+        ");
+        $stmt->execute(['ip' => $ip]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public static function clearFailedLogins(string $username): void
+    {
+        DB::get()
+            ->prepare("DELETE FROM login_attempts WHERE username = :username")
+            ->execute(['username' => mb_substr($username, 0, 100)]);
+    }
+
     public static function create(string $username, string $email, string $password): void
     {
         $db = DB::get();

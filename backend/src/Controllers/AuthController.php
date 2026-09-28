@@ -1,98 +1,61 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Controllers;
 
-use TempliMail\Services\JwtService;
+use TempliMail\Exceptions\ApiException;
 use TempliMail\Services\AuthService;
-use Exception;
+use TempliMail\Services\JwtService;
+use TempliMail\Utils\Env;
 
-class AuthController
+class AuthController extends BaseController
 {
-    private JwtService $jwtService;
-
-    public function __construct()
-    {
-        $this->jwtService = new JwtService($_ENV['JWT_SECRET']);
-    }
-
     public function login(): void
     {
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
+        $this->respond(function (): array {
+            $data = $this->body();
 
-            if (
-                !$data ||
-                empty($data['username']) ||
-                empty($data['password'])
-            ) {
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false,
-                    'error'   => 'Incomplete data'
-                ]);
-                return;
+            if (empty($data['username']) || empty($data['password'])) {
+                throw new ApiException('Usuario y contraseña son obligatorios');
             }
 
             $token = AuthService::login(
-                $data['username'],
-                $data['password'],
-                $this->jwtService
+                (string) $data['username'],
+                (string) $data['password'],
+                new JwtService(Env::get('JWT_SECRET', ''))
             );
 
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'token'   => $token
-            ]);
-
-        } catch (Exception $e) {
-
-            http_response_code(401);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return ['token' => $token];
+        });
     }
 
     public function register(): void
     {
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
-
-            if (
-                !$data ||
-                empty($data['username']) ||
-                empty($data['email']) ||
-                empty($data['password'])
-            ) {
-                http_response_code(400);
-                echo json_encode([
-                    'success' => false,
-                    'error'   => 'Incomplete data'
-                ]);
-                return;
-            }
+        $this->respond(function (): array {
+            $data = $this->body();
 
             AuthService::register(
-                $data['username'],
-                $data['email'],
-                $data['password']
+                (string) ($data['username'] ?? ''),
+                (string) ($data['email'] ?? ''),
+                (string) ($data['password'] ?? '')
             );
 
-            http_response_code(201);
-            echo json_encode([
-                'success' => true,
-                'message' => 'User created successfully'
-            ]);
+            return ['message' => 'Usuario creado correctamente'];
+        }, 201);
+    }
 
-        } catch (Exception $e) {
+    public function me(): void
+    {
+        $this->respond(fn(): array => ['data' => AuthService::currentUser($this->userId())]);
+    }
 
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+    public function logout(): void
+    {
+        $this->respond(function (): array {
+            AuthService::logout($this->userId());
+
+            return [];
+        });
     }
 }
