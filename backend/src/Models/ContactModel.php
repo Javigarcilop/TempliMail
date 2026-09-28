@@ -25,7 +25,14 @@ class ContactModel
 
         $stmt->execute(['user_id' => $userId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $contacts    = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $memberships = GroupModel::membershipsByContact($userId);
+
+        foreach ($contacts as &$contact) {
+            $contact['group_ids'] = $memberships[(int) $contact['id']] ?? [];
+        }
+
+        return $contacts;
     }
 
     /**
@@ -73,7 +80,7 @@ class ContactModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function create(int $userId, array $data): void
+    public static function create(int $userId, array $data): int
     {
         $email = self::validEmail($data['email'] ?? '');
 
@@ -81,7 +88,8 @@ class ContactModel
             throw ApiException::conflict('Ya existe un contacto con ese email');
         }
 
-        $stmt = DB::get()->prepare("
+        $db   = DB::get();
+        $stmt = $db->prepare("
             INSERT INTO contacts
             (user_id, first_name, last_name, email, phone, company, position)
             VALUES (:user_id, :first_name, :last_name, :email, :phone, :company, :position)
@@ -96,6 +104,8 @@ class ContactModel
             'company'    => self::nullable($data['company'] ?? null),
             'position'   => self::nullable($data['position'] ?? null),
         ]);
+
+        return (int) $db->lastInsertId();
     }
 
     public static function update(int $userId, int $id, array $data): void
@@ -148,6 +158,85 @@ class ContactModel
         if ($stmt->rowCount() === 0) {
             throw ApiException::notFound('Contacto no encontrado');
         }
+    }
+
+    /**
+     * Importacion masiva (CSV ya parseado en el navegador).
+     * Se omiten emails repetidos (en el fichero o ya existentes) y se informan los invalidos.
+     *
+     * @param  array<int,array<string,mixed>> $rows
+     * @return array{created:int,duplicates:int,invalid:array<int,array{row:int,email:string,reason:string}>}
+     */
+    public static function importMany(int $userId, array $rows, ?int $groupId = null): array
+    {
+        if ($groupId !== null && !GroupModel::owns($userId, $groupId)) {
+            throw ApiException::notFound('Grupo no encontrado');
+        }
+
+        $db = DB::get();
+
+        $stmt = $db->prepare("SELECT LOWER(email) FROM contacts WHERE user_id = :user_id AND deleted_at IS NULL");
+        $stmt->execute(['user_id' => $userId]);
+        $known = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
+
+        $insert = $db->prepare("
+            INSERT INTO contacts (user_id, first_name, last_name, email, phone, company, position)
+            VALUES (:user_id, :first_name, :last_name, :email, :phone, :company, :position)
+        ");
+
+        $created    = 0;
+        $duplicates = 0;
+        $invalid    = [];
+        $newIds     = [];
+
+        $db->beginTransaction();
+
+        try {
+            foreach ($rows as $index => $row) {
+                $email = trim((string) ($row['email'] ?? ''));
+
+                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 255) {
+                    if (count($invalid) < 50) {
+                        $invalid[] = [
+                            'row'    => $index + 1,
+                            'email'  => mb_substr($email, 0, 80),
+                            'reason' => $email === '' ? 'Email vacío' : 'Email no válido',
+                        ];
+                    }
+                    continue;
+                }
+
+                if (isset($known[strtolower($email)])) {
+                    $duplicates++;
+                    continue;
+                }
+
+                $insert->execute([
+                    'user_id'    => $userId,
+                    'first_name' => self::nullable(isset($row['first_name']) ? mb_substr((string) $row['first_name'], 0, 100) : null),
+                    'last_name'  => self::nullable(isset($row['last_name']) ? mb_substr((string) $row['last_name'], 0, 100) : null),
+                    'email'      => $email,
+                    'phone'      => self::nullable(isset($row['phone']) ? mb_substr((string) $row['phone'], 0, 50) : null),
+                    'company'    => self::nullable(isset($row['company']) ? mb_substr((string) $row['company'], 0, 150) : null),
+                    'position'   => self::nullable(isset($row['position']) ? mb_substr((string) $row['position'], 0, 150) : null),
+                ]);
+
+                $known[strtolower($email)] = true;
+                $newIds[] = (int) $db->lastInsertId();
+                $created++;
+            }
+
+            if ($groupId !== null) {
+                GroupModel::addContacts($groupId, $newIds);
+            }
+
+            $db->commit();
+        } catch (Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+
+        return ['created' => $created, 'duplicates' => $duplicates, 'invalid' => $invalid];
     }
 
     /** Baja / alta manual desde el panel. */

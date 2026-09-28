@@ -15,11 +15,10 @@ class ContactController extends BaseController
 
     public function create(): void
     {
-        $this->respond(function (): array {
-            ContactService::create($this->userId(), $this->body());
-
-            return [];
-        }, 201);
+        $this->respond(
+            fn(): array => ['id' => ContactService::create($this->userId(), $this->body())],
+            201
+        );
     }
 
     public function update(int $id): void
@@ -50,5 +49,24 @@ class ContactController extends BaseController
 
             return [];
         });
+    }
+
+    /** PUT /contacts/{id}/groups  {"group_ids": [1, 2]} */
+    public function setGroups(int $id): void
+    {
+        $this->respond(function () use ($id): array {
+            ContactService::setGroups($this->userId(), $id, $this->body());
+
+            return [];
+        });
+    }
+
+    /** POST /contacts/import  {"contacts": [...], "group_id": 3?} */
+    public function import(): void
+    {
+        $this->respond(
+            fn(): array => ContactService::import($this->userId(), $this->body()),
+            201
+        );
     }
 }
