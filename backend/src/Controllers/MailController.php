@@ -1,159 +1,79 @@
 <?php
 
+declare(strict_types=1);
+
 namespace TempliMail\Controllers;
 
 use TempliMail\Services\MailService;
-use TempliMail\Models\EmailCampaignModel;
-use TempliMail\Models\EmailDeliveryModel;
-use Exception;
 
-class MailController
+class MailController extends BaseController
 {
-
     public function sendSingle(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-            $data = json_decode(file_get_contents('php://input'), true);
+        $this->respond(function (): array {
+            MailService::sendSingle($this->userId(), $this->body());
 
-            MailService::sendSingle($userId, $data);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true
-            ]);
-        } catch (Exception $e) {
-
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+            return [];
+        });
     }
 
-    /**
-     * Create campaign and optionally send immediately
-     */
+    /** POST /mail/preview */
+    public function preview(): void
+    {
+        $this->respond(fn(): array => ['data' => MailService::preview($this->userId(), $this->body())]);
+    }
+
+    /** POST /mail/test  (envia una copia al email del propio usuario) */
+    public function sendTest(): void
+    {
+        $this->respond(fn(): array => ['sent_to' => MailService::sendTest($this->userId(), $this->body())]);
+    }
+
+    /** Encola una campana (inmediata o programada). */
     public function sendMassive(): void
     {
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
-
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $result = MailService::sendMassive($userId, $data);
-
-            http_response_code(201);
-            echo json_encode([
-                'success'   => true,
-                'scheduled' => $result['scheduled']
-            ]);
-        } catch (Exception $e) {
-
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+        $this->respond(
+            fn(): array => MailService::sendMassive($this->userId(), $this->body()),
+            201
+        );
     }
 
-    /**
-     * Get campaign history
-     */
     public function getHistory(): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $campaigns = EmailCampaignModel::getAllByUser($userId);
-
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'data'    => $campaigns
-            ]);
-        } catch (Exception $e) {
-
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * Manually trigger scheduled campaigns
-     * (esto será sustituido por worker CLI en el futuro)
-     */
-    public function processScheduled(): void
-    {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
-
-            $campaigns = EmailCampaignModel::getScheduledByUser($userId);
-
-            $processed = 0;
-
-            foreach ($campaigns as $campaign) {
-                MailService::processCampaign($userId, (int)$campaign['id']);
-                $processed++;
-            }
-
-            http_response_code(200);
-            echo json_encode([
-                'success'   => true,
-                'processed' => $processed
-            ]);
-        } catch (Exception $e) {
-
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => $e->getMessage()
-            ]);
-        }
+        $this->respond(fn(): array => ['data' => MailService::getHistory($this->userId())]);
     }
 
     public function getCampaignDeliveries(int $campaignId): void
     {
-        try {
-            $userId = (int) $_SERVER['AUTH_USER_ID'];
+        $this->respond(fn(): array => [
+            'data' => MailService::getDeliveries($this->userId(), $campaignId),
+        ]);
+    }
 
-            $deliveries = EmailDeliveryModel::getByCampaign($campaignId, $userId);
+    public function cancelCampaign(int $campaignId): void
+    {
+        $this->respond(function () use ($campaignId): array {
+            MailService::cancelCampaign($this->userId(), $campaignId);
 
-            http_response_code(200);
-            echo json_encode([
-                'success' => true,
-                'data'    => $deliveries,
-            ]);
-        } catch (Exception) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error'   => 'Internal server error',
-            ]);
-        }
+            return [];
+        });
+    }
+
+    public function retryFailed(int $campaignId): void
+    {
+        $this->respond(fn(): array => [
+            'requeued' => MailService::retryFailed($this->userId(), $campaignId),
+        ]);
     }
 
     /**
-     * Simple preview rendering test
+     * Procesa a mano las campanas vencidas del usuario. Normalmente lo hace el
+     * worker; este endpoint sirve de respaldo si el worker no esta en marcha.
      */
-    public function previewTest(): void
+    public function processScheduled(): void
     {
-        $template = "Hello {{name}}, welcome to {{app}}";
-
-        $data = [
-            'name' => 'Javi',
-            'app'  => 'TempliMail'
-        ];
-
-        foreach ($data as $key => $value) {
-            $template = str_replace('{{' . $key . '}}', $value, $template);
-        }
-
-        echo $template;
+        $this->respond(fn(): array => [
+            'processed' => MailService::processDueForUser($this->userId()),
+        ]);
     }
 }
