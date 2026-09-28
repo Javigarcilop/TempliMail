@@ -41,8 +41,8 @@ export class RegisterComponent {
       return;
     }
 
-    if (this.password.length < 6) {
-      alert(this.showMessage('La contraseña debe tener al menos 6 caracteres', true));
+    if (this.password.length < 8) {
+      this.showMessage('La contraseña debe tener al menos 8 caracteres', true);
       return;
     }
 

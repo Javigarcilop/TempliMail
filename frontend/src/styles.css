@@ -19,3 +19,23 @@ body>app-root {
   width: 100%;
   height: 100%;
 }
+
+/* ---------- Utilidades globales ---------- */
+
+.text-danger  { color: #a94442; }
+.text-success { color: #276749; }
+
+/* Etiquetas de estado (historial, contactos...) */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-green  { background: #e6f4ea; color: #276749; }
+.badge-orange { background: #fdf0e1; color: #b45f06; }
+.badge-blue   { background: #e8f1fb; color: #1f4e79; }
+.badge-red    { background: #fcebea; color: #a94442; }
+.badge-gray   { background: #eceff3; color: #5b6675; }

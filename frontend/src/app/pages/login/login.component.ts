@@ -1,51 +1,69 @@
-import { Component } from '@angular/core';
-import { Router, RouterModule } from '@angular/router'
-import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
+import { setToken } from '../../utils/token';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterModule, CommonModule], 
+  imports: [FormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
 
   username = '';
   password = '';
 
+  loading = false;
+  errorMessage = '';
+  infoMessage = '';
+
   constructor(
     private api: ApiService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
-  onLogin(): void {
+  ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.has('expired')) {
+      this.infoMessage = 'Tu sesión ha caducado. Inicia sesión de nuevo.';
+    }
+  }
 
+  onLogin(): void {
     if (!this.username || !this.password) {
-      alert('Completa todos los campos');
+      this.errorMessage = 'Completa todos los campos.';
       return;
     }
-  
-    this.api.login({
-      username: this.username,
-      password: this.password
-    }).subscribe({
-      next: (response) => {
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.infoMessage = '';
+
+    this.api.login({ username: this.username, password: this.password }).subscribe({
+      next: response => {
+        this.loading = false;
+
         if (!response?.success || !response?.token) {
-          alert('❌ Respuesta de login inválida');
+          this.errorMessage = 'Respuesta de inicio de sesión no válida.';
           return;
         }
 
-        localStorage.setItem('token', response.token);
-        localStorage.removeItem('loggedIn');
-
+        setToken(response.token);
         this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
-        console.error('Error login:', err);
-        alert('❌ Credenciales incorrectas');
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+
+        if (err.status === 0) {
+          this.errorMessage = 'No se pudo conectar con el servidor.';
+        } else {
+          // 401 credenciales incorrectas, 429 demasiados intentos...
+          this.errorMessage = err.error?.error ?? 'No se pudo iniciar sesión.';
+        }
       }
     });
   }

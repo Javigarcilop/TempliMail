@@ -1,6 +1,6 @@
 <div class="dashboard-wrapper">
 
-  <h2>Bienvenida 👋</h2>
+  <h2>Hola{{ username ? ', ' + username : '' }} 👋</h2>
   <p class="dashboard-subtitle">Resumen del sistema</p>
 
   <div class="dashboard-cards">
@@ -25,7 +25,7 @@
   <div class="dashboard-actions">
     <button (click)="goTo('send')" class="dashboard-btn">Enviar correo</button>
     <button (click)="goTo('templates')" class="dashboard-btn">Crear plantilla</button>
-    <button (click)="goTo('contacts')" class="dashboard-btn">Ver contactos</button>
+    <button (click)="goTo('contactos')" class="dashboard-btn">Ver contactos</button>
   </div>
 
   <div class="dashboard-summary">

@@ -1,16 +1,21 @@
 <div class="sidebar">
 
-    <img src="assets/TempliMail_logo_1_.png" alt="TempliMail" class="login-logo" />
-  
-    <nav>
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/send" routerLinkActive="active">Enviar</a>
-      <a routerLink="/mass-mail" routerLinkActive="active">Masivo</a>
-      <a routerLink="/contactos" routerLinkActive="active">Contactos</a>
-      <a routerLink="/templates" routerLinkActive="active">Plantillas</a>
-      <a routerLink="/historial" routerLinkActive="active">Historial</a>
-      <a href="/login" (click)="logout($event)">Salir</a>
-    </nav>
-  
+  <img src="assets/TempliMail_logo_1_.png" alt="TempliMail" class="login-logo" />
+
+  <nav>
+    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    <a routerLink="/send" routerLinkActive="active">Enviar</a>
+    <a routerLink="/mass-mail" routerLinkActive="active">Masivo</a>
+    <a routerLink="/contactos" routerLinkActive="active">Contactos</a>
+    <a routerLink="/templates" routerLinkActive="active">Plantillas</a>
+    <a routerLink="/historial" routerLinkActive="active">Historial</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    @if (username()) {
+      <span class="user">👤 {{ username() }}</span>
+    }
+    <a href="/login" (click)="logout($event)">Salir</a>
   </div>
-  
+
+</div>

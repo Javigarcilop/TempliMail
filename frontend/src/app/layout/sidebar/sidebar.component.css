@@ -41,3 +41,22 @@
 .sidebar a.router-link-active {
   background-color: #4A90E2;
 }
+
+/* Pie: usuario y cierre de sesión */
+.sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-footer .user {
+  font-size: 13px;
+  opacity: 0.8;
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

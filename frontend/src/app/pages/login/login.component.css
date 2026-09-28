@@ -122,3 +122,24 @@
   text-decoration: underline;
 }
 
+
+/* Mensajes del formulario */
+.form-message {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.form-message.error {
+  background: #fcebea;
+  color: #a94442;
+  border: 1px solid #f5c6cb;
+}
+
+.form-message.info {
+  background: #e8f1fb;
+  color: #1f4e79;
+  border: 1px solid #c5dcf3;
+}

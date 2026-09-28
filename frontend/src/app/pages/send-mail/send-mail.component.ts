@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { ApiService } from '../../services/api.service';
 import { EditorModule } from '@tinymce/tinymce-angular';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-send-mail',
@@ -14,13 +16,13 @@ import { EditorModule } from '@tinymce/tinymce-angular';
 })
 export class SendMailComponent {
 
+  readonly tinymceApiKey = environment.tinymceApiKey;
+
   to = '';
   subject = '';
   body = '';
 
   loading = false;
-  message = '';
-  isError = false;
 
   aiTopic = '';
   aiSuggestions: string[] = [];
@@ -29,37 +31,33 @@ export class SendMailComponent {
 
   constructor(
     private api: ApiService,
-    private router: Router
+    private toast: ToastService
   ) {}
 
-  onSubmit(form: any): void {
-    if (form.invalid) {
-      this.showMessage('Todos los campos son obligatorios', true);
+  onSubmit(form: NgForm): void {
+    if (form.invalid || !this.body.trim()) {
+      this.toast.error('Destinatario, asunto y mensaje son obligatorios.');
       return;
     }
 
     this.loading = true;
-    this.message = '';
 
     this.api.sendSingleMail({ to: this.to, subject: this.subject, body: this.body })
       .subscribe({
         next: () => {
           this.loading = false;
-          this.showMessage('Correo enviado correctamente ✅', false);
+          this.toast.success('Correo enviado correctamente.');
           form.resetForm();
+          this.body = '';
           this.aiSuggestions = [];
           this.aiTopic = '';
         },
-        error: (err: any) => {
+        error: (err: HttpErrorResponse) => {
           this.loading = false;
-
-          if (err?.status === 401) {
-            localStorage.removeItem('token');
-            this.router.navigate(['/login']);
-            return;
+          // La sesión caducada (401) la gestiona el interceptor
+          if (err.status !== 401) {
+            this.toast.error(err.error?.error ?? 'Error al enviar el correo.');
           }
-
-          this.showMessage(err?.error?.error || 'Error al enviar el correo', true);
         }
       });
   }
@@ -72,13 +70,13 @@ export class SendMailComponent {
     this.aiError = '';
 
     this.api.suggestSubjects(this.aiTopic).subscribe({
-      next: (response: any) => {
+      next: response => {
         this.aiLoading = false;
         this.aiSuggestions = response.subjects ?? [];
       },
-      error: (err: any) => {
+      error: (err: HttpErrorResponse) => {
         this.aiLoading = false;
-        this.aiError = err?.error?.error || 'Error al conectar con la IA';
+        this.aiError = err.error?.error ?? 'Error al conectar con la IA.';
       }
     });
   }
@@ -87,10 +85,5 @@ export class SendMailComponent {
     this.subject = suggestion;
     this.aiSuggestions = [];
     this.aiTopic = '';
-  }
-
-  private showMessage(msg: string, isError: boolean): void {
-    this.message = msg;
-    this.isError = isError;
   }
 }

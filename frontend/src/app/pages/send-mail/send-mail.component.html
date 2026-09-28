@@ -66,7 +66,7 @@
   <br />
 
   <editor
-    apiKey="90fkwvwq8dyv54dm0438f6opzfzf2deaz8j3ss23vmw3gtoq"
+    [apiKey]="tinymceApiKey"
     [(ngModel)]="body"
     name="body"
     required
@@ -82,14 +82,8 @@
   <br />
 
   <button type="submit" [disabled]="loading">
-    {{ loading ? 'Sending...' : 'Send' }}
+    {{ loading ? 'Enviando...' : 'Enviar' }}
   </button>
 
 </form>
 
-<p
-  *ngIf="message"
-  [ngClass]="{ 'text-danger': isError, 'text-success': !isError }"
->
-  {{ message }}
-</p>

@@ -1,22 +1,13 @@
-import { Component, OnInit } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './sidebar/sidebar.component';
+import { ToastComponent } from '../shared/toast/toast.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent],
+  imports: [RouterOutlet, SidebarComponent, ToastComponent],
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
-export class LayoutComponent implements OnInit {
-
-  constructor(private router: Router) {}
-
-  ngOnInit(): void {
-    if (!localStorage.getItem('token')) {
-      this.router.navigate(['/login']);
-    }
-  }
-}
+export class LayoutComponent {}
