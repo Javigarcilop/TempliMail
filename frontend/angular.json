@@ -21,10 +21,9 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
-                  "src/assets",
-                  "src/favicon.ico"
-                ],
-
+              "src/assets",
+              "src/favicon.ico"
+            ],
             "styles": [
               "src/styles.css"
             ],
@@ -56,6 +55,27 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "demo": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/demo/demo-mode.ts",
+                  "with": "src/app/demo/demo-mode.demo.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -68,6 +88,9 @@
             },
             "development": {
               "buildTarget": "frontend:build:development"
+            },
+            "demo": {
+              "buildTarget": "frontend:build:demo"
             }
           },
           "defaultConfiguration": "development"

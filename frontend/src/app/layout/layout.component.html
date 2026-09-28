@@ -2,6 +2,7 @@
   <app-sidebar></app-sidebar>
 
   <main class="app-content">
+    <div class="demo-banner" *ngIf="demo">Modo demo: datos de ejemplo simulados. No se envía ningún correo real y los cambios se pierden al recargar.</div>
     <router-outlet></router-outlet>
   </main>
 </div>

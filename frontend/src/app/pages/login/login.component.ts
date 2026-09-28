@@ -1,21 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { setToken } from '../../utils/token';
+import { DEMO_MODE } from '../../demo/demo-mode';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterModule],
+  imports: [NgIf, FormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
 
-  username = '';
-  password = '';
+  demo = DEMO_MODE;
+  username = DEMO_MODE ? 'demo' : '';
+  password = DEMO_MODE ? 'demo1234' : '';
 
   loading = false;
   errorMessage = '';
