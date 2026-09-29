@@ -1,22 +1,25 @@
 import { Component } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { EditorModule } from '@tinymce/tinymce-angular';
+import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../../environments/environment';
+import { tinymceScriptSrc, tinymceLicenseKey } from '../../demo/tinymce-self-host';
 
 @Component({
   selector: 'app-send-mail',
   standalone: true,
   imports: [FormsModule, EditorModule, CommonModule],
+  providers: [{ provide: TINYMCE_SCRIPT_SRC, useValue: tinymceScriptSrc }],
   templateUrl: './send-mail.component.html',
   styleUrls: ['./send-mail.component.css']
 })
 export class SendMailComponent {
 
   readonly tinymceApiKey = environment.tinymceApiKey;
+  readonly tinymceLicenseKey = tinymceLicenseKey;
 
   to = '';
   subject = '';

@@ -2,12 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { EditorModule } from '@tinymce/tinymce-angular';
+import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { MailPreviewComponent } from '../../shared/mail-preview/mail-preview.component';
 import { MailPreview, Template, TemplateInput, TEMPLATE_VARIABLES } from '../../models/api.models';
 import { environment } from '../../../environments/environment';
+import { tinymceScriptSrc, tinymceLicenseKey } from '../../demo/tinymce-self-host';
 
 const EMPTY_TEMPLATE: TemplateInput = {
   id: null,
@@ -20,12 +21,14 @@ const EMPTY_TEMPLATE: TemplateInput = {
   selector: 'app-templates',
   standalone: true,
   imports: [CommonModule, FormsModule, EditorModule, MailPreviewComponent],
+  providers: [{ provide: TINYMCE_SCRIPT_SRC, useValue: tinymceScriptSrc }],
   templateUrl: './templates.component.html',
   styleUrls: ['./templates.component.css']
 })
 export class TemplatesComponent implements OnInit {
 
   readonly tinymceApiKey = environment.tinymceApiKey;
+  readonly tinymceLicenseKey = tinymceLicenseKey;
   // Las llaves se exponen desde aquí: en la plantilla, "{{" se interpretaría como interpolación
   readonly variables = TEMPLATE_VARIABLES.map(v => ({ ...v, tag: `{{${v.key}}}` }));
   readonly exampleDefault = "{{first_name|amigo}}";
