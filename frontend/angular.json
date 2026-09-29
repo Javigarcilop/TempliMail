@@ -75,6 +75,15 @@
                   "replace": "src/app/demo/demo-mode.ts",
                   "with": "src/app/demo/demo-mode.demo.ts"
                 }
+              ],
+              "assets": [
+                "src/assets",
+                "src/favicon.ico",
+                {
+                  "glob": "**/*",
+                  "input": "node_modules/tinymce",
+                  "output": "tinymce/"
+                }
               ]
             }
           },
