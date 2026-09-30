@@ -2,23 +2,23 @@
 
 <form (ngSubmit)="onSubmit(mailForm)" #mailForm="ngForm">
 
-  <label for="to">Destinatario:</label>
+  <label for="destinatario">Destinatario:</label>
   <input
     type="email"
-    id="to"
-    name="to"
-    [(ngModel)]="to"
+    id="destinatario"
+    name="destinatario"
+    [(ngModel)]="destinatario"
     required
   />
 
   <br /><br />
 
-  <label for="subject">Asunto:</label>
+  <label for="asunto">Asunto:</label>
   <input
     type="text"
-    id="subject"
-    name="subject"
-    [(ngModel)]="subject"
+    id="asunto"
+    name="asunto"
+    [(ngModel)]="asunto"
     required
   />
 
@@ -62,14 +62,14 @@
 
   <br />
 
-  <label for="body">Mensaje:</label>
+  <label for="cuerpo">Mensaje:</label>
   <br />
 
   <editor
     [apiKey]="tinymceApiKey"
     [licenseKey]="tinymceLicenseKey"
-    [(ngModel)]="body"
-    name="body"
+    [(ngModel)]="cuerpo"
+    name="cuerpo"
     required
     [ngModelOptions]="{ standalone: true }"
     [init]="{
@@ -87,4 +87,3 @@
   </button>
 
 </form>
-

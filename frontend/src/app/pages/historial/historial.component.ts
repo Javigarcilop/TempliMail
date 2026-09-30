@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
-import { Campaign, Delivery, DeliveryStatus } from '../../models/api.models';
+import { Campana, Entrega, EstadoEntrega } from '../../models/api.models';
 
 interface StatusInfo {
   label: string;
@@ -23,7 +23,7 @@ const REFRESH_MS = 4000;
 })
 export class HistorialComponent implements OnInit, OnDestroy {
 
-  history: Campaign[] = [];
+  history: Campana[] = [];
   loaded = false;
   visibleCount = PAGE_SIZE;
 
@@ -33,7 +33,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
   maxDateFilter = '';
 
   expandedCampaignId: number | null = null;
-  deliveries: Partial<Record<number, Delivery[]>> = {};
+  deliveries: Partial<Record<number, Entrega[]>> = {};
   loadingDeliveries: Partial<Record<number, boolean>> = {};
   actionInProgress: number | null = null;
 
@@ -90,21 +90,21 @@ export class HistorialComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------
 
   /** Campaña que se está enviando o que está a punto de hacerlo. */
-  isActive(c: Campaign): boolean {
-    return c.status === 'processing' || this.isQueued(c);
+  isActive(c: Campana): boolean {
+    return c.estado === 'processing' || this.isQueued(c);
   }
 
-  private isQueued(c: Campaign): boolean {
-    return c.status === 'scheduled'
-      && (c.scheduled_at === null || new Date(c.scheduled_at).getTime() <= Date.now() + REFRESH_MS);
+  private isQueued(c: Campana): boolean {
+    return c.estado === 'scheduled'
+      && (c.programado_en === null || new Date(c.programado_en).getTime() <= Date.now() + REFRESH_MS);
   }
 
-  statusInfo(c: Campaign): StatusInfo {
-    switch (c.status) {
+  statusInfo(c: Campana): StatusInfo {
+    switch (c.estado) {
       case 'processing':
         return { label: 'Enviando', badge: 'badge-blue' };
       case 'completed':
-        return c.failed > 0
+        return c.fallidos > 0
           ? { label: 'Con errores', badge: 'badge-red' }
           : { label: 'Completada', badge: 'badge-green' };
       case 'cancelled':
@@ -116,24 +116,24 @@ export class HistorialComponent implements OnInit, OnDestroy {
     }
   }
 
-  progress(c: Campaign): number {
-    if (c.total_recipients === 0) {
+  progress(c: Campana): number {
+    if (c.total_destinatarios === 0) {
       return 100;
     }
 
-    return Math.round(((c.sent + c.failed + c.skipped) / c.total_recipients) * 100);
+    return Math.round(((c.enviados + c.fallidos + c.omitidos) / c.total_destinatarios) * 100);
   }
 
   /** Fecha relevante: la programada si la hay; si no, la de creación. */
-  displayDate(c: Campaign): string {
-    return c.scheduled_at ?? c.created_at;
+  displayDate(c: Campana): string {
+    return c.programado_en ?? c.creado_en;
   }
 
-  deliveryLabel(status: DeliveryStatus): string {
+  deliveryLabel(status: EstadoEntrega): string {
     return { pending: 'Pendiente', sent: 'Enviado', failed: 'Fallido', skipped: 'Omitido' }[status];
   }
 
-  deliveryBadge(status: DeliveryStatus): string {
+  deliveryBadge(status: EstadoEntrega): string {
     return { pending: 'badge-blue', sent: 'badge-green', failed: 'badge-red', skipped: 'badge-gray' }[status];
   }
 
@@ -141,13 +141,13 @@ export class HistorialComponent implements OnInit, OnDestroy {
   // Filtros y paginación
   // ---------------------------------------------------------------
 
-  get filteredHistory(): Campaign[] {
+  get filteredHistory(): Campana[] {
     const text = this.textFilter.trim().toLowerCase();
     const min = this.minDateFilter ? new Date(this.minDateFilter + 'T00:00:00') : null;
     const max = this.maxDateFilter ? new Date(this.maxDateFilter + 'T23:59:59') : null;
 
     return this.history.filter(c => {
-      if (text && !`${c.name ?? ''} ${c.subject}`.toLowerCase().includes(text)) {
+      if (text && !`${c.nombre ?? ''} ${c.asunto}`.toLowerCase().includes(text)) {
         return false;
       }
 
@@ -161,7 +161,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
     });
   }
 
-  get visibleHistory(): Campaign[] {
+  get visibleHistory(): Campana[] {
     return this.filteredHistory.slice(0, this.visibleCount);
   }
 
@@ -197,8 +197,8 @@ export class HistorialComponent implements OnInit, OnDestroy {
   // Acciones
   // ---------------------------------------------------------------
 
-  retryFailed(c: Campaign): void {
-    if (!confirm(`¿Reintentar el envío a los ${c.failed} destinatario(s) fallidos?`)) {
+  retryFailed(c: Campana): void {
+    if (!confirm(`¿Reintentar el envío a los ${c.fallidos} destinatario(s) fallidos?`)) {
       return;
     }
 
@@ -207,7 +207,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
     this.api.retryFailedDeliveries(c.id).subscribe({
       next: response => {
         this.actionInProgress = null;
-        this.toast.success(`${response.requeued} entrega(s) vuelven a la cola.`);
+        this.toast.success(`${response.reencolados} entrega(s) vuelven a la cola.`);
         this.afterAction(c.id);
       },
       error: (err: HttpErrorResponse) => {
@@ -217,7 +217,7 @@ export class HistorialComponent implements OnInit, OnDestroy {
     });
   }
 
-  cancel(c: Campaign): void {
+  cancel(c: Campana): void {
     if (!confirm('¿Cancelar esta campaña programada?')) {
       return;
     }

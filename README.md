@@ -18,7 +18,7 @@
 - **Grupos de contactos** (un contacto puede estar en varios) y filtro por grupo al preparar una campaña
 - **Importar / exportar CSV**: reconoce cabeceras en español e inglés, separadores `,` `;` y tabulador, omite duplicados e informa de las filas no válidas
 - Plantillas: editor visual (TinyMCE), importación desde `.docx` / `.pdf`, vista previa y correo de prueba
-- **Variables de personalización**: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{company}}`, `{{position}}`, `{{email}}`, con valor por defecto (`{{first_name|amigo}}`)
+- **Variables de personalización**: `{{nombre}}`, `{{apellidos}}`, `{{nombre_completo}}`, `{{empresa}}`, `{{cargo}}`, `{{correo}}`, con valor por defecto (`{{nombre|amigo}}`)
 - **Campañas masivas en cola**: las envía un worker en segundo plano (no dependen del navegador), con conexión SMTP reutilizada, pausa entre envíos y hasta 3 intentos por destinatario
 - Envío programado (las horas se guardan en UTC) y cancelación de campañas programadas
 - Historial con progreso en tiempo real, detalle por destinatario y **reintento de fallidos**

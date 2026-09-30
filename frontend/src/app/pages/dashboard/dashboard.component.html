@@ -1,23 +1,23 @@
 <div class="dashboard-wrapper">
 
-  <h2>Hola{{ username ? ', ' + username : '' }} 👋</h2>
+  <h2>Hola{{ nombreUsuario ? ', ' + nombreUsuario : '' }} 👋</h2>
   <p class="dashboard-subtitle">Resumen del sistema</p>
 
   <div class="dashboard-cards">
 
     <div class="card">
       <h3>Campañas enviadas</h3>
-      <p>{{ stats.total_campaigns }}</p>
+      <p>{{ stats.total_campanas }}</p>
     </div>
 
     <div class="card">
       <h3>Contactos activos</h3>
-      <p>{{ stats.total_contacts }}</p>
+      <p>{{ stats.total_contactos }}</p>
     </div>
 
     <div class="card">
       <h3>Plantillas creadas</h3>
-      <p>{{ stats.total_templates }}</p>
+      <p>{{ stats.total_plantillas }}</p>
     </div>
 
   </div>
@@ -26,12 +26,12 @@
 
     <div class="card">
       <h3>Correos enviados</h3>
-      <p>{{ stats.total_sent }}</p>
+      <p>{{ stats.total_enviados }}</p>
     </div>
 
     <div class="card">
       <h3>Correos fallidos</h3>
-      <p [class.bad]="stats.total_failed > 0">{{ stats.total_failed }}</p>
+      <p [class.bad]="stats.total_fallidos > 0">{{ stats.total_fallidos }}</p>
     </div>
 
     <div class="card">
@@ -53,13 +53,13 @@
       <p class="chart-empty">Todavía no hay envíos en este periodo.</p>
     } @else {
       <div class="chart" role="img" [attr.aria-label]="'Correos enviados por día: ' + totalLast14Days + ' en total'">
-        @for (day of activity; track day.date) {
-          <div class="bar-col" [title]="(asDate(day) | date:'d MMM':'UTC') + ': ' + day.sent + ' enviados'">
-            <span class="bar-value">{{ day.sent > 0 ? day.sent : '' }}</span>
+        @for (dia of actividad; track dia.fecha) {
+          <div class="bar-col" [title]="(asDate(dia) | date:'d MMM':'UTC') + ': ' + dia.enviados + ' enviados'">
+            <span class="bar-value">{{ dia.enviados > 0 ? dia.enviados : '' }}</span>
             <div class="bar-track">
-              <div class="bar" [style.height.%]="barHeight(day)"></div>
+              <div class="bar" [style.height.%]="barHeight(dia)"></div>
             </div>
-            <span class="bar-label">{{ asDate(day) | date:'dd/MM':'UTC' }}</span>
+            <span class="bar-label">{{ asDate(dia) | date:'dd/MM':'UTC' }}</span>
           </div>
         }
       </div>
@@ -78,13 +78,13 @@
     <ul>
       <li>
         <strong>Plantilla más usada:</strong>
-        {{ summary.most_used_template }}
-        ({{ summary.total_uses }} envíos)
+        {{ resumen.plantillaMasUsada }}
+        ({{ resumen.totalUsos }} envíos)
       </li>
       <li>
         <strong>Contacto más frecuente:</strong>
-        {{ summary.top_contact }}
-        ({{ summary.total_received }} correos)
+        {{ resumen.contactoTop }}
+        ({{ resumen.totalRecibidos }} correos)
       </li>
     </ul>
   </div>

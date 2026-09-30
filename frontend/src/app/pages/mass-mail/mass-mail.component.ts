@@ -6,7 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { MailPreviewComponent } from '../../shared/mail-preview/mail-preview.component';
-import { Contact, Group, MailPreview, MassiveMailInput, Template } from '../../models/api.models';
+import { Contacto, Grupo, VistaPreviaCorreo, EnvioMasivoInput, Plantilla } from '../../models/api.models';
 
 @Component({
   standalone: true,
@@ -17,9 +17,9 @@ import { Contact, Group, MailPreview, MassiveMailInput, Template } from '../../m
 })
 export class MassMailComponent implements OnInit {
 
-  contacts: Contact[] = [];
-  templates: Template[] = [];
-  groups: Group[] = [];
+  contactos: Contacto[] = [];
+  templates: Plantilla[] = [];
+  grupos: Grupo[] = [];
   /** '' = todos, o el id de un grupo */
   groupFilter: '' | number = '';
 
@@ -31,7 +31,7 @@ export class MassMailComponent implements OnInit {
 
   loading = false;
   busy = false;
-  preview: MailPreview | null = null;
+  preview: VistaPreviaCorreo | null = null;
 
   constructor(
     private api: ApiService,
@@ -41,12 +41,12 @@ export class MassMailComponent implements OnInit {
 
   ngOnInit(): void {
     this.api.getContacts().subscribe({
-      next: response => this.contacts = response.data ?? [],
+      next: response => this.contactos = response.data ?? [],
       error: () => this.toast.error('No se pudieron cargar los contactos.')
     });
 
     this.api.getGroups().subscribe({
-      next: response => this.groups = response.data ?? [],
+      next: response => this.grupos = response.data ?? [],
       error: () => { /* el filtro por grupo es opcional */ }
     });
 
@@ -60,26 +60,26 @@ export class MassMailComponent implements OnInit {
   // Datos derivados
   // ---------------------------------------------------------------
 
-  get selectedTemplate(): Template | undefined {
+  get selectedTemplate(): Plantilla | undefined {
     return this.templates.find(t => t.id === this.selectedTemplateId);
   }
 
-  get filteredContacts(): Contact[] {
+  get filteredContacts(): Contacto[] {
     const term = this.search.trim().toLowerCase();
 
-    return this.contacts.filter(c => {
-      if (typeof this.groupFilter === 'number' && !c.group_ids.includes(this.groupFilter)) {
+    return this.contactos.filter(c => {
+      if (typeof this.groupFilter === 'number' && !c.ids_grupo.includes(this.groupFilter)) {
         return false;
       }
 
-      return !term || [c.first_name, c.last_name, c.email, c.company]
+      return !term || [c.nombre, c.apellidos, c.correo, c.empresa]
         .some(value => value?.toLowerCase().includes(term));
     });
   }
 
   /** Contactos visibles que pueden recibir correo (los dados de baja no). */
-  private get selectableVisible(): Contact[] {
-    return this.filteredContacts.filter(c => !c.unsubscribed_at);
+  private get selectableVisible(): Contacto[] {
+    return this.filteredContacts.filter(c => !c.baja_en);
   }
 
   get allVisibleSelected(): boolean {
@@ -89,7 +89,7 @@ export class MassMailComponent implements OnInit {
   }
 
   get unsubscribedCount(): number {
-    return this.contacts.filter(c => c.unsubscribed_at).length;
+    return this.contactos.filter(c => c.baja_en).length;
   }
 
   /** Mínimo permitido para programar (ahora + 1 min), en formato datetime-local. */
@@ -104,7 +104,7 @@ export class MassMailComponent implements OnInit {
   // Selección
   // ---------------------------------------------------------------
 
-  toggleContact(contact: Contact, checked: boolean): void {
+  toggleContact(contact: Contacto, checked: boolean): void {
     if (checked) {
       this.selectedContactIds.add(contact.id);
     } else {
@@ -148,7 +148,7 @@ export class MassMailComponent implements OnInit {
     this.api.sendTestMail(payload).subscribe({
       next: response => {
         this.busy = false;
-        this.toast.success(`Correo de prueba enviado a ${response.sent_to}.`);
+        this.toast.success(`Correo de prueba enviado a ${response.enviado_a}.`);
       },
       error: (err: HttpErrorResponse) => {
         this.busy = false;
@@ -169,13 +169,13 @@ export class MassMailComponent implements OnInit {
       return;
     }
 
-    const payload: MassiveMailInput = {
-      template_id: template.id,
-      contact_ids: [...this.selectedContactIds]
+    const payload: EnvioMasivoInput = {
+      plantilla_id: template.id,
+      ids_contacto: [...this.selectedContactIds]
     };
 
     if (this.campaignName.trim()) {
-      payload.name = this.campaignName.trim();
+      payload.nombre = this.campaignName.trim();
     }
 
     if (this.scheduledAt) {
@@ -187,15 +187,15 @@ export class MassMailComponent implements OnInit {
       }
 
       // Se envía en UTC: el servidor y su cola trabajan en UTC
-      payload.scheduled_at = date.toISOString();
+      payload.programado_en = date.toISOString();
     }
 
     const count = this.selectedContactIds.size;
-    const when = payload.scheduled_at
-      ? `programar para el ${new Date(payload.scheduled_at).toLocaleString()}`
+    const when = payload.programado_en
+      ? `programar para el ${new Date(payload.programado_en).toLocaleString()}`
       : 'enviar ahora';
 
-    if (!confirm(`¿Quieres ${when} "${template.name}" a ${count} contacto(s)?`)) {
+    if (!confirm(`¿Quieres ${when} "${template.nombre}" a ${count} contacto(s)?`)) {
       return;
     }
 
@@ -205,12 +205,12 @@ export class MassMailComponent implements OnInit {
       next: response => {
         this.loading = false;
 
-        const excluded = response.excluded > 0 ? ` (${response.excluded} excluido/s por baja o no válido)` : '';
+        const excluidos = response.excluidos > 0 ? ` (${response.excluidos} excluido/s por baja o no válido)` : '';
 
         this.toast.success(
-          response.scheduled
-            ? `Campaña programada para ${response.recipients} contacto(s)${excluded}.`
-            : `Campaña en cola: ${response.recipients} contacto(s)${excluded}. Se enviará en unos segundos.`
+          response.programado
+            ? `Campaña programada para ${response.destinatarios} contacto(s)${excluidos}.`
+            : `Campaña en cola: ${response.destinatarios} contacto(s)${excluidos}. Se enviará en unos segundos.`
         );
 
         this.router.navigate(['/historial']);
@@ -236,9 +236,9 @@ export class MassMailComponent implements OnInit {
     const firstContactId = this.selectedContactIds.values().next().value;
 
     return {
-      subject: template.subject,
-      content_html: template.content_html,
-      ...(firstContactId !== undefined ? { contact_id: firstContactId } : {})
+      asunto: template.asunto,
+      contenido_html: template.contenido_html,
+      ...(firstContactId !== undefined ? { contacto_id: firstContactId } : {})
     };
   }
 }

@@ -17,9 +17,9 @@ import { ApiService } from '../../services/api.service';
 })
 export class RegisterComponent {
 
-  username = '';
-  email = '';
-  password = '';
+  nombreUsuario = '';
+  correo = '';
+  contrasena = '';
 
   message = '';
   loading = false;
@@ -36,12 +36,12 @@ export class RegisterComponent {
     // Validaciones básicas
     // =========================
 
-    if (!this.username || !this.email || !this.password) {
+    if (!this.nombreUsuario || !this.correo || !this.contrasena) {
       this.showMessage('Todos los campos son obligatorios', true);
       return;
     }
 
-    if (this.password.length < 8) {
+    if (this.contrasena.length < 8) {
       this.showMessage('La contraseña debe tener al menos 8 caracteres', true);
       return;
     }
@@ -54,9 +54,9 @@ export class RegisterComponent {
     // =========================
 
     this.api.register({
-      username: this.username,
-      email: this.email,
-      password: this.password
+      nombre_usuario: this.nombreUsuario,
+      correo: this.correo,
+      contrasena: this.contrasena
     }).subscribe({
       next: () => {
 

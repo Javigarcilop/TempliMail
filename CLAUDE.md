@@ -26,27 +26,28 @@ docker compose logs -f worker              # actividad del worker de envío
 ## Arquitectura
 
 ### Backend (`backend/`)
-- `api/index.php`: entrada única. **Tabla de rutas** `[método, regex, controlador, acción, pública]`; las rutas no públicas pasan por `AuthMiddleware`.
+- `api/index.php`: entrada única. **Tabla de rutas** `[método, regex, controlador, acción, pública]`; las rutas no públicas pasan por `MiddlewareAutenticacion`.
 - `bootstrap.php`: autoload, dotenv, zona UTC, `display_errors` desactivado. Lo usan la API y los scripts de `bin/`.
-- Capas: `Controllers/` (extienden `BaseController::respond()`) → `Services/` (lógica) → `Models/` (PDO, métodos estáticos). Namespace `TempliMail\` → `backend/src/`.
-- **Errores**: lanzar `ApiException` (con código HTTP) para errores que el cliente puede ver. Cualquier otra excepción se registra con `error_log` y responde 500 genérico. No devolver `$e->getMessage()` de excepciones internas.
-- **Seguridad multiusuario**: todas las consultas filtran por `user_id` (`$_SERVER['AUTH_USER_ID']`). Al recibir ids de contactos, validarlos con `ContactModel::getSendableByIds`.
-- Configuración: `Utils\Env::get()`; conexión: `Utils\DB` (variables `DB_*`, sesión en UTC).
+- Capas: `Controllers/` (extienden `ControladorBase::respond()`) → `Services/` (lógica) → `Models/` (PDO, métodos estáticos). Namespace `TempliMail\` → `backend/src/`. Los nombres de clase, columnas y claves JSON están en español (p. ej. `ModeloContacto`, `ServicioAutenticacion`); las carpetas (`Controllers/Models/Services/Utils`) se mantienen en inglés.
+- **Errores**: lanzar `ExcepcionApi` (con código HTTP) para errores que el cliente puede ver. Cualquier otra excepción se registra con `error_log` y responde 500 genérico. No devolver `$e->getMessage()` de excepciones internas.
+- **Seguridad multiusuario**: todas las consultas filtran por `usuario_id` (`$_SERVER['AUTH_USER_ID']`). Al recibir ids de contactos, validarlos con `ModeloContacto::getSendableByIds`.
+- Configuración: `Utils\Entorno::get()`; conexión: `Utils\BD` (variables `DB_*`, sesión en UTC).
 - **Fechas**: se guardan en UTC. Los modelos devuelven ISO 8601 con sufijo `Z` (`DATE_FORMAT(..., '%Y-%m-%dT%H:%i:%sZ')`) para que el navegador las convierta a hora local.
-- Autenticación: JWT HS256 (8 h) con `token_version`; `POST /logout` incrementa la versión e invalida todos los tokens. Login limitado a 5 fallos/15 min por usuario (`login_attempts`).
+- Autenticación: JWT HS256 (8 h) con `version_token`; `POST /logout` incrementa la versión e invalida todos los tokens. Login limitado a 5 fallos/15 min por usuario (`intentos_login`).
 
 ### Cola de envío
-- `POST /send-massive` **solo encola** (campaña `scheduled`; `scheduled_at` NULL = enviar ya). `backend/bin/worker.php` (servicio `worker`) la procesa.
-- `EmailCampaignModel::claim()` reclama la campaña de forma atómica (evita duplicados); `heartbeat()` marca actividad y una campaña `processing` sin latido 5 min se retoma.
-- `MailService::deliver()`: personaliza por contacto (`Utils\TemplateRenderer`), añade pie y cabeceras de baja (`Utils\Unsubscribe`), reintenta hasta `MAIL_MAX_ATTEMPTS`.
-- Estados de campaña: `scheduled → processing → completed | cancelled`. Entregas: `pending | sent | failed | skipped`.
-- Envíos individuales también quedan en el historial (`type = 'single'`, `contact_id` NULL).
+- `POST /send-massive` **solo encola** (campaña `scheduled`; `programado_en` NULL = enviar ya). `backend/bin/worker.php` (servicio `worker`) la procesa.
+- `ModeloCampanaCorreo::claim()` reclama la campaña de forma atómica (evita duplicados); `heartbeat()` marca actividad y una campaña `processing` sin latido 5 min se retoma.
+- `ServicioCorreo::deliver()`: personaliza por contacto (`Utils\RenderizadorPlantilla`), añade pie y cabeceras de baja (`Utils\Baja`), reintenta hasta `MAIL_MAX_ATTEMPTS`.
+- Estados de campaña: `scheduled → processing → completed | cancelled` (valores guardados en inglés). Entregas: `pending | sent | failed | skipped`.
+- Envíos individuales también quedan en el historial (`tipo = 'single'`, `contacto_id` NULL).
+- Variables de plantilla en español (`{{nombre}}`, `{{correo}}`...); `Utils\RenderizadorPlantilla::ALIAS` reconoce además los nombres antiguos en inglés por compatibilidad con plantillas guardadas antes de traducir el proyecto.
 
 ### Grupos, importación y cuenta
-- Grupos: `contact_groups` + `contact_group_members` (N:M, cascada). `GroupModel::setContactGroups` valida que contacto y grupos sean del usuario. `GET /contacts` devuelve `group_ids` de cada contacto.
-- `POST /contacts/import` (máx. 2000 filas, transacción): omite emails existentes o repetidos (sin distinguir mayúsculas) e informa de los inválidos. El CSV se parsea en el navegador (`utils/csv.ts`, con `csv.spec.ts`).
-- `PUT /me/password` exige la contraseña actual y devuelve un token nuevo (el cambio incrementa `token_version` y cierra las demás sesiones).
-- Dashboard: `GET /dashboard/stats` incluye `total_sent`/`total_failed`; `GET /dashboard/activity` devuelve 14 días (UTC) rellenando con 0.
+- Grupos: `grupos_contacto` + `miembros_grupo_contacto` (N:M, cascada). `ModeloGrupo::setContactGroups` valida que contacto y grupos sean del usuario. `GET /contactos` devuelve `ids_grupo` de cada contacto.
+- `POST /contactos/import` (máx. 2000 filas, transacción): omite correos existentes o repetidos (sin distinguir mayúsculas) e informa de los inválidos. El CSV se parsea en el navegador (`utils/csv.ts`, con `csv.spec.ts`).
+- `PUT /me/contrasena` exige la contraseña actual y devuelve un token nuevo (el cambio incrementa `version_token` y cierra las demás sesiones).
+- Dashboard: `GET /dashboard/stats` incluye `total_enviados`/`total_fallidos`; `GET /dashboard/activity` devuelve 14 días (UTC) rellenando con 0.
 
 ### Frontend (`frontend/src/app/`)
 - Componentes standalone con lazy loading (`app.routes.ts`); nuevo control flow (`@if`/`@for`) en el código nuevo.
@@ -58,7 +59,7 @@ docker compose logs -f worker              # actividad del worker de envío
 
 ### Endpoints
 Públicos: `POST /login`, `POST /register`, `GET|POST /unsubscribe/{id}/{firma}`.
-Con JWT: `GET|PUT /me`, `PUT /me/password`, `POST /logout`, contactos (`/contacts`, `/contacts/{id}`, `PUT /contacts/{id}/subscription`, `PUT /contacts/{id}/groups`, `POST /contacts/import`), grupos (`/groups`, `/groups/{id}`), plantillas (`/templates`, `/templates/{id}`, `POST /upload-template-file`), correo (`POST /send-mail`, `/send-massive`, `/mail/preview`, `/mail/test`, `GET /process-scheduled`), historial (`GET /history`, `/history/{id}/deliveries`, `POST /history/{id}/cancel`, `/history/{id}/retry-failed`), `POST /ai/suggest-subject`, `GET /dashboard/stats|summary|activity`.
+Con JWT: `GET|PUT /me`, `PUT /me/contrasena`, `POST /logout`, contactos (`/contactos`, `/contactos/{id}`, `PUT /contactos/{id}/subscription`, `PUT /contactos/{id}/grupos`, `POST /contactos/import`), grupos (`/grupos`, `/grupos/{id}`), plantillas (`/plantillas`, `/plantillas/{id}`, `POST /upload-template-file`), correo (`POST /send-mail`, `/send-massive`, `/mail/preview`, `/mail/test`, `GET /process-scheduled`), historial (`GET /history`, `/history/{id}/deliveries`, `POST /history/{id}/cancel`, `/history/{id}/retry-failed`), `POST /ai/suggest-asunto`, `GET /dashboard/stats|summary|activity`.
 
 ## Convenciones y trampas
 - En Apache solo `backend/api/` es accesible (`backend/docker/templimail.conf`); no mover secretos ni código a esa carpeta.

@@ -13,13 +13,13 @@ import { clearToken } from '../../utils/token';
 })
 export class SidebarComponent implements OnInit {
 
-  readonly username = signal('');
+  readonly nombreUsuario = signal('');
 
   constructor(private api: ApiService, private router: Router) {}
 
   ngOnInit(): void {
     this.api.me().subscribe({
-      next: response => this.username.set(response.data.username),
+      next: response => this.nombreUsuario.set(response.data.nombre_usuario),
       error: () => { /* el interceptor ya gestiona la sesión caducada */ }
     });
   }

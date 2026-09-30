@@ -20,11 +20,11 @@
       <select [(ngModel)]="selectedTemplateId" id="template" class="form-select">
         <option [ngValue]="null">-- Elige plantilla --</option>
         @for (t of templates; track t.id) {
-          <option [ngValue]="t.id">{{ t.name }}</option>
+          <option [ngValue]="t.id">{{ t.nombre }}</option>
         }
       </select>
       @if (selectedTemplate) {
-        <small class="hint">Asunto: {{ selectedTemplate.subject }}</small>
+        <small class="hint">Asunto: {{ selectedTemplate.asunto }}</small>
       }
     </div>
   </div>
@@ -50,16 +50,16 @@
       placeholder="Buscar contacto..."
       [(ngModel)]="search"
     />
-    @if (groups.length > 0) {
+    @if (grupos.length > 0) {
       <select class="form-select group-select" [(ngModel)]="groupFilter" title="Filtrar por grupo">
         <option [ngValue]="''">Todos los grupos</option>
-        @for (g of groups; track g.id) {
-          <option [ngValue]="g.id">{{ g.name }} ({{ g.member_count }})</option>
+        @for (g of grupos; track g.id) {
+          <option [ngValue]="g.id">{{ g.nombre }} ({{ g.total_miembros }})</option>
         }
       </select>
     }
     <span class="counter">
-      <strong>{{ selectedContactIds.size }}</strong> seleccionados de {{ contacts.length }}
+      <strong>{{ selectedContactIds.size }}</strong> seleccionados de {{ contactos.length }}
       @if (unsubscribedCount > 0) {
         · {{ unsubscribedCount }} de baja
       }
@@ -79,7 +79,7 @@
             />
           </th>
           <th>Nombre</th>
-          <th>Email</th>
+          <th>Correo</th>
           <th>Empresa</th>
           <th>Estado</th>
         </tr>
@@ -87,20 +87,20 @@
 
       <tbody>
         @for (contact of filteredContacts; track contact.id) {
-          <tr [class.unsub]="contact.unsubscribed_at">
+          <tr [class.unsub]="contact.baja_en">
             <td>
               <input
                 type="checkbox"
-                [disabled]="!!contact.unsubscribed_at"
+                [disabled]="!!contact.baja_en"
                 [checked]="selectedContactIds.has(contact.id)"
                 (change)="toggleContact(contact, $any($event.target).checked)"
               />
             </td>
-            <td>{{ contact.first_name }} {{ contact.last_name }}</td>
-            <td>{{ contact.email }}</td>
-            <td>{{ contact.company }}</td>
+            <td>{{ contact.nombre }} {{ contact.apellidos }}</td>
+            <td>{{ contact.correo }}</td>
+            <td>{{ contact.empresa }}</td>
             <td>
-              @if (contact.unsubscribed_at) {
+              @if (contact.baja_en) {
                 <span class="badge badge-gray">De baja</span>
               } @else {
                 <span class="badge badge-green">Suscrito</span>
@@ -110,7 +110,7 @@
         } @empty {
           <tr>
             <td colspan="5" class="empty">
-              {{ contacts.length === 0 ? 'Todavía no tienes contactos.' : 'Ningún contacto coincide.' }}
+              {{ contactos.length === 0 ? 'Todavía no tienes contactos.' : 'Ningún contacto coincide.' }}
             </td>
           </tr>
         }
@@ -150,5 +150,5 @@
 </div>
 
 @if (preview) {
-  <app-mail-preview [subject]="preview.subject" [html]="preview.body" (close)="preview = null" />
+  <app-mail-preview [asunto]="preview.asunto" [cuerpo]="preview.cuerpo" (close)="preview = null" />
 }

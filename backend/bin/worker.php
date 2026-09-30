@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-use TempliMail\Services\MailService;
-use TempliMail\Utils\Env;
+use TempliMail\Services\ServicioCorreo;
+use TempliMail\Utils\Entorno;
 
 $once     = in_array('--once', $argv, true);
-$interval = max(1, Env::int('WORKER_INTERVAL_SECONDS', 5));
+$interval = max(1, Entorno::int('WORKER_INTERVAL_SECONDS', 5));
 
 $log = static fn(string $message) => fwrite(STDOUT, sprintf("[%s] %s\n", date('Y-m-d H:i:s'), $message));
 
@@ -23,7 +23,7 @@ $log('Worker iniciado' . ($once ? ' (una pasada)' : ''));
 
 do {
     try {
-        $processed = MailService::processDue();
+        $processed = ServicioCorreo::processDue();
 
         if ($processed > 0) {
             $log("Campañas enviadas: {$processed}");

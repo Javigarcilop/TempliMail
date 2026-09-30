@@ -21,9 +21,9 @@ export class SendMailComponent {
   readonly tinymceApiKey = environment.tinymceApiKey;
   readonly tinymceLicenseKey = tinymceLicenseKey;
 
-  to = '';
-  subject = '';
-  body = '';
+  destinatario = '';
+  asunto = '';
+  cuerpo = '';
 
   loading = false;
 
@@ -38,20 +38,20 @@ export class SendMailComponent {
   ) {}
 
   onSubmit(form: NgForm): void {
-    if (form.invalid || !this.body.trim()) {
+    if (form.invalid || !this.cuerpo.trim()) {
       this.toast.error('Destinatario, asunto y mensaje son obligatorios.');
       return;
     }
 
     this.loading = true;
 
-    this.api.sendSingleMail({ to: this.to, subject: this.subject, body: this.body })
+    this.api.sendSingleMail({ destinatario: this.destinatario, asunto: this.asunto, cuerpo: this.cuerpo })
       .subscribe({
         next: () => {
           this.loading = false;
           this.toast.success('Correo enviado correctamente.');
           form.resetForm();
-          this.body = '';
+          this.cuerpo = '';
           this.aiSuggestions = [];
           this.aiTopic = '';
         },
@@ -85,7 +85,7 @@ export class SendMailComponent {
   }
 
   selectSuggestion(suggestion: string): void {
-    this.subject = suggestion;
+    this.asunto = suggestion;
     this.aiSuggestions = [];
     this.aiTopic = '';
   }

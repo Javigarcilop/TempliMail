@@ -15,7 +15,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
         <header>
           <div>
             <small>Asunto</small>
-            <strong>{{ subject }}</strong>
+            <strong>{{ asunto }}</strong>
           </div>
           <button type="button" class="close" aria-label="Cerrar" (click)="close.emit()">×</button>
         </header>
@@ -74,14 +74,14 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   `]
 })
 export class MailPreviewComponent {
-  @Input({ required: true }) subject = '';
+  @Input({ required: true }) asunto = '';
   @Output() close = new EventEmitter<void>();
 
   safeHtml: SafeHtml = '';
 
   private sanitizer = inject(DomSanitizer);
 
-  @Input({ required: true }) set html(value: string) {
+  @Input({ required: true }) set cuerpo(value: string) {
     // Es seguro marcarlo como fiable porque el iframe usa sandbox="" (sin scripts)
     this.safeHtml = this.sanitizer.bypassSecurityTrustHtml(value);
   }

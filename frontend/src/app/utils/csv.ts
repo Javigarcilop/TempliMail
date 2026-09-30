@@ -99,15 +99,15 @@ export function toCsv(rows: (string | number | null | undefined)[][], delimiter 
 // Contactos: cabeceras reconocidas (español e inglés)
 // -------------------------------------------------------------------
 
-export type ContactField = 'first_name' | 'last_name' | 'email' | 'phone' | 'company' | 'position';
+export type ContactField = 'nombre' | 'apellidos' | 'correo' | 'telefono' | 'empresa' | 'cargo';
 
 const HEADER_ALIASES: Record<ContactField, string[]> = {
-  email: ['email', 'e-mail', 'correo', 'correo electronico', 'mail'],
-  first_name: ['first_name', 'firstname', 'nombre', 'name'],
-  last_name: ['last_name', 'lastname', 'apellidos', 'apellido', 'surname'],
-  phone: ['phone', 'telefono', 'tel', 'movil', 'mobile'],
-  company: ['company', 'empresa', 'organizacion'],
-  position: ['position', 'cargo', 'puesto', 'job', 'title']
+  correo: ['email', 'e-mail', 'correo', 'correo electronico', 'mail'],
+  nombre: ['first_name', 'firstname', 'nombre', 'name'],
+  apellidos: ['last_name', 'lastname', 'apellidos', 'apellido', 'surname'],
+  telefono: ['phone', 'telefono', 'tel', 'movil', 'mobile'],
+  empresa: ['company', 'empresa', 'organizacion'],
+  cargo: ['position', 'cargo', 'puesto', 'job', 'title']
 };
 
 const normalize = (value: string): string =>
@@ -120,7 +120,7 @@ export interface ParsedContacts {
 }
 
 /**
- * Convierte un CSV con cabecera en contactos. Devuelve null si no hay columna de email.
+ * Convierte un CSV con cabecera en contactos. Devuelve null si no hay columna de correo.
  */
 export function parseContactsCsv(text: string): ParsedContacts | null {
   const rows = parseCsv(text);
@@ -142,7 +142,7 @@ export function parseContactsCsv(text: string): ParsedContacts | null {
     }
   });
 
-  if (columns.email === undefined) {
+  if (columns.correo === undefined) {
     return null;
   }
 

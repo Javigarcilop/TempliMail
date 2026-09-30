@@ -5,20 +5,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { of, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
-import { Contact, ContactInput, Group, ImportResult } from '../../models/api.models';
+import { Contacto, ContactoInput, Grupo, ResultadoImportacion } from '../../models/api.models';
 import { ParsedContacts, parseContactsCsv, toCsv } from '../../utils/csv';
 
-const EMPTY_CONTACT: ContactInput = {
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  company: '',
-  position: ''
+const CONTACTO_VACIO: ContactoInput = {
+  nombre: '',
+  apellidos: '',
+  correo: '',
+  telefono: '',
+  empresa: '',
+  cargo: ''
 };
 
-const PAGE_SIZE = 25;
-const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+const TAMANO_PAGINA = 25;
+const MAX_BYTES_IMPORT = 2 * 1024 * 1024;
 
 @Component({
   selector: 'app-contacts',
@@ -29,16 +29,16 @@ const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 })
 export class ContactsComponent implements OnInit {
 
-  contacts: Contact[] = [];
-  groups: Group[] = [];
+  contactos: Contacto[] = [];
+  grupos: Grupo[] = [];
 
   search = '';
   /** '' = todos, 'none' = sin grupo, o el id de un grupo */
   groupFilter: '' | 'none' | number = '';
   page = 1;
-  readonly pageSize = PAGE_SIZE;
+  readonly pageSize = TAMANO_PAGINA;
 
-  newContact: ContactInput = { ...EMPTY_CONTACT };
+  newContact: ContactoInput = { ...CONTACTO_VACIO };
   editingId: number | null = null;
   selectedGroupIds = new Set<number>();
 
@@ -48,7 +48,7 @@ export class ContactsComponent implements OnInit {
   importPreview: (ParsedContacts & { fileName: string }) | null = null;
   importGroupId: number | '' = '';
   importing = false;
-  importResult: ImportResult | null = null;
+  importResult: ResultadoImportacion | null = null;
 
   constructor(
     private api: ApiService,
@@ -64,14 +64,14 @@ export class ContactsComponent implements OnInit {
   // Datos derivados
   // ---------------------------------------------------------------
 
-  get filteredContacts(): Contact[] {
+  get filteredContacts(): Contacto[] {
     const term = this.search.trim().toLowerCase();
 
-    return this.contacts.filter(c => {
-      if (this.groupFilter === 'none' && c.group_ids.length > 0) return false;
-      if (typeof this.groupFilter === 'number' && !c.group_ids.includes(this.groupFilter)) return false;
+    return this.contactos.filter(c => {
+      if (this.groupFilter === 'none' && c.ids_grupo.length > 0) return false;
+      if (typeof this.groupFilter === 'number' && !c.ids_grupo.includes(this.groupFilter)) return false;
 
-      return !term || [c.first_name, c.last_name, c.email, c.company, c.position]
+      return !term || [c.nombre, c.apellidos, c.correo, c.empresa, c.cargo]
         .some(value => value?.toLowerCase().includes(term));
     });
   }
@@ -80,14 +80,14 @@ export class ContactsComponent implements OnInit {
     return Math.max(1, Math.ceil(this.filteredContacts.length / this.pageSize));
   }
 
-  get pagedContacts(): Contact[] {
+  get pagedContacts(): Contacto[] {
     const start = (Math.min(this.page, this.totalPages) - 1) * this.pageSize;
 
     return this.filteredContacts.slice(start, start + this.pageSize);
   }
 
   groupName(id: number): string {
-    return this.groups.find(g => g.id === id)?.name ?? '';
+    return this.grupos.find(g => g.id === id)?.nombre ?? '';
   }
 
   /** Cualquier cambio de filtro vuelve a la primera página. */
@@ -105,9 +105,9 @@ export class ContactsComponent implements OnInit {
 
   loadContacts(): void {
     this.api.getContacts().subscribe({
-      next: response => this.contacts = response.data ?? [],
+      next: response => this.contactos = response.data ?? [],
       error: () => {
-        this.contacts = [];
+        this.contactos = [];
         this.toast.error('No se pudieron cargar los contactos.');
       }
     });
@@ -115,7 +115,7 @@ export class ContactsComponent implements OnInit {
 
   loadGroups(): void {
     this.api.getGroups().subscribe({
-      next: response => this.groups = response.data ?? [],
+      next: response => this.grupos = response.data ?? [],
       error: () => this.toast.error('No se pudieron cargar los grupos.')
     });
   }
@@ -162,29 +162,29 @@ export class ContactsComponent implements OnInit {
     });
   }
 
-  editContact(contact: Contact): void {
+  editContact(contact: Contacto): void {
     this.newContact = {
-      first_name: contact.first_name ?? '',
-      last_name: contact.last_name ?? '',
-      email: contact.email ?? '',
-      phone: contact.phone ?? '',
-      company: contact.company ?? '',
-      position: contact.position ?? ''
+      nombre: contact.nombre ?? '',
+      apellidos: contact.apellidos ?? '',
+      correo: contact.correo ?? '',
+      telefono: contact.telefono ?? '',
+      empresa: contact.empresa ?? '',
+      cargo: contact.cargo ?? ''
     };
 
-    this.selectedGroupIds = new Set(contact.group_ids);
+    this.selectedGroupIds = new Set(contact.ids_grupo);
     this.editingId = contact.id;
     window.scrollTo?.({ top: 0 });
   }
 
   cancelEdit(): void {
-    this.newContact = { ...EMPTY_CONTACT };
+    this.newContact = { ...CONTACTO_VACIO };
     this.selectedGroupIds = new Set<number>();
     this.editingId = null;
   }
 
-  deleteContact(contact: Contact): void {
-    if (!confirm(`¿Eliminar a ${contact.email}?`)) {
+  deleteContact(contact: Contacto): void {
+    if (!confirm(`¿Eliminar a ${contact.correo}?`)) {
       return;
     }
 
@@ -199,8 +199,8 @@ export class ContactsComponent implements OnInit {
   }
 
   /** Baja / alta manual: un contacto dado de baja no recibe campañas. */
-  toggleSubscription(contact: Contact): void {
-    const subscribe = contact.unsubscribed_at !== null;
+  toggleSubscription(contact: Contacto): void {
+    const subscribe = contact.baja_en !== null;
 
     this.api.setContactSubscription(contact.id, subscribe).subscribe({
       next: () => {
@@ -234,10 +234,10 @@ export class ContactsComponent implements OnInit {
     });
   }
 
-  renameGroup(group: Group): void {
-    const name = prompt('Nuevo nombre del grupo:', group.name)?.trim();
+  renameGroup(group: Grupo): void {
+    const name = prompt('Nuevo nombre del grupo:', group.nombre)?.trim();
 
-    if (!name || name === group.name) {
+    if (!name || name === group.nombre) {
       return;
     }
 
@@ -251,8 +251,8 @@ export class ContactsComponent implements OnInit {
     });
   }
 
-  deleteGroup(group: Group): void {
-    if (!confirm(`¿Eliminar el grupo "${group.name}"? Sus contactos NO se borran.`)) {
+  deleteGroup(group: Grupo): void {
+    if (!confirm(`¿Eliminar el grupo "${group.nombre}"? Sus contactos NO se borran.`)) {
       return;
     }
 
@@ -283,7 +283,7 @@ export class ContactsComponent implements OnInit {
       return;
     }
 
-    if (file.size > MAX_IMPORT_BYTES) {
+    if (file.size > MAX_BYTES_IMPORT) {
       this.toast.error('El archivo supera los 2 MB.');
       return;
     }
@@ -292,7 +292,7 @@ export class ContactsComponent implements OnInit {
       const parsed = parseContactsCsv(text);
 
       if (!parsed) {
-        this.toast.error('No se encontró una columna "email". La primera fila debe ser la cabecera.');
+        this.toast.error('No se encontró una columna "correo". La primera fila debe ser la cabecera.');
         return;
       }
 
@@ -327,7 +327,7 @@ export class ContactsComponent implements OnInit {
         this.importing = false;
         this.importPreview = null;
         this.importResult = response;
-        this.toast.success(`${response.created} contacto(s) importados.`);
+        this.toast.success(`${response.creados} contacto(s) importados.`);
         this.reload();
       },
       error: (err: HttpErrorResponse) => {
@@ -339,13 +339,13 @@ export class ContactsComponent implements OnInit {
 
   exportCsv(): void {
     const rows = this.filteredContacts.map(c => [
-      c.first_name, c.last_name, c.email, c.phone, c.company, c.position,
-      c.group_ids.map(id => this.groupName(id)).filter(Boolean).join(' | '),
-      c.unsubscribed_at ? 'De baja' : 'Suscrito'
+      c.nombre, c.apellidos, c.correo, c.telefono, c.empresa, c.cargo,
+      c.ids_grupo.map(id => this.groupName(id)).filter(Boolean).join(' | '),
+      c.baja_en ? 'De baja' : 'Suscrito'
     ]);
 
     const csv = toCsv([
-      ['Nombre', 'Apellidos', 'Email', 'Teléfono', 'Empresa', 'Cargo', 'Grupos', 'Estado'],
+      ['Nombre', 'Apellidos', 'Correo', 'Teléfono', 'Empresa', 'Cargo', 'Grupos', 'Estado'],
       ...rows
     ]);
 

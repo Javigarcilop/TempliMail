@@ -2,31 +2,31 @@
 <form (ngSubmit)="saveTemplate()" #form="ngForm">
 
   <div class="mb-3">
-    <label for="name" class="form-label">
+    <label for="nombre" class="form-label">
       Nombre plantilla
     </label>
 
     <input
       type="text"
-      id="name"
+      id="nombre"
       class="form-control"
-      [(ngModel)]="templateForm.name"
-      name="name"
+      [(ngModel)]="templateForm.nombre"
+      name="nombre"
       required
     />
   </div>
 
   <div class="mb-3">
-    <label for="subject" class="form-label">
+    <label for="asunto" class="form-label">
       Asunto
     </label>
 
     <input
       type="text"
-      id="subject"
+      id="asunto"
       class="form-control"
-      [(ngModel)]="templateForm.subject"
-      name="subject"
+      [(ngModel)]="templateForm.asunto"
+      name="asunto"
       required
     />
   </div>
@@ -43,7 +43,7 @@
   </div>
 
   <div class="editor-container mb-3">
-    <label for="content" class="form-label">
+    <label for="contenido_html" class="form-label">
       Contenido
     </label>
 
@@ -51,8 +51,8 @@
       [apiKey]="tinymceApiKey"
       [licenseKey]="tinymceLicenseKey"
       (onInit)="onEditorInit($event)"
-      [(ngModel)]="templateForm.content_html"
-      name="content_html"
+      [(ngModel)]="templateForm.contenido_html"
+      name="contenido_html"
       [init]="{
         height: 500,
         resize: true,
@@ -63,7 +63,7 @@
     </editor>
   </div>
 
-  <!-- File Upload -->
+  <!-- Subida de archivo -->
   <div class="mb-3 upload-wrapper">
 
     <label for="fileInput" class="form-label">
@@ -122,8 +122,8 @@
     <tbody>
       <tr *ngFor="let template of templates">
 
-        <td>{{ template.name }}</td>
-        <td>{{ template.subject }}</td>
+        <td>{{ template.nombre }}</td>
+        <td>{{ template.asunto }}</td>
 
         <td class="acciones">
           <button (click)="editTemplate(template)">
@@ -148,7 +148,7 @@
 
 <app-mail-preview
   *ngIf="preview"
-  [subject]="preview.subject"
-  [html]="preview.body"
+  [asunto]="preview.asunto"
+  [cuerpo]="preview.cuerpo"
   (close)="preview = null">
 </app-mail-preview>

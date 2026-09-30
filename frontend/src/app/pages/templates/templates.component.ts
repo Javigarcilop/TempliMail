@@ -6,15 +6,15 @@ import { EditorModule, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { MailPreviewComponent } from '../../shared/mail-preview/mail-preview.component';
-import { MailPreview, Template, TemplateInput, TEMPLATE_VARIABLES } from '../../models/api.models';
+import { VistaPreviaCorreo, Plantilla, PlantillaInput, VARIABLES_PLANTILLA } from '../../models/api.models';
 import { environment } from '../../../environments/environment';
 import { tinymceScriptSrc, tinymceLicenseKey } from '../../demo/tinymce-self-host';
 
-const EMPTY_TEMPLATE: TemplateInput = {
+const PLANTILLA_VACIA: PlantillaInput = {
   id: null,
-  name: '',
-  subject: '',
-  content_html: ''
+  nombre: '',
+  asunto: '',
+  contenido_html: ''
 };
 
 @Component({
@@ -30,17 +30,17 @@ export class TemplatesComponent implements OnInit {
   readonly tinymceApiKey = environment.tinymceApiKey;
   readonly tinymceLicenseKey = tinymceLicenseKey;
   // Las llaves se exponen desde aquí: en la plantilla, "{{" se interpretaría como interpolación
-  readonly variables = TEMPLATE_VARIABLES.map(v => ({ ...v, tag: `{{${v.key}}}` }));
-  readonly exampleDefault = "{{first_name|amigo}}";
-  readonly exampleUnsubscribe = "{{unsubscribe_url}}";
+  readonly variables = VARIABLES_PLANTILLA.map(v => ({ ...v, tag: `{{${v.key}}}` }));
+  readonly exampleDefault = "{{nombre|amigo}}";
+  readonly exampleUnsubscribe = "{{enlace_baja}}";
 
-  templates: Template[] = [];
-  templateForm: TemplateInput = { ...EMPTY_TEMPLATE };
+  templates: Plantilla[] = [];
+  templateForm: PlantillaInput = { ...PLANTILLA_VACIA };
   editing = false;
 
   selectedFile: Event | null = null;
 
-  preview: MailPreview | null = null;
+  preview: VistaPreviaCorreo | null = null;
   busy = false;
 
   private editor: { insertContent(html: string): void } | null = null;
@@ -66,7 +66,7 @@ export class TemplatesComponent implements OnInit {
   }
 
   saveTemplate(): void {
-    if (!this.templateForm.name.trim() || !this.templateForm.subject.trim()) {
+    if (!this.templateForm.nombre.trim() || !this.templateForm.asunto.trim()) {
       this.toast.error('El nombre y el asunto son obligatorios.');
       return;
     }
@@ -103,7 +103,7 @@ export class TemplatesComponent implements OnInit {
     this.api.uploadTemplateFile(formData).subscribe({
       next: response => {
         if (response.success) {
-          this.templateForm.content_html = response.html;
+          this.templateForm.contenido_html = response.html;
           this.toast.success('Archivo cargado en el editor.');
         }
       },
@@ -112,22 +112,22 @@ export class TemplatesComponent implements OnInit {
     });
   }
 
-  editTemplate(template: Template): void {
+  editTemplate(template: Plantilla): void {
     this.templateForm = {
       id: template.id,
-      name: template.name,
-      subject: template.subject,
-      content_html: template.content_html
+      nombre: template.nombre,
+      asunto: template.asunto,
+      contenido_html: template.contenido_html
     };
     this.editing = true;
     window.scrollTo?.({ top: 0 });
   }
 
-  duplicateTemplate(template: Template): void {
+  duplicateTemplate(template: Plantilla): void {
     this.api.addTemplate({
-      name: `${template.name} (copia)`.slice(0, 255),
-      subject: template.subject,
-      content_html: template.content_html
+      nombre: `${template.nombre} (copia)`.slice(0, 255),
+      asunto: template.asunto,
+      contenido_html: template.contenido_html
     }).subscribe({
       next: () => {
         this.toast.success('Plantilla duplicada.');
@@ -138,8 +138,8 @@ export class TemplatesComponent implements OnInit {
     });
   }
 
-  deleteTemplate(template: Template): void {
-    if (!confirm(`¿Eliminar la plantilla "${template.name}"?`)) {
+  deleteTemplate(template: Plantilla): void {
+    if (!confirm(`¿Eliminar la plantilla "${template.nombre}"?`)) {
       return;
     }
 
@@ -154,7 +154,7 @@ export class TemplatesComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.templateForm = { ...EMPTY_TEMPLATE };
+    this.templateForm = { ...PLANTILLA_VACIA };
     this.editing = false;
     this.selectedFile = null;
   }
@@ -169,7 +169,7 @@ export class TemplatesComponent implements OnInit {
     if (this.editor) {
       this.editor.insertContent(tag);
     } else {
-      this.templateForm.content_html += tag;
+      this.templateForm.contenido_html += tag;
     }
   }
 
@@ -187,7 +187,7 @@ export class TemplatesComponent implements OnInit {
     this.api.sendTestMail(this.mailPayload()).subscribe({
       next: response => {
         this.busy = false;
-        this.toast.success(`Correo de prueba enviado a ${response.sent_to}.`);
+        this.toast.success(`Correo de prueba enviado a ${response.enviado_a}.`);
       },
       error: (err: HttpErrorResponse) => {
         this.busy = false;
@@ -198,8 +198,8 @@ export class TemplatesComponent implements OnInit {
 
   private mailPayload() {
     return {
-      subject: this.templateForm.subject,
-      content_html: this.templateForm.content_html
+      asunto: this.templateForm.asunto,
+      contenido_html: this.templateForm.contenido_html
     };
   }
 }

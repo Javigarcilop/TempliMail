@@ -6,14 +6,14 @@
     <h3>Datos personales</h3>
 
     <form (ngSubmit)="saveProfile()" #profileForm="ngForm">
-      <label for="username">Usuario</label>
-      <input id="username" type="text" [value]="username" disabled />
+      <label for="nombre_usuario">Usuario</label>
+      <input id="nombre_usuario" type="text" [value]="nombreUsuario" disabled />
 
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" required [(ngModel)]="email" />
+      <label for="correo">Correo</label>
+      <input id="correo" name="correo" type="email" required [(ngModel)]="correo" />
 
-      <button type="submit" [disabled]="profileForm.invalid || savingProfile">
-        {{ savingProfile ? 'Guardando...' : 'Guardar cambios' }}
+      <button type="submit" [disabled]="profileForm.invalid || guardandoPerfil">
+        {{ guardandoPerfil ? 'Guardando...' : 'Guardar cambios' }}
       </button>
     </form>
   </section>
@@ -22,22 +22,22 @@
     <h3>Cambiar contraseña</h3>
 
     <form (ngSubmit)="changePassword()" #passwordForm="ngForm">
-      <label for="current">Contraseña actual</label>
-      <input id="current" name="current" type="password" required autocomplete="current-password" [(ngModel)]="currentPassword" />
+      <label for="actual">Contraseña actual</label>
+      <input id="actual" name="actual" type="password" required autocomplete="current-password" [(ngModel)]="contrasenaActual" />
 
-      <label for="new">Nueva contraseña</label>
-      <input id="new" name="new" type="password" required [minlength]="minPasswordLength" autocomplete="new-password" [(ngModel)]="newPassword" />
-      <small>Mínimo {{ minPasswordLength }} caracteres.</small>
+      <label for="nueva">Nueva contraseña</label>
+      <input id="nueva" name="nueva" type="password" required [minlength]="longitudMinimaContrasena" autocomplete="new-password" [(ngModel)]="contrasenaNueva" />
+      <small>Mínimo {{ longitudMinimaContrasena }} caracteres.</small>
 
-      <label for="confirm">Repite la nueva contraseña</label>
-      <input id="confirm" name="confirm" type="password" required autocomplete="new-password" [(ngModel)]="confirmPassword" />
+      <label for="confirmar">Repite la nueva contraseña</label>
+      <input id="confirmar" name="confirmar" type="password" required autocomplete="new-password" [(ngModel)]="confirmarContrasena" />
 
-      @if (passwordError) {
-        <p class="form-error" role="alert">{{ passwordError }}</p>
+      @if (errorContrasena) {
+        <p class="form-error" role="alert">{{ errorContrasena }}</p>
       }
 
-      <button type="submit" [disabled]="passwordForm.invalid || savingPassword">
-        {{ savingPassword ? 'Cambiando...' : 'Cambiar contraseña' }}
+      <button type="submit" [disabled]="passwordForm.invalid || guardandoContrasena">
+        {{ guardandoContrasena ? 'Cambiando...' : 'Cambiar contraseña' }}
       </button>
     </form>
 

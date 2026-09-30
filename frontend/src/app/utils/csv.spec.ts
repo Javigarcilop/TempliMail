@@ -34,13 +34,13 @@ describe('csv', () => {
     );
 
     expect(result?.contacts[0]).toEqual({
-      email: 'ana@x.com', first_name: 'Ana', last_name: 'López', phone: '600', company: 'ACME', position: 'CEO'
+      correo: 'ana@x.com', nombre: 'Ana', apellidos: 'López', telefono: '600', empresa: 'ACME', cargo: 'CEO'
     });
     expect(result?.ignoredColumns).toEqual(['Notas']);
-    expect(parseContactsCsv('email,first_name\na@x.com,Ana')?.contacts[0].first_name).toBe('Ana');
+    expect(parseContactsCsv('email,first_name\na@x.com,Ana')?.contacts[0].nombre).toBe('Ana');
   });
 
-  it('devuelve null si no hay columna de email o solo hay cabecera', () => {
+  it('devuelve null si no hay columna de correo o solo hay cabecera', () => {
     expect(parseContactsCsv('nombre,empresa\nAna,X')).toBeNull();
     expect(parseContactsCsv('email')).toBeNull();
   });

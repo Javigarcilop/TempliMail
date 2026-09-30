@@ -7,148 +7,148 @@ export interface DataResponse<T> extends ApiResponse {
   data: T;
 }
 
-export interface User {
+export interface Usuario {
   id: number;
-  username: string;
-  email: string;
+  nombre_usuario: string;
+  correo: string;
 }
 
-export interface Contact {
+export interface Contacto {
   id: number;
-  first_name: string | null;
-  last_name: string | null;
-  email: string;
-  phone: string | null;
-  company: string | null;
-  position: string | null;
+  nombre: string | null;
+  apellidos: string | null;
+  correo: string;
+  telefono: string | null;
+  empresa: string | null;
+  cargo: string | null;
   /** ISO 8601 (UTC) si el contacto se dio de baja */
-  unsubscribed_at: string | null;
-  created_at: string;
-  group_ids: number[];
+  baja_en: string | null;
+  creado_en: string;
+  ids_grupo: number[];
 }
 
-export interface Group {
+export interface Grupo {
   id: number;
-  name: string;
-  member_count: number;
+  nombre: string;
+  total_miembros: number;
 }
 
-export interface ImportResult {
-  created: number;
-  duplicates: number;
-  invalid: { row: number; email: string; reason: string }[];
+export interface ResultadoImportacion {
+  creados: number;
+  duplicados: number;
+  invalidos: { fila: number; correo: string; motivo: string }[];
 }
 
-export interface ContactInput {
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
-  position: string;
+export interface ContactoInput {
+  nombre: string;
+  apellidos: string;
+  correo: string;
+  telefono: string;
+  empresa: string;
+  cargo: string;
 }
 
-export interface Template {
+export interface Plantilla {
   id: number;
-  name: string;
-  subject: string;
-  content_html: string;
-  created_at: string;
-  updated_at: string;
+  nombre: string;
+  asunto: string;
+  contenido_html: string;
+  creado_en: string;
+  actualizado_en: string;
 }
 
-export interface TemplateInput {
+export interface PlantillaInput {
   id?: number | null;
-  name: string;
-  subject: string;
-  content_html: string;
+  nombre: string;
+  asunto: string;
+  contenido_html: string;
 }
 
-export type CampaignStatus = 'scheduled' | 'processing' | 'completed' | 'cancelled';
+export type EstadoCampana = 'scheduled' | 'processing' | 'completed' | 'cancelled';
 
-export interface Campaign {
+export interface Campana {
   id: number;
-  name: string | null;
-  type: 'mass' | 'single';
-  subject: string;
-  status: CampaignStatus;
+  nombre: string | null;
+  tipo: 'mass' | 'single';
+  asunto: string;
+  estado: EstadoCampana;
   /** ISO 8601 (UTC). null = en cola para enviarse ya */
-  scheduled_at: string | null;
-  created_at: string;
-  updated_at: string;
-  template_name: string | null;
-  total_recipients: number;
-  sent: number;
-  failed: number;
-  pending: number;
-  skipped: number;
+  programado_en: string | null;
+  creado_en: string;
+  actualizado_en: string;
+  nombre_plantilla: string | null;
+  total_destinatarios: number;
+  enviados: number;
+  fallidos: number;
+  pendientes: number;
+  omitidos: number;
 }
 
-export type DeliveryStatus = 'pending' | 'sent' | 'failed' | 'skipped';
+export type EstadoEntrega = 'pending' | 'sent' | 'failed' | 'skipped';
 
-export interface Delivery {
+export interface Entrega {
   id: number;
-  status: DeliveryStatus;
-  retry_count: number;
-  sent_at: string | null;
-  error_message: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  email: string;
+  estado: EstadoEntrega;
+  reintentos: number;
+  enviado_en: string | null;
+  mensaje_error: string | null;
+  nombre: string | null;
+  apellidos: string | null;
+  correo: string;
 }
 
-export interface MassiveMailInput {
-  template_id: number;
-  contact_ids: number[];
-  name?: string;
+export interface EnvioMasivoInput {
+  plantilla_id: number;
+  ids_contacto: number[];
+  nombre?: string;
   /** ISO 8601 con zona horaria (p. ej. new Date(...).toISOString()) */
-  scheduled_at?: string;
+  programado_en?: string;
 }
 
-export interface MassiveMailResponse extends ApiResponse {
-  campaign_id: number;
-  scheduled: boolean;
-  recipients: number;
-  excluded: number;
+export interface EnvioMasivoRespuesta extends ApiResponse {
+  campana_id: number;
+  programado: boolean;
+  destinatarios: number;
+  excluidos: number;
 }
 
-export interface MailPreviewInput {
-  subject: string;
-  content_html: string;
-  contact_id?: number;
+export interface VistaPreviaCorreoInput {
+  asunto: string;
+  contenido_html: string;
+  contacto_id?: number;
 }
 
-export interface MailPreview {
-  subject: string;
-  body: string;
+export interface VistaPreviaCorreo {
+  asunto: string;
+  cuerpo: string;
 }
 
-export interface DashboardStats {
-  total_campaigns: number;
-  total_contacts: number;
-  total_templates: number;
-  total_sent: number;
-  total_failed: number;
+export interface EstadisticasPanel {
+  total_campanas: number;
+  total_contactos: number;
+  total_plantillas: number;
+  total_enviados: number;
+  total_fallidos: number;
 }
 
-export interface ActivityDay {
+export interface DiaActividad {
   /** YYYY-MM-DD (UTC) */
-  date: string;
-  sent: number;
+  fecha: string;
+  enviados: number;
 }
 
-export interface DashboardSummary {
-  top_template: { name: string; total: number } | null;
-  top_contact: { name: string; total: number } | null;
+export interface ResumenPanel {
+  plantilla_top: { nombre: string; total: number } | null;
+  contacto_top: { nombre: string; total: number } | null;
 }
 
-/** Variables que se pueden usar en plantillas: {{first_name}}, {{first_name|amigo}}... */
-export const TEMPLATE_VARIABLES: { key: string; label: string }[] = [
-  { key: 'first_name', label: 'Nombre' },
-  { key: 'last_name', label: 'Apellidos' },
-  { key: 'full_name', label: 'Nombre completo' },
-  { key: 'email', label: 'Email' },
-  { key: 'company', label: 'Empresa' },
-  { key: 'position', label: 'Cargo' },
-  { key: 'unsubscribe_url', label: 'Enlace de baja' }
+/** Variables que se pueden usar en plantillas: {{nombre}}, {{nombre|amigo}}... */
+export const VARIABLES_PLANTILLA: { key: string; label: string }[] = [
+  { key: 'nombre', label: 'Nombre' },
+  { key: 'apellidos', label: 'Apellidos' },
+  { key: 'nombre_completo', label: 'Nombre completo' },
+  { key: 'correo', label: 'Correo' },
+  { key: 'empresa', label: 'Empresa' },
+  { key: 'cargo', label: 'Cargo' },
+  { key: 'enlace_baja', label: 'Enlace de baja' }
 ];

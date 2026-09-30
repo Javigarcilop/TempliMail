@@ -5,7 +5,7 @@ import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { setToken } from '../../utils/token';
 
-const MIN_PASSWORD_LENGTH = 8;
+const LONGITUD_MINIMA_CONTRASENA = 8;
 
 @Component({
   selector: 'app-account',
@@ -16,17 +16,17 @@ const MIN_PASSWORD_LENGTH = 8;
 })
 export class AccountComponent implements OnInit {
 
-  username = '';
-  email = '';
-  savingProfile = false;
+  nombreUsuario = '';
+  correo = '';
+  guardandoPerfil = false;
 
-  currentPassword = '';
-  newPassword = '';
-  confirmPassword = '';
-  savingPassword = false;
-  passwordError = '';
+  contrasenaActual = '';
+  contrasenaNueva = '';
+  confirmarContrasena = '';
+  guardandoContrasena = false;
+  errorContrasena = '';
 
-  readonly minPasswordLength = MIN_PASSWORD_LENGTH;
+  readonly longitudMinimaContrasena = LONGITUD_MINIMA_CONTRASENA;
 
   constructor(
     private api: ApiService,
@@ -35,53 +35,53 @@ export class AccountComponent implements OnInit {
 
   ngOnInit(): void {
     this.api.me().subscribe(response => {
-      this.username = response.data.username;
-      this.email = response.data.email;
+      this.nombreUsuario = response.data.nombre_usuario;
+      this.correo = response.data.correo;
     });
   }
 
   saveProfile(): void {
-    this.savingProfile = true;
+    this.guardandoPerfil = true;
 
-    this.api.updateProfile(this.email.trim()).subscribe({
+    this.api.updateProfile(this.correo.trim()).subscribe({
       next: response => {
-        this.savingProfile = false;
-        this.email = response.data.email;
+        this.guardandoPerfil = false;
+        this.correo = response.data.correo;
         this.toast.success('Datos actualizados.');
       },
       error: (err: HttpErrorResponse) => {
-        this.savingProfile = false;
+        this.guardandoPerfil = false;
         this.toast.error(err.error?.error ?? 'No se pudieron guardar los cambios.');
       }
     });
   }
 
   changePassword(): void {
-    this.passwordError = '';
+    this.errorContrasena = '';
 
-    if (this.newPassword.length < MIN_PASSWORD_LENGTH) {
-      this.passwordError = `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+    if (this.contrasenaNueva.length < LONGITUD_MINIMA_CONTRASENA) {
+      this.errorContrasena = `La nueva contraseña debe tener al menos ${LONGITUD_MINIMA_CONTRASENA} caracteres.`;
       return;
     }
 
-    if (this.newPassword !== this.confirmPassword) {
-      this.passwordError = 'Las contraseñas nuevas no coinciden.';
+    if (this.contrasenaNueva !== this.confirmarContrasena) {
+      this.errorContrasena = 'Las contraseñas nuevas no coinciden.';
       return;
     }
 
-    this.savingPassword = true;
+    this.guardandoContrasena = true;
 
-    this.api.changePassword(this.currentPassword, this.newPassword).subscribe({
+    this.api.changePassword(this.contrasenaActual, this.contrasenaNueva).subscribe({
       next: response => {
-        this.savingPassword = false;
+        this.guardandoContrasena = false;
         // El cambio invalida el token anterior: se guarda el nuevo para seguir dentro
         setToken(response.token);
-        this.currentPassword = this.newPassword = this.confirmPassword = '';
+        this.contrasenaActual = this.contrasenaNueva = this.confirmarContrasena = '';
         this.toast.success('Contraseña actualizada. Se han cerrado tus otras sesiones.');
       },
       error: (err: HttpErrorResponse) => {
-        this.savingPassword = false;
-        this.passwordError = err.error?.error ?? 'No se pudo cambiar la contraseña.';
+        this.guardandoContrasena = false;
+        this.errorContrasena = err.error?.error ?? 'No se pudo cambiar la contraseña.';
       }
     });
   }

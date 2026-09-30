@@ -17,8 +17,8 @@ import { DEMO_MODE } from '../../demo/demo-mode';
 export class LoginComponent implements OnInit {
 
   demo = DEMO_MODE;
-  username = DEMO_MODE ? 'demo' : '';
-  password = DEMO_MODE ? 'demo1234' : '';
+  nombreUsuario = DEMO_MODE ? 'demo' : '';
+  contrasena = DEMO_MODE ? 'demo1234' : '';
 
   loading = false;
   errorMessage = '';
@@ -37,7 +37,7 @@ export class LoginComponent implements OnInit {
   }
 
   onLogin(): void {
-    if (!this.username || !this.password) {
+    if (!this.nombreUsuario || !this.contrasena) {
       this.errorMessage = 'Completa todos los campos.';
       return;
     }
@@ -46,7 +46,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
     this.infoMessage = '';
 
-    this.api.login({ username: this.username, password: this.password }).subscribe({
+    this.api.login({ nombre_usuario: this.nombreUsuario, contrasena: this.contrasena }).subscribe({
       next: response => {
         this.loading = false;
 

@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-use TempliMail\Utils\Mailer;
+use TempliMail\Utils\EnviadorCorreo;
 
 $to = $argv[1] ?? null;
 
@@ -20,7 +20,7 @@ if ($to === null || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    Mailer::sendOnce($to, 'Prueba SMTP TempliMail', '<h1>Si lees esto, el SMTP funciona</h1>');
+    EnviadorCorreo::sendOnce($to, 'Prueba SMTP TempliMail', '<h1>Si lees esto, el SMTP funciona</h1>');
     echo "Correo enviado a {$to}\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Error: ' . $e->getMessage() . "\n");

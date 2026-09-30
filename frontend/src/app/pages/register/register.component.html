@@ -7,34 +7,34 @@
   <div class="login-box">
     <form (ngSubmit)="onRegister()" #registerForm="ngForm" class="login-form">
 
-      <!-- USERNAME -->
-      <label for="username">Usuario</label>
+      <!-- USUARIO -->
+      <label for="nombre_usuario">Usuario</label>
       <input
         type="text"
-        id="username"
-        name="username"
-        [(ngModel)]="username"
+        id="nombre_usuario"
+        name="nombre_usuario"
+        [(ngModel)]="nombreUsuario"
         required
       />
 
-      <!-- EMAIL -->
-      <label for="email">Email</label>
+      <!-- CORREO -->
+      <label for="correo">Correo</label>
       <input
         type="email"
-        id="email"
-        name="email"
-        [(ngModel)]="email"
+        id="correo"
+        name="correo"
+        [(ngModel)]="correo"
         required
         email
       />
 
-      <!-- PASSWORD -->
-      <label for="password">Contraseña</label>
+      <!-- CONTRASEÑA -->
+      <label for="contrasena">Contraseña</label>
       <input
         type="password"
-        id="password"
-        name="password"
-        [(ngModel)]="password"
+        id="contrasena"
+        name="contrasena"
+        [(ngModel)]="contrasena"
         required
         minlength="8"
       />

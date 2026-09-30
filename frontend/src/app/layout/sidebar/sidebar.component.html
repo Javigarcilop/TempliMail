@@ -12,8 +12,8 @@
   </nav>
 
   <div class="sidebar-footer">
-    @if (username()) {
-      <a routerLink="/cuenta" routerLinkActive="active" class="user" title="Mi cuenta">👤 {{ username() }}</a>
+    @if (nombreUsuario()) {
+      <a routerLink="/cuenta" routerLinkActive="active" class="user" title="Mi cuenta">👤 {{ nombreUsuario() }}</a>
     }
     <a href="/login" (click)="logout($event)">Salir</a>
   </div>

@@ -46,16 +46,16 @@
           <tr>
             <td>
               <div class="campaign-name">
-                {{ campaign.name || campaign.subject }}
-                @if (campaign.type === 'single') {
+                {{ campaign.nombre || campaign.asunto }}
+                @if (campaign.tipo === 'single') {
                   <span class="badge badge-gray">Individual</span>
                 }
               </div>
-              @if (campaign.name) {
-                <small class="muted">{{ campaign.subject }}</small>
+              @if (campaign.nombre) {
+                <small class="muted">{{ campaign.asunto }}</small>
               }
-              @if (campaign.template_name) {
-                <small class="muted"> · {{ campaign.template_name }}</small>
+              @if (campaign.nombre_plantilla) {
+                <small class="muted"> · {{ campaign.nombre_plantilla }}</small>
               }
             </td>
 
@@ -70,12 +70,12 @@
                 <div class="progress-bar" [style.width.%]="progress(campaign)"></div>
               </div>
               <small>
-                {{ campaign.sent }}/{{ campaign.total_recipients }} enviados
-                @if (campaign.failed > 0) {
-                  · <span class="text-danger">{{ campaign.failed }} fallidos</span>
+                {{ campaign.enviados }}/{{ campaign.total_destinatarios }} enviados
+                @if (campaign.fallidos > 0) {
+                  · <span class="text-danger">{{ campaign.fallidos }} fallidos</span>
                 }
-                @if (campaign.skipped > 0) {
-                  · {{ campaign.skipped }} omitidos
+                @if (campaign.omitidos > 0) {
+                  · {{ campaign.omitidos }} omitidos
                 }
               </small>
             </td>
@@ -87,13 +87,13 @@
                 {{ expandedCampaignId === campaign.id ? 'Ocultar ▲' : 'Detalle ▼' }}
               </button>
 
-              @if (campaign.status === 'completed' && campaign.failed > 0) {
+              @if (campaign.estado === 'completed' && campaign.fallidos > 0) {
                 <button class="btn-expand" [disabled]="actionInProgress === campaign.id" (click)="retryFailed(campaign)">
                   Reintentar fallidos
                 </button>
               }
 
-              @if (campaign.status === 'scheduled' && !isActive(campaign)) {
+              @if (campaign.estado === 'scheduled' && !isActive(campaign)) {
                 <button class="btn-expand danger" [disabled]="actionInProgress === campaign.id" (click)="cancel(campaign)">
                   Cancelar
                 </button>
@@ -114,7 +114,7 @@
                     <thead>
                       <tr>
                         <th>Nombre</th>
-                        <th>Email</th>
+                        <th>Correo</th>
                         <th>Estado</th>
                         <th>Enviado</th>
                         <th>Detalle</th>
@@ -123,18 +123,18 @@
                     <tbody>
                       @for (d of deliveries[campaign.id]; track d.id) {
                         <tr>
-                          <td>{{ d.first_name }} {{ d.last_name }}</td>
-                          <td>{{ d.email }}</td>
+                          <td>{{ d.nombre }} {{ d.apellidos }}</td>
+                          <td>{{ d.correo }}</td>
                           <td>
-                            <span class="badge" [ngClass]="deliveryBadge(d.status)">
-                              {{ deliveryLabel(d.status) }}
+                            <span class="badge" [ngClass]="deliveryBadge(d.estado)">
+                              {{ deliveryLabel(d.estado) }}
                             </span>
                           </td>
-                          <td>{{ d.sent_at | date:'short' }}</td>
+                          <td>{{ d.enviado_en | date:'short' }}</td>
                           <td class="error-msg">
-                            {{ d.error_message || '—' }}
-                            @if (d.retry_count > 0 && d.status === 'sent') {
-                              <span class="muted">(enviado tras {{ d.retry_count + 1 }} intentos)</span>
+                            {{ d.mensaje_error || '—' }}
+                            @if (d.reintentos > 0 && d.estado === 'sent') {
+                              <span class="muted">(enviado tras {{ d.reintentos + 1 }} intentos)</span>
                             }
                           </td>
                         </tr>
