@@ -75,9 +75,17 @@ export function parseCsv(input: string): string[][] {
   return rows.filter(r => r.some(cell => cell.trim() !== ''));
 }
 
+// Excel (y similares) interpretan una celda que empieza por =, +, - o @ como una
+// fórmula. Anteponer una comilla simple neutraliza el riesgo sin cambiar lo que se ve.
+const FORMULA_PREFIX = /^[=+\-@]/;
+
 export function toCsv(rows: (string | number | null | undefined)[][], delimiter = ';'): string {
   const escape = (value: string | number | null | undefined): string => {
-    const text = value === null || value === undefined ? '' : String(value);
+    let text = value === null || value === undefined ? '' : String(value);
+
+    if (FORMULA_PREFIX.test(text)) {
+      text = `'${text}`;
+    }
 
     return /["\r\n]/.test(text) || text.includes(delimiter)
       ? `"${text.replace(/"/g, '""')}"`

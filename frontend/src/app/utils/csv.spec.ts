@@ -24,6 +24,10 @@ describe('csv', () => {
     expect(parseCsv(toCsv([['x;y', 'l1\nl2', '"q"']]))).toEqual([['x;y', 'l1\nl2', '"q"']]);
   });
 
+  it('toCsv antepone comilla simple a celdas que empiezan por =, +, - o @ (inyección de fórmulas)', () => {
+    expect(toCsv([['=cmd', '+1', '-1', '@x', 'normal']])).toBe("'=cmd;'+1;'-1;'@x;normal");
+  });
+
   it('reconoce cabeceras de contactos en español (con tildes) e inglés', () => {
     const result = parseContactsCsv(
       'Nombre;Apellidos;Correo electrónico;Teléfono;Empresa;Cargo;Notas\nAna;López;ana@x.com;600;ACME;CEO;vip'
