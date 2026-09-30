@@ -231,7 +231,7 @@ class ContactModel
             }
 
             $db->commit();
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $db->rollBack();
             throw $e;
         }
