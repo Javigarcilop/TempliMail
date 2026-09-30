@@ -66,7 +66,7 @@ class ServicioAutenticacion
         if (
             !$user ||
             $user['eliminado_en'] !== null ||
-            !password_verify($contrasena, $user['password_hash'])
+            !password_verify($contrasena, $user['hash_contrasena'])
         ) {
             ModeloAutenticacion::recordFailedLogin($nombre_usuario, $ip);
             throw new ExcepcionApi('Credenciales incorrectas', 401);
@@ -111,7 +111,7 @@ class ServicioAutenticacion
     {
         $user = ModeloAutenticacion::findWithPasswordById($userId);
 
-        if (!$user || !password_verify($current, $user['password_hash'])) {
+        if (!$user || !password_verify($current, $user['hash_contrasena'])) {
             throw new ExcepcionApi('La contraseña actual no es correcta', 403);
         }
 

@@ -12,7 +12,7 @@ class ModeloAutenticacion
         $db = BD::get();
 
         $stmt = $db->prepare("
-            SELECT id, nombre_usuario, correo, password_hash, version_token, eliminado_en
+            SELECT id, nombre_usuario, correo, hash_contrasena, version_token, eliminado_en
             FROM usuarios
             WHERE nombre_usuario = :nombre_usuario
             LIMIT 1
@@ -46,7 +46,7 @@ class ModeloAutenticacion
     public static function findWithPasswordById(int $id): ?array
     {
         $stmt = BD::get()->prepare("
-            SELECT id, nombre_usuario, correo, password_hash, version_token, eliminado_en
+            SELECT id, nombre_usuario, correo, hash_contrasena, version_token, eliminado_en
             FROM usuarios WHERE id = :id LIMIT 1
         ");
         $stmt->execute(['id' => $id]);
@@ -120,14 +120,14 @@ class ModeloAutenticacion
         $db = BD::get();
 
         $stmt = $db->prepare("
-            INSERT INTO usuarios (nombre_usuario, correo, password_hash, version_token)
-            VALUES (:nombre_usuario, :correo, :password_hash, 1)
+            INSERT INTO usuarios (nombre_usuario, correo, hash_contrasena, version_token)
+            VALUES (:nombre_usuario, :correo, :hash_contrasena, 1)
         ");
 
         $stmt->execute([
             'nombre_usuario'      => $nombre_usuario,
             'correo'         => $correo,
-            'password_hash' => password_hash($contrasena, PASSWORD_ARGON2ID) 
+            'hash_contrasena' => password_hash($contrasena, PASSWORD_ARGON2ID)
         ]);
     }
 
@@ -137,7 +137,7 @@ class ModeloAutenticacion
 
         $stmt = $db->prepare("
             UPDATE usuarios
-            SET password_hash = :password_hash,
+            SET hash_contrasena = :hash_contrasena,
                 version_token = version_token + 1,
                 actualizado_en = NOW()
             WHERE id = :id
@@ -146,7 +146,7 @@ class ModeloAutenticacion
 
         $stmt->execute([
             'id' => $userId,
-            'password_hash' => password_hash($newPassword, PASSWORD_ARGON2ID)
+            'hash_contrasena' => password_hash($newPassword, PASSWORD_ARGON2ID)
         ]);
     }
 
