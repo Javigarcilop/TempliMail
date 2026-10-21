@@ -7,7 +7,7 @@ namespace TempliMail\Models;
 use TempliMail\Utils\BD;
 use PDO;
 
-class ModeloPanel
+class PanelModelo
 {
     public static function getStats(int $userId): array
     {

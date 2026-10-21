@@ -6,14 +6,14 @@ namespace TempliMail\Middleware;
 
 use DomainException;
 use InvalidArgumentException;
-use TempliMail\Models\ModeloAutenticacion;
-use TempliMail\Services\ServicioJwt;
+use TempliMail\Models\AutenticacionModelo;
+use TempliMail\Services\JwtServicio;
 use UnexpectedValueException;
 
-class MiddlewareAutenticacion
+class AutenticacionMiddleware
 {
     public function __construct(
-        private ServicioJwt $jwtService
+        private JwtServicio $jwtService
     ) {}
 
     public function handle(): int
@@ -32,7 +32,7 @@ class MiddlewareAutenticacion
             $this->unauthorized();
         }
 
-        $user = ModeloAutenticacion::findById((int) $decoded->sub);
+        $user = AutenticacionModelo::findById((int) $decoded->sub);
 
         if (
             !$user ||

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Models\ModeloContacto;
+use TempliMail\Models\ContactoModelo;
 use TempliMail\Utils\Baja;
 use Throwable;
 
@@ -14,7 +14,7 @@ use Throwable;
  * el POST ejecuta la baja. El POST tambien atiende la baja "one-click"
  * (cabecera List-Unsubscribe-Post) de Gmail, Outlook, etc.
  */
-class ControladorBaja
+class BajaControlador
 {
     public function handle(int $contactId, string $signature): void
     {
@@ -29,7 +29,7 @@ class ControladorBaja
 
         try {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $correo = ModeloContacto::unsubscribe($contactId);
+                $correo = ContactoModelo::unsubscribe($contactId);
 
                 if ($correo === null) {
                     http_response_code(404);

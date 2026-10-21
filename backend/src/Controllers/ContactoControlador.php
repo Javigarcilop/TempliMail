@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Services\ServicioContacto;
+use TempliMail\Services\ContactoServicio;
 
-class ControladorContacto extends ControladorBase
+class ContactoControlador extends BaseControlador
 {
     public function getAll(): void
     {
-        $this->respond(fn(): array => ['data' => ServicioContacto::getAll($this->userId())]);
+        $this->respond(fn(): array => ['data' => ContactoServicio::getAll($this->userId())]);
     }
 
     public function create(): void
     {
         $this->respond(
-            fn(): array => ['id' => ServicioContacto::create($this->userId(), $this->body())],
+            fn(): array => ['id' => ContactoServicio::create($this->userId(), $this->body())],
             201
         );
     }
@@ -24,7 +24,7 @@ class ControladorContacto extends ControladorBase
     public function update(int $id): void
     {
         $this->respond(function () use ($id): array {
-            ServicioContacto::update($this->userId(), $id, $this->body());
+            ContactoServicio::update($this->userId(), $id, $this->body());
 
             return [];
         });
@@ -33,7 +33,7 @@ class ControladorContacto extends ControladorBase
     public function delete(int $id): void
     {
         $this->respond(function () use ($id): array {
-            ServicioContacto::delete($this->userId(), $id);
+            ContactoServicio::delete($this->userId(), $id);
 
             return [];
         });
@@ -45,7 +45,7 @@ class ControladorContacto extends ControladorBase
         $this->respond(function () use ($id): array {
             $subscribed = (bool) ($this->body()['subscribed'] ?? false);
 
-            ServicioContacto::setSubscribed($this->userId(), $id, $subscribed);
+            ContactoServicio::setSubscribed($this->userId(), $id, $subscribed);
 
             return [];
         });
@@ -55,7 +55,7 @@ class ControladorContacto extends ControladorBase
     public function setGroups(int $id): void
     {
         $this->respond(function () use ($id): array {
-            ServicioContacto::setGroups($this->userId(), $id, $this->body());
+            ContactoServicio::setGroups($this->userId(), $id, $this->body());
 
             return [];
         });
@@ -65,7 +65,7 @@ class ControladorContacto extends ControladorBase
     public function import(): void
     {
         $this->respond(
-            fn(): array => ServicioContacto::import($this->userId(), $this->body()),
+            fn(): array => ContactoServicio::import($this->userId(), $this->body()),
             201
         );
     }

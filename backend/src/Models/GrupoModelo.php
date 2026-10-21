@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace TempliMail\Models;
 
 use PDOException;
-use TempliMail\Exceptions\ExcepcionApi;
+use TempliMail\Exceptions\ApiExcepcion;
 use TempliMail\Utils\BD;
 use PDO;
 
-class ModeloGrupo
+class GrupoModelo
 {
     public static function getAllByUser(int $userId): array
     {
@@ -60,7 +60,7 @@ class ModeloGrupo
         }
 
         if (!self::owns($userId, $id)) {
-            throw ExcepcionApi::notFound('Grupo no encontrado');
+            throw ApiExcepcion::notFound('Grupo no encontrado');
         }
     }
 
@@ -70,7 +70,7 @@ class ModeloGrupo
         $stmt->execute(['id' => $id, 'usuario_id' => $userId]);
 
         if ($stmt->rowCount() === 0) {
-            throw ExcepcionApi::notFound('Grupo no encontrado');
+            throw ApiExcepcion::notFound('Grupo no encontrado');
         }
     }
 
@@ -112,13 +112,13 @@ class ModeloGrupo
     {
         $groupIds = array_values(array_unique(array_filter(array_map('intval', $groupIds))));
 
-        if (ModeloContacto::getById($userId, $contactId) === null) {
-            throw ExcepcionApi::notFound('Contacto no encontrado');
+        if (ContactoModelo::getById($userId, $contactId) === null) {
+            throw ApiExcepcion::notFound('Contacto no encontrado');
         }
 
         foreach ($groupIds as $groupId) {
             if (!self::owns($userId, $groupId)) {
-                throw ExcepcionApi::notFound('Grupo no encontrado');
+                throw ApiExcepcion::notFound('Grupo no encontrado');
             }
         }
 
@@ -166,11 +166,11 @@ class ModeloGrupo
         $nombre = trim($nombre);
 
         if ($nombre === '') {
-            throw new ExcepcionApi('El nombre del grupo es obligatorio');
+            throw new ApiExcepcion('El nombre del grupo es obligatorio');
         }
 
         if (mb_strlen($nombre) > 100) {
-            throw new ExcepcionApi('El nombre del grupo es demasiado largo (máximo 100 caracteres)');
+            throw new ApiExcepcion('El nombre del grupo es demasiado largo (máximo 100 caracteres)');
         }
 
         return $nombre;
@@ -180,7 +180,7 @@ class ModeloGrupo
     {
         // 23000 = violacion de UNIQUE (nombre repetido para el usuario)
         return $e->getCode() === '23000'
-            ? ExcepcionApi::conflict('Ya existe un grupo con ese nombre')
+            ? ApiExcepcion::conflict('Ya existe un grupo con ese nombre')
             : $e;
     }
 }

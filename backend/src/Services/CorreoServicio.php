@@ -6,12 +6,12 @@ namespace TempliMail\Services;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use TempliMail\Exceptions\ExcepcionApi;
-use TempliMail\Models\ModeloAutenticacion;
-use TempliMail\Models\ModeloContacto;
-use TempliMail\Models\ModeloCampanaCorreo;
-use TempliMail\Models\ModeloEntregaCorreo;
-use TempliMail\Models\ModeloPlantilla;
+use TempliMail\Exceptions\ApiExcepcion;
+use TempliMail\Models\AutenticacionModelo;
+use TempliMail\Models\ContactoModelo;
+use TempliMail\Models\CampanaCorreoModelo;
+use TempliMail\Models\EntregaCorreoModelo;
+use TempliMail\Models\PlantillaModelo;
 use TempliMail\Utils\Entorno;
 use TempliMail\Utils\EnviadorCorreo;
 use TempliMail\Utils\RenderizadorPlantilla;
@@ -19,7 +19,7 @@ use TempliMail\Utils\Baja;
 use TempliMail\Utils\Seguimiento;
 use Throwable;
 
-class ServicioCorreo
+class CorreoServicio
 {
     private const MAX_RECIPIENTS = 5000;
     private const BATCH_SIZE     = 50;
@@ -35,30 +35,30 @@ class ServicioCorreo
         $body    = (string) ($data['cuerpo'] ?? '');
 
         if ($to === '' || $asunto === '' || trim(strip_tags($body)) === '') {
-            throw new ExcepcionApi('Destinatario, asunto y mensaje son obligatorios');
+            throw new ApiExcepcion('Destinatario, asunto y mensaje son obligatorios');
         }
 
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-            throw new ExcepcionApi('El correo del destinatario no es valido');
+            throw new ApiExcepcion('El correo del destinatario no es valido');
         }
 
-        $campaignId = ModeloCampanaCorreo::create($userId, null, null, 'single', $asunto, $body, 'processing', null);
-        ModeloEntregaCorreo::insertBatch($campaignId, [['id' => null, 'correo' => $to]]);
-        $delivery = ModeloEntregaCorreo::getPendingByCampaign($campaignId, 1)[0];
+        $campaignId = CampanaCorreoModelo::create($userId, null, null, 'single', $asunto, $body, 'processing', null);
+        EntregaCorreoModelo::insertBatch($campaignId, [['id' => null, 'correo' => $to]]);
+        $delivery = EntregaCorreoModelo::getPendingByCampaign($campaignId, 1)[0];
 
         try {
             $trackedBody = self::applyTracking($body, (int) $delivery['id'], null);
             EnviadorCorreo::sendOnce($to, $asunto, $trackedBody);
-            ModeloEntregaCorreo::markSent((int) $delivery['id']);
+            EntregaCorreoModelo::markSent((int) $delivery['id']);
         } catch (Throwable $e) {
-            ModeloEntregaCorreo::markFailed((int) $delivery['id'], $e->getMessage());
-            ModeloCampanaCorreo::markCompleted($campaignId);
+            EntregaCorreoModelo::markFailed((int) $delivery['id'], $e->getMessage());
+            CampanaCorreoModelo::markCompleted($campaignId);
             error_log('sendSingle failed: ' . $e->getMessage());
 
-            throw new ExcepcionApi('No se pudo enviar el correo. Revisa la configuración SMTP.', 502);
+            throw new ApiExcepcion('No se pudo enviar el correo. Revisa la configuración SMTP.', 502);
         }
 
-        ModeloCampanaCorreo::markCompleted($campaignId);
+        CampanaCorreoModelo::markCompleted($campaignId);
     }
 
     // =================================================================
@@ -78,17 +78,17 @@ class ServicioCorreo
     {
         [$asunto, $body] = self::previewContent($userId, $data);
 
-        $user = ModeloAutenticacion::findById($userId);
+        $user = AutenticacionModelo::findById($userId);
 
         if (!$user) {
-            throw ExcepcionApi::notFound('Usuario no encontrado');
+            throw ApiExcepcion::notFound('Usuario no encontrado');
         }
 
         try {
             EnviadorCorreo::sendOnce($user['correo'], '[PRUEBA] ' . $asunto, $body);
         } catch (Throwable $e) {
             error_log('sendTest failed: ' . $e->getMessage());
-            throw new ExcepcionApi('No se pudo enviar el correo de prueba. Revisa la configuración SMTP.', 502);
+            throw new ApiExcepcion('No se pudo enviar el correo de prueba. Revisa la configuración SMTP.', 502);
         }
 
         return $user['correo'];
@@ -108,24 +108,24 @@ class ServicioCorreo
         $templateId = (int) ($data['plantilla_id'] ?? 0);
 
         if (!is_array($contactIds) || $contactIds === [] || $templateId <= 0) {
-            throw new ExcepcionApi('Selecciona una plantilla y al menos un contacto');
+            throw new ApiExcepcion('Selecciona una plantilla y al menos un contacto');
         }
 
         if (count($contactIds) > self::MAX_RECIPIENTS) {
-            throw new ExcepcionApi('Maximo ' . self::MAX_RECIPIENTS . ' destinatarios por campaña');
+            throw new ApiExcepcion('Maximo ' . self::MAX_RECIPIENTS . ' destinatarios por campaña');
         }
 
-        $template = ModeloPlantilla::getById($userId, $templateId);
+        $template = PlantillaModelo::getById($userId, $templateId);
 
         if (!$template) {
-            throw ExcepcionApi::notFound('Plantilla no encontrada');
+            throw ApiExcepcion::notFound('Plantilla no encontrada');
         }
 
         // Solo contactos del usuario y suscritos (evita enviar a contactos ajenos o dados de baja)
-        $recipients = ModeloContacto::getSendableByIds($userId, $contactIds);
+        $recipients = ContactoModelo::getSendableByIds($userId, $contactIds);
 
         if ($recipients === []) {
-            throw new ExcepcionApi('Ninguno de los contactos seleccionados puede recibir correos');
+            throw new ApiExcepcion('Ninguno de los contactos seleccionados puede recibir correos');
         }
 
         $scheduledAt = self::parseScheduledAt($data['programado_en'] ?? null);
@@ -133,7 +133,7 @@ class ServicioCorreo
         $nombre = trim((string) ($data['nombre'] ?? ''));
         $nombre = $nombre !== '' ? mb_substr($nombre, 0, 255) : null;
 
-        $campaignId = ModeloCampanaCorreo::create(
+        $campaignId = CampanaCorreoModelo::create(
             $userId,
             $templateId,
             $nombre,
@@ -144,7 +144,7 @@ class ServicioCorreo
             $scheduledAt
         );
 
-        ModeloEntregaCorreo::insertBatch($campaignId, $recipients);
+        EntregaCorreoModelo::insertBatch($campaignId, $recipients);
 
         return [
             'campana_id'    => $campaignId,
@@ -156,22 +156,22 @@ class ServicioCorreo
 
     public static function cancelCampaign(int $userId, int $campaignId): void
     {
-        ModeloCampanaCorreo::cancel($userId, $campaignId);
+        CampanaCorreoModelo::cancel($userId, $campaignId);
     }
 
     public static function retryFailed(int $userId, int $campaignId): int
     {
-        return ModeloCampanaCorreo::retryFailed($userId, $campaignId);
+        return CampanaCorreoModelo::retryFailed($userId, $campaignId);
     }
 
     public static function getHistory(int $userId): array
     {
-        return ModeloCampanaCorreo::getAllByUser($userId);
+        return CampanaCorreoModelo::getAllByUser($userId);
     }
 
     public static function getDeliveries(int $userId, int $campaignId): array
     {
-        return ModeloEntregaCorreo::getByCampaign($campaignId, $userId);
+        return EntregaCorreoModelo::getByCampaign($campaignId, $userId);
     }
 
     // =================================================================
@@ -183,7 +183,7 @@ class ServicioCorreo
     {
         $processed = 0;
 
-        foreach (ModeloCampanaCorreo::getDue(50) as $campaign) {
+        foreach (CampanaCorreoModelo::getDue(50) as $campaign) {
             if ((int) $campaign['usuario_id'] === $userId && self::processCampaign((int) $campaign['id'])) {
                 $processed++;
             }
@@ -197,7 +197,7 @@ class ServicioCorreo
     {
         $processed = 0;
 
-        foreach (ModeloCampanaCorreo::getDue(10) as $campaign) {
+        foreach (CampanaCorreoModelo::getDue(10) as $campaign) {
             if (self::processCampaign((int) $campaign['id'])) {
                 $processed++;
             }
@@ -212,11 +212,11 @@ class ServicioCorreo
      */
     public static function processCampaign(int $campaignId): bool
     {
-        if (!ModeloCampanaCorreo::claim($campaignId)) {
+        if (!CampanaCorreoModelo::claim($campaignId)) {
             return false;
         }
 
-        $campaign = ModeloCampanaCorreo::findById($campaignId);
+        $campaign = CampanaCorreoModelo::findById($campaignId);
 
         if (!$campaign) {
             return false;
@@ -227,11 +227,11 @@ class ServicioCorreo
         $mailer      = new EnviadorCorreo(true);
 
         try {
-            while ($deliveries = ModeloEntregaCorreo::getPendingByCampaign($campaignId, self::BATCH_SIZE)) {
+            while ($deliveries = EntregaCorreoModelo::getPendingByCampaign($campaignId, self::BATCH_SIZE)) {
                 foreach ($deliveries as $delivery) {
                     self::deliver($mailer, $campaign, $delivery, $maxAttempts);
 
-                    ModeloCampanaCorreo::heartbeat($campaignId);
+                    CampanaCorreoModelo::heartbeat($campaignId);
 
                     if ($throttleUs > 0) {
                         usleep($throttleUs);
@@ -239,7 +239,7 @@ class ServicioCorreo
                 }
             }
 
-            ModeloCampanaCorreo::markCompleted($campaignId);
+            CampanaCorreoModelo::markCompleted($campaignId);
         } finally {
             $mailer->close();
         }
@@ -257,12 +257,12 @@ class ServicioCorreo
         $contactId  = $delivery['contacto_id'] !== null ? (int) $delivery['contacto_id'] : null;
 
         if ($contactId === null && $campaign['tipo'] === 'mass') {
-            ModeloEntregaCorreo::markSkipped($deliveryId, 'El contacto ya no existe');
+            EntregaCorreoModelo::markSkipped($deliveryId, 'El contacto ya no existe');
             return;
         }
 
         if ($delivery['baja_en'] !== null) {
-            ModeloEntregaCorreo::markSkipped($deliveryId, 'Contacto dado de baja');
+            EntregaCorreoModelo::markSkipped($deliveryId, 'Contacto dado de baja');
             return;
         }
 
@@ -294,7 +294,7 @@ class ServicioCorreo
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
                 $mailer->send($delivery['correo_destinatario'], $asunto, $body, $headers);
-                ModeloEntregaCorreo::markSent($deliveryId, $attempt);
+                EntregaCorreoModelo::markSent($deliveryId, $attempt);
                 return;
             } catch (Throwable $e) {
                 $lastError = $e->getMessage();
@@ -305,7 +305,7 @@ class ServicioCorreo
             }
         }
 
-        ModeloEntregaCorreo::markFailed($deliveryId, $lastError, $maxAttempts);
+        EntregaCorreoModelo::markFailed($deliveryId, $lastError, $maxAttempts);
     }
 
     /** Anade el pie con el enlace de baja si el contenido no lo incluye ya. */
@@ -362,13 +362,13 @@ class ServicioCorreo
         $html    = (string) ($data['contenido_html'] ?? '');
 
         if (trim($asunto) === '' && trim(strip_tags($html)) === '') {
-            throw new ExcepcionApi('No hay contenido que previsualizar');
+            throw new ApiExcepcion('No hay contenido que previsualizar');
         }
 
         $vars = RenderizadorPlantilla::SAMPLE;
 
         if (!empty($data['contacto_id'])) {
-            $contact = ModeloContacto::getById($userId, (int) $data['contacto_id']);
+            $contact = ContactoModelo::getById($userId, (int) $data['contacto_id']);
 
             if ($contact) {
                 $vars = array_intersect_key($contact, RenderizadorPlantilla::VARIABLES);
@@ -396,7 +396,7 @@ class ServicioCorreo
         try {
             $date = new DateTimeImmutable((string) $value, new DateTimeZone('UTC'));
         } catch (Throwable) {
-            throw new ExcepcionApi('La fecha de programación no es válida');
+            throw new ApiExcepcion('La fecha de programación no es válida');
         }
 
         $utc = $date->setTimezone(new DateTimeZone('UTC'));

@@ -11,7 +11,7 @@ use RuntimeException;
  * (validacion, recurso inexistente, credenciales invalidas...).
  * Cualquier otra excepcion se registra en el log y se responde con un 500 generico.
  */
-class ExcepcionApi extends RuntimeException
+class ApiExcepcion extends RuntimeException
 {
     public function __construct(
         string $message,

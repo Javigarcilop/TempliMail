@@ -5,7 +5,7 @@ namespace TempliMail\Models;
 use TempliMail\Utils\BD;
 use PDO;
 
-class ModeloAutenticacion
+class AutenticacionModelo
 {
     public static function findByUsername(string $nombre_usuario): ?array
     {

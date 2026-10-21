@@ -7,7 +7,7 @@ namespace TempliMail\Models;
 use TempliMail\Utils\BD;
 use PDO;
 
-class ModeloEntregaCorreo
+class EntregaCorreoModelo
 {
     /**
      * @param array<int,array{id:int|string|null,correo:string}> $recipients

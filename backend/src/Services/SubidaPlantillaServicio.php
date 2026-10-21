@@ -2,30 +2,30 @@
 
 namespace TempliMail\Services;
 
-use TempliMail\Exceptions\ExcepcionApi;
+use TempliMail\Exceptions\ApiExcepcion;
 use PhpOffice\PhpWord\IOFactory;
 use Smalot\PdfParser\Parser;
 
-class ServicioSubidaPlantilla
+class SubidaPlantillaServicio
 {
     private const MAX_SIZE = 5242880; // 5MB
 
     public static function process(array $file): string
     {
         if (!isset($file['tmp_name'], $file['nombre'], $file['size'])) {
-            throw new ExcepcionApi('Archivo inválido.');
+            throw new ApiExcepcion('Archivo inválido.');
         }
 
         if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-            throw new ExcepcionApi('No se pudo subir el archivo (error ' . $file['error'] . ').');
+            throw new ApiExcepcion('No se pudo subir el archivo (error ' . $file['error'] . ').');
         }
 
         if ($file['size'] === 0 || !file_exists($file['tmp_name'])) {
-            throw new ExcepcionApi('Archivo vacío o no válido.');
+            throw new ApiExcepcion('Archivo vacío o no válido.');
         }
 
         if ($file['size'] > self::MAX_SIZE) {
-            throw new ExcepcionApi('El archivo supera el tamaño máximo permitido.');
+            throw new ApiExcepcion('El archivo supera el tamaño máximo permitido.');
         }
 
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
@@ -37,7 +37,7 @@ class ServicioSubidaPlantilla
         ];
 
         if (!in_array($mime, $allowedMimes)) {
-            throw new ExcepcionApi('Tipo de archivo no permitido.');
+            throw new ApiExcepcion('Tipo de archivo no permitido.');
         }
 
         return match ($mime) {
@@ -78,7 +78,7 @@ class ServicioSubidaPlantilla
         $text = trim($pdf->getText());
 
         if ($text === '') {
-            throw new ExcepcionApi('No se pudo extraer contenido del PDF.');
+            throw new ApiExcepcion('No se pudo extraer contenido del PDF.');
         }
 
         return '<p>' . nl2br(htmlentities($text)) . '</p>';

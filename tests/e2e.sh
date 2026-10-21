@@ -134,9 +134,9 @@ check "ahora las 2 se envían" "$(SQL "SELECT COUNT(*) FROM entregas_correo WHER
 echo "== 10. Envío individual y prueba (vía CLI, SMTP->Mailpit) =="
 docker compose run --rm -T $MP worker php -r '
 require "backend/bootstrap.php";
-TempliMail\Services\ServicioCorreo::sendSingle(1, ["destinatario"=>"destino@test.local","asunto"=>"Suelto\r\nBcc: x@y.z","cuerpo"=>"<p>Hola</p>"]);
+TempliMail\Services\CorreoServicio::sendSingle(1, ["destinatario"=>"destino@test.local","asunto"=>"Suelto\r\nBcc: x@y.z","cuerpo"=>"<p>Hola</p>"]);
 echo "single ok\n";
-echo "test enviado a ".TempliMail\Services\ServicioCorreo::sendTest(1, ["asunto"=>"Hola {{nombre}}","contenido_html"=>"<p>x</p>"])."\n";' 2>&1 | sed 's/^/    /'
+echo "test enviado a ".TempliMail\Services\CorreoServicio::sendTest(1, ["asunto"=>"Hola {{nombre}}","contenido_html"=>"<p>x</p>"])."\n";' 2>&1 | sed 's/^/    /'
 check "envío individual en el historial (tipo=single)" "$(SQL "SELECT COUNT(*) FROM campanas_correo WHERE tipo='single' AND estado='completed'")" 1
 check "asunto sin saltos de línea (anti-inyección)" "$(SQL "SELECT asunto FROM campanas_correo WHERE tipo='single'" | grep -c Bcc)" 1
 check "destinatario individual registrado" "$(SQL "SELECT correo_destinatario FROM entregas_correo ed JOIN campanas_correo ec ON ec.id=ed.campana_id WHERE ec.tipo='single'")" destino@test.local

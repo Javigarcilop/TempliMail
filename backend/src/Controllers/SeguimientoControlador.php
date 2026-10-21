@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Models\ModeloEntregaCorreo;
+use TempliMail\Models\EntregaCorreoModelo;
 use TempliMail\Utils\Seguimiento;
 use Throwable;
 
@@ -13,7 +13,7 @@ use Throwable;
  * clics incrustados en cada correo enviado. Los visita el cliente de correo o
  * el navegador del destinatario, nunca el frontend, asi que no llevan JWT.
  */
-class ControladorSeguimiento
+class SeguimientoControlador
 {
     /** GIF transparente de 1x1 (43 bytes): el estandar de facto para pixeles de seguimiento. */
     private const PIXEL_GIF = "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
@@ -24,7 +24,7 @@ class ControladorSeguimiento
     {
         try {
             if (Seguimiento::isValidOpenSignature($deliveryId, $signature)) {
-                ModeloEntregaCorreo::recordOpen($deliveryId);
+                EntregaCorreoModelo::recordOpen($deliveryId);
             }
         } catch (Throwable $e) {
             error_log('Seguimiento (apertura) fallo: ' . $e->getMessage());
@@ -59,7 +59,7 @@ class ControladorSeguimiento
         }
 
         try {
-            ModeloEntregaCorreo::recordClick($deliveryId);
+            EntregaCorreoModelo::recordClick($deliveryId);
         } catch (Throwable $e) {
             error_log('Seguimiento (clic) fallo: ' . $e->getMessage());
         }

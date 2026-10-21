@@ -4,45 +4,45 @@ declare(strict_types=1);
 
 namespace TempliMail\Services;
 
-use TempliMail\Exceptions\ExcepcionApi;
-use TempliMail\Models\ModeloContacto;
-use TempliMail\Models\ModeloGrupo;
+use TempliMail\Exceptions\ApiExcepcion;
+use TempliMail\Models\ContactoModelo;
+use TempliMail\Models\GrupoModelo;
 
-class ServicioContacto
+class ContactoServicio
 {
     public static function getAll(int $userId): array
     {
-        return ModeloContacto::getAllByUser($userId);
+        return ContactoModelo::getAllByUser($userId);
     }
 
     public static function create(int $userId, array $data): int
     {
-        return ModeloContacto::create($userId, $data);
+        return ContactoModelo::create($userId, $data);
     }
 
     public static function update(int $userId, int $id, array $data): void
     {
-        ModeloContacto::update($userId, $id, $data);
+        ContactoModelo::update($userId, $id, $data);
     }
 
     public static function delete(int $userId, int $id): void
     {
-        ModeloContacto::delete($userId, $id);
+        ContactoModelo::delete($userId, $id);
     }
 
     public static function setSubscribed(int $userId, int $id, bool $subscribed): void
     {
-        ModeloContacto::setSubscribed($userId, $id, $subscribed);
+        ContactoModelo::setSubscribed($userId, $id, $subscribed);
     }
     public static function setGroups(int $userId, int $id, array $data): void
     {
         $groupIds = $data['ids_grupo'] ?? [];
 
         if (!is_array($groupIds)) {
-            throw new ExcepcionApi('ids_grupo debe ser una lista');
+            throw new ApiExcepcion('ids_grupo debe ser una lista');
         }
 
-        ModeloGrupo::setContactGroups($userId, $id, $groupIds);
+        GrupoModelo::setContactGroups($userId, $id, $groupIds);
     }
 
     /** @return array{created:int,duplicates:int,invalid:array} */
@@ -51,15 +51,15 @@ class ServicioContacto
         $rows = $data['contactos'] ?? null;
 
         if (!is_array($rows) || $rows === []) {
-            throw new ExcepcionApi('No hay contactos que importar');
+            throw new ApiExcepcion('No hay contactos que importar');
         }
 
         if (count($rows) > 2000) {
-            throw new ExcepcionApi('Máximo 2000 contactos por importación');
+            throw new ApiExcepcion('Máximo 2000 contactos por importación');
         }
 
         $groupId = !empty($data['grupo_id']) ? (int) $data['grupo_id'] : null;
 
-        return ModeloContacto::importMany($userId, array_filter($rows, 'is_array'), $groupId);
+        return ContactoModelo::importMany($userId, array_filter($rows, 'is_array'), $groupId);
     }
 }

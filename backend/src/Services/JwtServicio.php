@@ -6,7 +6,7 @@ namespace TempliMail\Services;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-class ServicioJwt
+class JwtServicio
 {
     private string $secret;
     private int $ttl;

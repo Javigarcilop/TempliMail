@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace TempliMail\Models;
 
-use TempliMail\Exceptions\ExcepcionApi;
+use TempliMail\Exceptions\ApiExcepcion;
 use TempliMail\Utils\BD;
 use PDO;
 
-class ModeloContacto
+class ContactoModelo
 {
     public static function getAllByUser(int $userId): array
     {
@@ -26,7 +26,7 @@ class ModeloContacto
         $stmt->execute(['usuario_id' => $userId]);
 
         $contactos    = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $memberships = ModeloGrupo::membershipsByContact($userId);
+        $memberships = GrupoModelo::membershipsByContact($userId);
 
         foreach ($contactos as &$contact) {
             $contact['ids_grupo'] = $memberships[(int) $contact['id']] ?? [];
@@ -85,7 +85,7 @@ class ModeloContacto
         $correo = self::validEmail($data['correo'] ?? '');
 
         if (self::emailExists($userId, $correo)) {
-            throw ExcepcionApi::conflict('Ya existe un contacto con ese correo');
+            throw ApiExcepcion::conflict('Ya existe un contacto con ese correo');
         }
 
         $db   = BD::get();
@@ -113,7 +113,7 @@ class ModeloContacto
         $correo = self::validEmail($data['correo'] ?? '');
 
         if (self::emailExistsForAnotherContact($userId, $correo, $id)) {
-            throw ExcepcionApi::conflict('Ya existe otro contacto con ese correo');
+            throw ApiExcepcion::conflict('Ya existe otro contacto con ese correo');
         }
 
         $stmt = BD::get()->prepare("
@@ -142,7 +142,7 @@ class ModeloContacto
 
         // rowCount() vale 0 si no cambio nada: se comprueba la existencia aparte
         if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
-            throw ExcepcionApi::notFound('Contacto no encontrado');
+            throw ApiExcepcion::notFound('Contacto no encontrado');
         }
     }
 
@@ -156,7 +156,7 @@ class ModeloContacto
         $stmt->execute(['id' => $id, 'usuario_id' => $userId]);
 
         if ($stmt->rowCount() === 0) {
-            throw ExcepcionApi::notFound('Contacto no encontrado');
+            throw ApiExcepcion::notFound('Contacto no encontrado');
         }
     }
 
@@ -169,8 +169,8 @@ class ModeloContacto
      */
     public static function importMany(int $userId, array $rows, ?int $groupId = null): array
     {
-        if ($groupId !== null && !ModeloGrupo::owns($userId, $groupId)) {
-            throw ExcepcionApi::notFound('Grupo no encontrado');
+        if ($groupId !== null && !GrupoModelo::owns($userId, $groupId)) {
+            throw ApiExcepcion::notFound('Grupo no encontrado');
         }
 
         $db = BD::get();
@@ -227,7 +227,7 @@ class ModeloContacto
             }
 
             if ($groupId !== null) {
-                ModeloGrupo::addContacts($groupId, $newIds);
+                GrupoModelo::addContacts($groupId, $newIds);
             }
 
             $db->commit();
@@ -251,7 +251,7 @@ class ModeloContacto
         $stmt->execute(['id' => $id, 'usuario_id' => $userId]);
 
         if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
-            throw ExcepcionApi::notFound('Contacto no encontrado');
+            throw ApiExcepcion::notFound('Contacto no encontrado');
         }
     }
 
@@ -284,11 +284,11 @@ class ModeloContacto
         $correo = trim((string) $value);
 
         if ($correo === '') {
-            throw new ExcepcionApi('El correo es obligatorio');
+            throw new ApiExcepcion('El correo es obligatorio');
         }
 
         if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-            throw new ExcepcionApi('El formato del correo no es valido');
+            throw new ApiExcepcion('El formato del correo no es valido');
         }
 
         return $correo;

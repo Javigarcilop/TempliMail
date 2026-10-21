@@ -2,11 +2,11 @@
 
 namespace TempliMail\Models;
 
-use TempliMail\Exceptions\ExcepcionApi;
+use TempliMail\Exceptions\ApiExcepcion;
 use TempliMail\Utils\BD;
 use PDO;
 
-class ModeloPlantilla
+class PlantillaModelo
 {
     public static function getAllByUser(int $userId): array
     {
@@ -91,7 +91,7 @@ class ModeloPlantilla
 
         // rowCount() vale 0 si no cambio nada: se comprueba la existencia aparte
         if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
-            throw ExcepcionApi::notFound('Plantilla no encontrada');
+            throw ApiExcepcion::notFound('Plantilla no encontrada');
         }
     }
 
@@ -113,7 +113,7 @@ class ModeloPlantilla
         ]);
 
         if ($stmt->rowCount() === 0) {
-            throw ExcepcionApi::notFound('Plantilla no encontrada');
+            throw ApiExcepcion::notFound('Plantilla no encontrada');
         }
     }
 }

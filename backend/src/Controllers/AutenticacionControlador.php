@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace TempliMail\Controllers;
 
-use TempliMail\Exceptions\ExcepcionApi;
-use TempliMail\Services\ServicioAutenticacion;
-use TempliMail\Services\ServicioJwt;
+use TempliMail\Exceptions\ApiExcepcion;
+use TempliMail\Services\AutenticacionServicio;
+use TempliMail\Services\JwtServicio;
 use TempliMail\Utils\Entorno;
 
-class ControladorAutenticacion extends ControladorBase
+class AutenticacionControlador extends BaseControlador
 {
     public function login(): void
     {
@@ -17,13 +17,13 @@ class ControladorAutenticacion extends ControladorBase
             $data = $this->body();
 
             if (empty($data['nombre_usuario']) || empty($data['contrasena'])) {
-                throw new ExcepcionApi('Usuario y contraseña son obligatorios');
+                throw new ApiExcepcion('Usuario y contraseña son obligatorios');
             }
 
-            $token = ServicioAutenticacion::login(
+            $token = AutenticacionServicio::login(
                 (string) $data['nombre_usuario'],
                 (string) $data['contrasena'],
-                new ServicioJwt(Entorno::get('JWT_SECRET', ''))
+                new JwtServicio(Entorno::get('JWT_SECRET', ''))
             );
 
             return ['token' => $token];
@@ -35,7 +35,7 @@ class ControladorAutenticacion extends ControladorBase
         $this->respond(function (): array {
             $data = $this->body();
 
-            ServicioAutenticacion::register(
+            AutenticacionServicio::register(
                 (string) ($data['nombre_usuario'] ?? ''),
                 (string) ($data['correo'] ?? ''),
                 (string) ($data['contrasena'] ?? '')
@@ -47,14 +47,14 @@ class ControladorAutenticacion extends ControladorBase
 
     public function me(): void
     {
-        $this->respond(fn(): array => ['data' => ServicioAutenticacion::currentUser($this->userId())]);
+        $this->respond(fn(): array => ['data' => AutenticacionServicio::currentUser($this->userId())]);
     }
 
     /** PUT /me  {"correo": "..."} */
     public function updateProfile(): void
     {
         $this->respond(fn(): array => [
-            'data' => ServicioAutenticacion::updateProfile($this->userId(), (string) ($this->body()['correo'] ?? '')),
+            'data' => AutenticacionServicio::updateProfile($this->userId(), (string) ($this->body()['correo'] ?? '')),
         ]);
     }
 
@@ -64,11 +64,11 @@ class ControladorAutenticacion extends ControladorBase
         $this->respond(function (): array {
             $data = $this->body();
 
-            $token = ServicioAutenticacion::changePassword(
+            $token = AutenticacionServicio::changePassword(
                 $this->userId(),
                 (string) ($data['contrasena_actual'] ?? ''),
                 (string) ($data['contrasena_nueva'] ?? ''),
-                new ServicioJwt(Entorno::get('JWT_SECRET', ''))
+                new JwtServicio(Entorno::get('JWT_SECRET', ''))
             );
 
             return ['token' => $token];
@@ -78,7 +78,7 @@ class ControladorAutenticacion extends ControladorBase
     public function logout(): void
     {
         $this->respond(function (): array {
-            ServicioAutenticacion::logout($this->userId());
+            AutenticacionServicio::logout($this->userId());
 
             return [];
         });

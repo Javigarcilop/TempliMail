@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace TempliMail\Services;
 
-use TempliMail\Exceptions\ExcepcionApi;
+use TempliMail\Exceptions\ApiExcepcion;
 use TempliMail\Utils\Entorno;
 
-class ServicioIA
+class IAServicio
 {
     private const MODEL   = 'llama-3.3-70b-versatile';
     private const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -17,7 +17,7 @@ class ServicioIA
         $apiKey = Entorno::get('GROQ_API_KEY', '');
 
         if ($apiKey === '' || $apiKey === 'your-api-key-here') {
-            throw new ExcepcionApi('La generación de asuntos con IA no está configurada', 503);
+            throw new ApiExcepcion('La generación de asuntos con IA no está configurada', 503);
         }
 
         $prompt = <<<PROMPT
@@ -55,7 +55,7 @@ PROMPT;
 
         if ($response === false || $httpCode !== 200) {
             error_log('Groq API error (HTTP ' . $httpCode . '): ' . (string) $response);
-            throw new ExcepcionApi('No se pudo contactar con el servicio de IA. Inténtalo más tarde.', 502);
+            throw new ApiExcepcion('No se pudo contactar con el servicio de IA. Inténtalo más tarde.', 502);
         }
 
         $data = json_decode($response, true);

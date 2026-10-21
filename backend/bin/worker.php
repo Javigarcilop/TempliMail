@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 
-use TempliMail\Services\ServicioCorreo;
+use TempliMail\Services\CorreoServicio;
 use TempliMail\Utils\Entorno;
 
 $once     = in_array('--once', $argv, true);
@@ -23,7 +23,7 @@ $log('Worker iniciado' . ($once ? ' (una pasada)' : ''));
 
 do {
     try {
-        $processed = ServicioCorreo::processDue();
+        $processed = CorreoServicio::processDue();
 
         if ($processed > 0) {
             $log("Campañas enviadas: {$processed}");

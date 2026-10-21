@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TempliMail\Models;
 
-use TempliMail\Exceptions\ExcepcionApi;
+use TempliMail\Exceptions\ApiExcepcion;
 use TempliMail\Utils\BD;
 use PDO;
 
@@ -17,7 +17,7 @@ use PDO;
  * "scheduled" con programado_en = NULL significa "en cola, enviar ya".
  * Todas las fechas se guardan en UTC y se devuelven en ISO 8601 (sufijo Z).
  */
-class ModeloCampanaCorreo
+class CampanaCorreoModelo
 {
     /** Minutos sin latido tras los cuales una campana "processing" se da por abandonada. */
     private const STALE_MINUTES = 5;
@@ -145,7 +145,7 @@ class ModeloCampanaCorreo
             $stmt->execute(['id' => $campaignId, 'usuario_id' => $userId]);
 
             if ($stmt->rowCount() === 0) {
-                throw new ExcepcionApi('Solo se pueden cancelar campañas programadas que no hayan empezado', 409);
+                throw new ApiExcepcion('Solo se pueden cancelar campañas programadas que no hayan empezado', 409);
             }
 
             $db->prepare("
@@ -177,11 +177,11 @@ class ModeloCampanaCorreo
             $estado = $stmt->fetchColumn();
 
             if ($estado === false) {
-                throw ExcepcionApi::notFound('Campaña no encontrada');
+                throw ApiExcepcion::notFound('Campaña no encontrada');
             }
 
             if ($estado !== 'completed') {
-                throw new ExcepcionApi('Solo se pueden reintentar campañas ya finalizadas', 409);
+                throw new ApiExcepcion('Solo se pueden reintentar campañas ya finalizadas', 409);
             }
 
             $stmt = $db->prepare("
@@ -193,7 +193,7 @@ class ModeloCampanaCorreo
             $requeued = $stmt->rowCount();
 
             if ($requeued === 0) {
-                throw new ExcepcionApi('La campaña no tiene entregas fallidas', 409);
+                throw new ApiExcepcion('La campaña no tiene entregas fallidas', 409);
             }
 
             $db->prepare("

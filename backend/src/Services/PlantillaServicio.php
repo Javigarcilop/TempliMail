@@ -4,34 +4,34 @@ declare(strict_types=1);
 
 namespace TempliMail\Services;
 
-use TempliMail\Exceptions\ExcepcionApi;
-use TempliMail\Models\ModeloPlantilla;
+use TempliMail\Exceptions\ApiExcepcion;
+use TempliMail\Models\PlantillaModelo;
 
-class ServicioPlantilla
+class PlantillaServicio
 {
     public static function getAll(int $userId): array
     {
-        return ModeloPlantilla::getAllByUser($userId);
+        return PlantillaModelo::getAllByUser($userId);
     }
 
     public static function create(int $userId, array $data): void
     {
-        ModeloPlantilla::create($userId, self::validated($data));
+        PlantillaModelo::create($userId, self::validated($data));
     }
 
     public static function update(int $userId, int $id, array $data): void
     {
-        ModeloPlantilla::update($userId, $id, self::validated($data));
+        PlantillaModelo::update($userId, $id, self::validated($data));
     }
 
     public static function delete(int $userId, int $id): void
     {
-        ModeloPlantilla::softDelete($userId, $id);
+        PlantillaModelo::softDelete($userId, $id);
     }
 
     public static function getById(int $userId, int $id): ?array
     {
-        return ModeloPlantilla::getById($userId, $id);
+        return PlantillaModelo::getById($userId, $id);
     }
 
     private static function validated(array $data): array
@@ -41,7 +41,7 @@ class ServicioPlantilla
         $content = (string) ($data['contenido_html'] ?? '');
 
         if ($nombre === '' || $asunto === '' || trim(strip_tags($content)) === '') {
-            throw new ExcepcionApi('Nombre, asunto y contenido son obligatorios');
+            throw new ApiExcepcion('Nombre, asunto y contenido son obligatorios');
         }
 
         return [
