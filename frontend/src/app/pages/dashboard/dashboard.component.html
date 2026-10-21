@@ -54,12 +54,12 @@
     } @else {
       <div class="chart" role="img" [attr.aria-label]="'Correos enviados por día: ' + totalLast14Days + ' en total'">
         @for (dia of actividad; track dia.fecha) {
-          <div class="bar-col" [title]="(asDate(dia) | date:'d MMM':'UTC') + ': ' + dia.enviados + ' enviados'">
+          <div class="bar-col" [title]="(aFecha(dia) | date:'d MMM':'UTC') + ': ' + dia.enviados + ' enviados'">
             <span class="bar-value">{{ dia.enviados > 0 ? dia.enviados : '' }}</span>
             <div class="bar-track">
-              <div class="bar" [style.height.%]="barHeight(dia)"></div>
+              <div class="bar" [style.height.%]="alturaBarra(dia)"></div>
             </div>
-            <span class="bar-label">{{ asDate(dia) | date:'dd/MM':'UTC' }}</span>
+            <span class="bar-label">{{ aFecha(dia) | date:'dd/MM':'UTC' }}</span>
           </div>
         }
       </div>
@@ -67,10 +67,10 @@
   </div>
 
   <div class="dashboard-actions">
-    <button (click)="goTo('send')" class="dashboard-btn">Enviar correo</button>
-    <button (click)="goTo('mass-mail')" class="dashboard-btn">Campaña masiva</button>
-    <button (click)="goTo('templates')" class="dashboard-btn">Crear plantilla</button>
-    <button (click)="goTo('contactos')" class="dashboard-btn">Ver contactos</button>
+    <button (click)="irA('send')" class="dashboard-btn">Enviar correo</button>
+    <button (click)="irA('mass-mail')" class="dashboard-btn">Campaña masiva</button>
+    <button (click)="irA('templates')" class="dashboard-btn">Crear plantilla</button>
+    <button (click)="irA('contactos')" class="dashboard-btn">Ver contactos</button>
   </div>
 
   <div class="dashboard-summary">

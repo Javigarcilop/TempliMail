@@ -51,68 +51,68 @@ export class TemplatesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadTemplates();
+    this.cargarPlantillas();
   }
 
-  onEditorInit(event: { editor: { insertContent(html: string): void } }): void {
+  alIniciarEditor(event: { editor: { insertContent(html: string): void } }): void {
     this.editor = event.editor;
   }
 
-  loadTemplates(): void {
-    this.api.getTemplates().subscribe({
+  cargarPlantillas(): void {
+    this.api.obtenerPlantillas().subscribe({
       next: response => this.templates = response.data ?? [],
-      error: () => this.toast.error('No se pudieron cargar las plantillas.')
+      error: () => this.toast.fallo('No se pudieron cargar las plantillas.')
     });
   }
 
-  saveTemplate(): void {
+  guardarPlantilla(): void {
     if (!this.templateForm.nombre.trim() || !this.templateForm.asunto.trim()) {
-      this.toast.error('El nombre y el asunto son obligatorios.');
+      this.toast.fallo('El nombre y el asunto son obligatorios.');
       return;
     }
 
     const wasEditing = this.editing && this.templateForm.id != null;
 
     const request = wasEditing
-      ? this.api.updateTemplate(this.templateForm.id as number, this.templateForm)
-      : this.api.addTemplate(this.templateForm);
+      ? this.api.actualizarPlantilla(this.templateForm.id as number, this.templateForm)
+      : this.api.crearPlantilla(this.templateForm);
 
     request.subscribe({
       next: () => {
-        this.toast.success(wasEditing ? 'Plantilla actualizada.' : 'Plantilla guardada.');
-        this.loadTemplates();
-        this.resetForm();
+        this.toast.exito(wasEditing ? 'Plantilla actualizada.' : 'Plantilla guardada.');
+        this.cargarPlantillas();
+        this.reiniciarFormulario();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo guardar la plantilla.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo guardar la plantilla.')
     });
   }
 
-  uploadFile(): void {
+  subirArchivo(): void {
     const input = this.selectedFile?.target as HTMLInputElement | undefined;
     const file = input?.files?.[0];
 
     if (!file) {
-      this.toast.info('Selecciona primero un archivo .docx o .pdf.');
+      this.toast.aviso('Selecciona primero un archivo .docx o .pdf.');
       return;
     }
 
     const formData = new FormData();
     formData.append('file', file);
 
-    this.api.uploadTemplateFile(formData).subscribe({
+    this.api.subirArchivoPlantilla(formData).subscribe({
       next: response => {
         if (response.success) {
           this.templateForm.contenido_html = response.html;
-          this.toast.success('Archivo cargado en el editor.');
+          this.toast.exito('Archivo cargado en el editor.');
         }
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'Error al subir el archivo.')
+        this.toast.fallo(err.error?.error ?? 'Error al subir el archivo.')
     });
   }
 
-  editTemplate(template: Plantilla): void {
+  editarPlantilla(template: Plantilla): void {
     this.templateForm = {
       id: template.id,
       nombre: template.nombre,
@@ -123,37 +123,37 @@ export class TemplatesComponent implements OnInit {
     window.scrollTo?.({ top: 0 });
   }
 
-  duplicateTemplate(template: Plantilla): void {
-    this.api.addTemplate({
+  duplicarPlantilla(template: Plantilla): void {
+    this.api.crearPlantilla({
       nombre: `${template.nombre} (copia)`.slice(0, 255),
       asunto: template.asunto,
       contenido_html: template.contenido_html
     }).subscribe({
       next: () => {
-        this.toast.success('Plantilla duplicada.');
-        this.loadTemplates();
+        this.toast.exito('Plantilla duplicada.');
+        this.cargarPlantillas();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo duplicar la plantilla.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo duplicar la plantilla.')
     });
   }
 
-  deleteTemplate(template: Plantilla): void {
+  eliminarPlantilla(template: Plantilla): void {
     if (!confirm(`¿Eliminar la plantilla "${template.nombre}"?`)) {
       return;
     }
 
-    this.api.deleteTemplate(template.id).subscribe({
+    this.api.eliminarPlantilla(template.id).subscribe({
       next: () => {
-        this.toast.success('Plantilla eliminada.');
-        this.loadTemplates();
+        this.toast.exito('Plantilla eliminada.');
+        this.cargarPlantillas();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo eliminar la plantilla.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo eliminar la plantilla.')
     });
   }
 
-  resetForm(): void {
+  reiniciarFormulario(): void {
     this.templateForm = { ...PLANTILLA_VACIA };
     this.editing = false;
     this.selectedFile = null;
@@ -163,7 +163,7 @@ export class TemplatesComponent implements OnInit {
   // Variables, vista previa y prueba
   // ---------------------------------------------------------------
 
-  insertVariable(key: string): void {
+  insertarVariable(key: string): void {
     const tag = `{{${key}}}`;
 
     if (this.editor) {
@@ -173,30 +173,30 @@ export class TemplatesComponent implements OnInit {
     }
   }
 
-  showPreview(): void {
-    this.api.previewMail(this.mailPayload()).subscribe({
+  mostrarVistaPrevia(): void {
+    this.api.previsualizarCorreo(this.datosCorreo()).subscribe({
       next: response => this.preview = response.data,
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo generar la vista previa.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo generar la vista previa.')
     });
   }
 
-  sendTest(): void {
+  enviarPrueba(): void {
     this.busy = true;
 
-    this.api.sendTestMail(this.mailPayload()).subscribe({
+    this.api.enviarCorreoPrueba(this.datosCorreo()).subscribe({
       next: response => {
         this.busy = false;
-        this.toast.success(`Correo de prueba enviado a ${response.enviado_a}.`);
+        this.toast.exito(`Correo de prueba enviado a ${response.enviado_a}.`);
       },
       error: (err: HttpErrorResponse) => {
         this.busy = false;
-        this.toast.error(err.error?.error ?? 'No se pudo enviar la prueba.');
+        this.toast.fallo(err.error?.error ?? 'No se pudo enviar la prueba.');
       }
     });
   }
 
-  private mailPayload() {
+  private datosCorreo() {
     return {
       asunto: this.templateForm.asunto,
       contenido_html: this.templateForm.contenido_html

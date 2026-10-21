@@ -4,7 +4,7 @@
  * campos entre comillas con saltos de línea y comillas escapadas ("").
  */
 
-export function detectDelimiter(text: string): string {
+export function detectarDelimitador(text: string): string {
   const firstLine = text.split(/\r?\n/, 1)[0] ?? '';
   const candidates = [';', ',', '\t'];
   let best = ',';
@@ -22,9 +22,9 @@ export function detectDelimiter(text: string): string {
   return best;
 }
 
-export function parseCsv(input: string): string[][] {
+export function analizarCsv(input: string): string[][] {
   const text = input.replace(/^﻿/, '');
-  const delimiter = detectDelimiter(text);
+  const delimiter = detectarDelimitador(text);
   const rows: string[][] = [];
 
   let row: string[] = [];
@@ -79,7 +79,7 @@ export function parseCsv(input: string): string[][] {
 // fórmula. Anteponer una comilla simple neutraliza el riesgo sin cambiar lo que se ve.
 const FORMULA_PREFIX = /^[=+\-@]/;
 
-export function toCsv(rows: (string | number | null | undefined)[][], delimiter = ';'): string {
+export function convertirACsv(rows: (string | number | null | undefined)[][], delimiter = ';'): string {
   const escape = (value: string | number | null | undefined): string => {
     let text = value === null || value === undefined ? '' : String(value);
 
@@ -122,8 +122,8 @@ export interface ParsedContacts {
 /**
  * Convierte un CSV con cabecera en contactos. Devuelve null si no hay columna de correo.
  */
-export function parseContactsCsv(text: string): ParsedContacts | null {
-  const rows = parseCsv(text);
+export function analizarContactosCsv(text: string): ParsedContacts | null {
+  const rows = analizarCsv(text);
 
   if (rows.length < 2) {
     return null;

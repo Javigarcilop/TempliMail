@@ -6,7 +6,7 @@ import { of, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { Contacto, ContactoInput, Grupo, ResultadoImportacion } from '../../models/api.models';
-import { ParsedContacts, parseContactsCsv, toCsv } from '../../utils/csv';
+import { ParsedContacts, analizarContactosCsv, convertirACsv } from '../../utils/csv';
 
 const CONTACTO_VACIO: ContactoInput = {
   nombre: '',
@@ -56,8 +56,8 @@ export class ContactsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadContacts();
-    this.loadGroups();
+    this.cargarContactos();
+    this.cargarGrupos();
   }
 
   // ---------------------------------------------------------------
@@ -86,16 +86,16 @@ export class ContactsComponent implements OnInit {
     return this.filteredContacts.slice(start, start + this.pageSize);
   }
 
-  groupName(id: number): string {
+  nombreGrupo(id: number): string {
     return this.grupos.find(g => g.id === id)?.nombre ?? '';
   }
 
   /** Cualquier cambio de filtro vuelve a la primera página. */
-  resetPage(): void {
+  reiniciarPagina(): void {
     this.page = 1;
   }
 
-  goToPage(page: number): void {
+  irAPagina(page: number): void {
     this.page = Math.min(Math.max(1, page), this.totalPages);
   }
 
@@ -103,33 +103,33 @@ export class ContactsComponent implements OnInit {
   // Carga
   // ---------------------------------------------------------------
 
-  loadContacts(): void {
-    this.api.getContacts().subscribe({
+  cargarContactos(): void {
+    this.api.obtenerContactos().subscribe({
       next: response => this.contactos = response.data ?? [],
       error: () => {
         this.contactos = [];
-        this.toast.error('No se pudieron cargar los contactos.');
+        this.toast.fallo('No se pudieron cargar los contactos.');
       }
     });
   }
 
-  loadGroups(): void {
-    this.api.getGroups().subscribe({
+  cargarGrupos(): void {
+    this.api.obtenerGrupos().subscribe({
       next: response => this.grupos = response.data ?? [],
-      error: () => this.toast.error('No se pudieron cargar los grupos.')
+      error: () => this.toast.fallo('No se pudieron cargar los grupos.')
     });
   }
 
-  private reload(): void {
-    this.loadContacts();
-    this.loadGroups();
+  private recargar(): void {
+    this.cargarContactos();
+    this.cargarGrupos();
   }
 
   // ---------------------------------------------------------------
   // Alta / edición
   // ---------------------------------------------------------------
 
-  toggleGroup(id: number, checked: boolean): void {
+  alternarGrupo(id: number, checked: boolean): void {
     if (checked) {
       this.selectedGroupIds.add(id);
     } else {
@@ -137,32 +137,32 @@ export class ContactsComponent implements OnInit {
     }
   }
 
-  saveContact(): void {
+  guardarContacto(): void {
     const groupIds = [...this.selectedGroupIds];
     const wasEditing = this.editingId !== null;
 
     const save$ = this.editingId !== null
-      ? this.api.updateContact(this.editingId, this.newContact).pipe(
-          switchMap(() => this.api.setContactGroups(this.editingId as number, groupIds))
+      ? this.api.actualizarContacto(this.editingId, this.newContact).pipe(
+          switchMap(() => this.api.establecerGruposContacto(this.editingId as number, groupIds))
         )
-      : this.api.addContact(this.newContact).pipe(
+      : this.api.crearContacto(this.newContact).pipe(
           switchMap(response => groupIds.length > 0
-            ? this.api.setContactGroups(response.id, groupIds)
+            ? this.api.establecerGruposContacto(response.id, groupIds)
             : of(response))
         );
 
     save$.subscribe({
       next: () => {
-        this.toast.success(wasEditing ? 'Contacto actualizado.' : 'Contacto creado.');
-        this.cancelEdit();
-        this.reload();
+        this.toast.exito(wasEditing ? 'Contacto actualizado.' : 'Contacto creado.');
+        this.cancelarEdicion();
+        this.recargar();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo guardar el contacto.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo guardar el contacto.')
     });
   }
 
-  editContact(contact: Contacto): void {
+  editarContacto(contact: Contacto): void {
     this.newContact = {
       nombre: contact.nombre ?? '',
       apellidos: contact.apellidos ?? '',
@@ -177,38 +177,38 @@ export class ContactsComponent implements OnInit {
     window.scrollTo?.({ top: 0 });
   }
 
-  cancelEdit(): void {
+  cancelarEdicion(): void {
     this.newContact = { ...CONTACTO_VACIO };
     this.selectedGroupIds = new Set<number>();
     this.editingId = null;
   }
 
-  deleteContact(contact: Contacto): void {
+  eliminarContacto(contact: Contacto): void {
     if (!confirm(`¿Eliminar a ${contact.correo}?`)) {
       return;
     }
 
-    this.api.deleteContact(contact.id).subscribe({
+    this.api.eliminarContacto(contact.id).subscribe({
       next: () => {
-        this.toast.success('Contacto eliminado.');
-        this.reload();
+        this.toast.exito('Contacto eliminado.');
+        this.recargar();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo eliminar el contacto.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo eliminar el contacto.')
     });
   }
 
   /** Baja / alta manual: un contacto dado de baja no recibe campañas. */
-  toggleSubscription(contact: Contacto): void {
+  alternarSuscripcion(contact: Contacto): void {
     const subscribe = contact.baja_en !== null;
 
-    this.api.setContactSubscription(contact.id, subscribe).subscribe({
+    this.api.establecerSuscripcionContacto(contact.id, subscribe).subscribe({
       next: () => {
-        this.toast.success(subscribe ? 'Contacto reactivado.' : 'Contacto dado de baja.');
-        this.loadContacts();
+        this.toast.exito(subscribe ? 'Contacto reactivado.' : 'Contacto dado de baja.');
+        this.cargarContactos();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo actualizar la suscripción.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo actualizar la suscripción.')
     });
   }
 
@@ -216,57 +216,57 @@ export class ContactsComponent implements OnInit {
   // Grupos
   // ---------------------------------------------------------------
 
-  createGroup(): void {
+  crearGrupo(): void {
     const name = this.newGroupName.trim();
 
     if (!name) {
       return;
     }
 
-    this.api.createGroup(name).subscribe({
+    this.api.crearGrupo(name).subscribe({
       next: () => {
         this.newGroupName = '';
-        this.toast.success(`Grupo "${name}" creado.`);
-        this.loadGroups();
+        this.toast.exito(`Grupo "${name}" creado.`);
+        this.cargarGrupos();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo crear el grupo.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo crear el grupo.')
     });
   }
 
-  renameGroup(group: Grupo): void {
+  renombrarGrupo(group: Grupo): void {
     const name = prompt('Nuevo nombre del grupo:', group.nombre)?.trim();
 
     if (!name || name === group.nombre) {
       return;
     }
 
-    this.api.renameGroup(group.id, name).subscribe({
+    this.api.renombrarGrupo(group.id, name).subscribe({
       next: () => {
-        this.toast.success('Grupo renombrado.');
-        this.loadGroups();
+        this.toast.exito('Grupo renombrado.');
+        this.cargarGrupos();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo renombrar el grupo.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo renombrar el grupo.')
     });
   }
 
-  deleteGroup(group: Grupo): void {
+  eliminarGrupo(group: Grupo): void {
     if (!confirm(`¿Eliminar el grupo "${group.nombre}"? Sus contactos NO se borran.`)) {
       return;
     }
 
-    this.api.deleteGroup(group.id).subscribe({
+    this.api.eliminarGrupo(group.id).subscribe({
       next: () => {
         if (this.groupFilter === group.id) {
           this.groupFilter = '';
         }
         this.selectedGroupIds.delete(group.id);
-        this.toast.success('Grupo eliminado.');
-        this.reload();
+        this.toast.exito('Grupo eliminado.');
+        this.recargar();
       },
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo eliminar el grupo.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo eliminar el grupo.')
     });
   }
 
@@ -274,7 +274,7 @@ export class ContactsComponent implements OnInit {
   // Importar / exportar CSV
   // ---------------------------------------------------------------
 
-  onFileSelected(event: Event): void {
+  seleccionarArchivo(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = ''; // permite volver a elegir el mismo archivo
@@ -284,20 +284,20 @@ export class ContactsComponent implements OnInit {
     }
 
     if (file.size > MAX_BYTES_IMPORT) {
-      this.toast.error('El archivo supera los 2 MB.');
+      this.toast.fallo('El archivo supera los 2 MB.');
       return;
     }
 
     file.text().then(text => {
-      const parsed = parseContactsCsv(text);
+      const parsed = analizarContactosCsv(text);
 
       if (!parsed) {
-        this.toast.error('No se encontró una columna "correo". La primera fila debe ser la cabecera.');
+        this.toast.fallo('No se encontró una columna "correo". La primera fila debe ser la cabecera.');
         return;
       }
 
       if (parsed.contacts.length > 2000) {
-        this.toast.error('Máximo 2000 contactos por importación. Divide el archivo.');
+        this.toast.fallo('Máximo 2000 contactos por importación. Divide el archivo.');
         return;
       }
 
@@ -307,19 +307,19 @@ export class ContactsComponent implements OnInit {
     });
   }
 
-  cancelImport(): void {
+  cancelarImportacion(): void {
     this.importPreview = null;
     this.importResult = null;
   }
 
-  confirmImport(): void {
+  confirmarImportacion(): void {
     if (!this.importPreview) {
       return;
     }
 
     this.importing = true;
 
-    this.api.importContacts(
+    this.api.importarContactos(
       this.importPreview.contacts,
       this.importGroupId === '' ? undefined : this.importGroupId
     ).subscribe({
@@ -327,24 +327,24 @@ export class ContactsComponent implements OnInit {
         this.importing = false;
         this.importPreview = null;
         this.importResult = response;
-        this.toast.success(`${response.creados} contacto(s) importados.`);
-        this.reload();
+        this.toast.exito(`${response.creados} contacto(s) importados.`);
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.importing = false;
-        this.toast.error(err.error?.error ?? 'No se pudo importar el archivo.');
+        this.toast.fallo(err.error?.error ?? 'No se pudo importar el archivo.');
       }
     });
   }
 
-  exportCsv(): void {
+  exportarCsv(): void {
     const rows = this.filteredContacts.map(c => [
       c.nombre, c.apellidos, c.correo, c.telefono, c.empresa, c.cargo,
-      c.ids_grupo.map(id => this.groupName(id)).filter(Boolean).join(' | '),
+      c.ids_grupo.map(id => this.nombreGrupo(id)).filter(Boolean).join(' | '),
       c.baja_en ? 'De baja' : 'Suscrito'
     ]);
 
-    const csv = toCsv([
+    const csv = convertirACsv([
       ['Nombre', 'Apellidos', 'Correo', 'Teléfono', 'Empresa', 'Cargo', 'Grupos', 'Estado'],
       ...rows
     ]);

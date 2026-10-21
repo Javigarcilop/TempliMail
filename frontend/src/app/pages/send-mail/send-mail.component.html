@@ -1,6 +1,6 @@
 <h2>Enviar Email</h2>
 
-<form (ngSubmit)="onSubmit(mailForm)" #mailForm="ngForm">
+<form (ngSubmit)="enviarFormulario(mailForm)" #mailForm="ngForm">
 
   <label for="destinatario">Destinatario:</label>
   <input
@@ -32,13 +32,13 @@
         [(ngModel)]="aiTopic"
         name="aiTopic"
         [ngModelOptions]="{ standalone: true }"
-        (keyup.enter)="suggestSubjects()"
+        (keyup.enter)="sugerirAsuntos()"
         maxlength="300"
       />
       <button
         type="button"
         class="ai-btn"
-        (click)="suggestSubjects()"
+        (click)="sugerirAsuntos()"
         [disabled]="aiLoading || !aiTopic.trim()"
       >
         {{ aiLoading ? 'Generando...' : '✨ Sugerir asunto' }}
@@ -53,7 +53,7 @@
         type="button"
         class="suggestion-chip"
         *ngFor="let s of aiSuggestions"
-        (click)="selectSuggestion(s)"
+        (click)="seleccionarSugerencia(s)"
       >
         {{ s }}
       </button>

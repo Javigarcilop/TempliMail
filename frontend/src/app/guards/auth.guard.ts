@@ -1,15 +1,15 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { clearToken, hasValidToken } from '../utils/token';
+import { borrarToken, tieneTokenValido } from '../utils/token';
 
-export const authGuard: CanActivateFn = () => {
+export const guardiaAutenticado: CanActivateFn = () => {
   const router = inject(Router);
 
-  if (hasValidToken()) {
+  if (tieneTokenValido()) {
     return true;
   }
 
   // Token ausente o caducado
-  clearToken();
+  borrarToken();
   return router.createUrlTree(['/login']);
 };

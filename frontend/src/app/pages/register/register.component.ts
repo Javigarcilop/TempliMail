@@ -30,19 +30,19 @@ export class RegisterComponent {
     private router: Router
   ) {}
 
-  onRegister(): void {
+  registrarUsuario(): void {
 
     // =========================
     // Validaciones básicas
     // =========================
 
     if (!this.nombreUsuario || !this.correo || !this.contrasena) {
-      this.showMessage('Todos los campos son obligatorios', true);
+      this.mostrarMensaje('Todos los campos son obligatorios', true);
       return;
     }
 
     if (this.contrasena.length < 8) {
-      this.showMessage('La contraseña debe tener al menos 8 caracteres', true);
+      this.mostrarMensaje('La contraseña debe tener al menos 8 caracteres', true);
       return;
     }
 
@@ -53,7 +53,7 @@ export class RegisterComponent {
     // Llamada API
     // =========================
 
-    this.api.register({
+    this.api.registrar({
       nombre_usuario: this.nombreUsuario,
       correo: this.correo,
       contrasena: this.contrasena
@@ -61,7 +61,7 @@ export class RegisterComponent {
       next: () => {
 
         this.loading = false;
-        this.showMessage('Usuario creado correctamente', false);
+        this.mostrarMensaje('Usuario creado correctamente', false);
 
         setTimeout(() => {
           this.router.navigate(['/login']);
@@ -75,7 +75,7 @@ export class RegisterComponent {
         const backendMessage =
           err?.error?.error || 'Error en el registro';
 
-        this.showMessage(backendMessage, true);
+        this.mostrarMensaje(backendMessage, true);
       }
     });
   }
@@ -84,7 +84,7 @@ export class RegisterComponent {
   // UI Message helper
   // =========================
 
-  private showMessage(msg: string, isError: boolean): void {
+  private mostrarMensaje(msg: string, isError: boolean): void {
     this.message = msg;
     this.isError = isError;
   }

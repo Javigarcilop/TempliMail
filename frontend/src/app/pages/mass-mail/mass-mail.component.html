@@ -75,7 +75,7 @@
               type="checkbox"
               title="Seleccionar todos los visibles"
               [checked]="allVisibleSelected"
-              (change)="toggleAllVisible($any($event.target).checked)"
+              (change)="alternarTodosVisibles($any($event.target).checked)"
             />
           </th>
           <th>Nombre</th>
@@ -93,7 +93,7 @@
                 type="checkbox"
                 [disabled]="!!contact.baja_en"
                 [checked]="selectedContactIds.has(contact.id)"
-                (change)="toggleContact(contact, $any($event.target).checked)"
+                (change)="alternarContacto(contact, $any($event.target).checked)"
               />
             </td>
             <td>{{ contact.nombre }} {{ contact.apellidos }}</td>
@@ -123,7 +123,7 @@
       type="button"
       class="btn btn-outline"
       [disabled]="!selectedTemplate"
-      (click)="showPreview()"
+      (click)="mostrarVistaPrevia()"
     >
       Vista previa
     </button>
@@ -132,7 +132,7 @@
       type="button"
       class="btn btn-outline"
       [disabled]="!selectedTemplate || busy"
-      (click)="sendTest()"
+      (click)="enviarPrueba()"
     >
       {{ busy ? 'Enviando...' : 'Enviarme una prueba' }}
     </button>
@@ -141,7 +141,7 @@
       type="button"
       class="btn"
       [disabled]="loading || !selectedTemplate || selectedContactIds.size === 0"
-      (click)="sendMassive()"
+      (click)="enviarMasivo()"
     >
       {{ loading ? 'Creando campaña...' : (scheduledAt ? 'Programar campaña' : 'Enviar ahora') }}
     </button>

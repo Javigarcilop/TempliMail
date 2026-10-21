@@ -10,11 +10,11 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  isLoggedIn(): boolean {
+  estaAutenticado(): boolean {
     return !!localStorage.getItem('token');
   }
 
-  logout() {
+  cerrarSesion() {
     localStorage.removeItem('token');
     localStorage.removeItem('loggedIn');
     window.location.href = '/login';

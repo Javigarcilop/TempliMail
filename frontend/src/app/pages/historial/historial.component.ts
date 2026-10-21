@@ -45,12 +45,12 @@ export class HistorialComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadHistory();
+    this.cargarHistorial();
 
     // Mientras haya campañas enviándose o en cola, la lista se actualiza sola
     this.refreshTimer = setInterval(() => {
-      if (this.history.some(c => this.isActive(c))) {
-        this.loadHistory();
+      if (this.history.some(c => this.estaActiva(c))) {
+        this.cargarHistorial();
       }
     }, REFRESH_MS);
   }
@@ -61,8 +61,8 @@ export class HistorialComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadHistory(): void {
-    this.api.getHistory().subscribe({
+  cargarHistorial(): void {
+    this.api.obtenerHistorial().subscribe({
       next: response => {
         this.history = response.data ?? [];
         this.loaded = true;
@@ -71,14 +71,14 @@ export class HistorialComponent implements OnInit, OnDestroy {
         if (this.expandedCampaignId !== null) {
           const expanded = this.history.find(c => c.id === this.expandedCampaignId);
 
-          if (expanded && this.isActive(expanded)) {
-            this.fetchDeliveries(expanded.id);
+          if (expanded && this.estaActiva(expanded)) {
+            this.obtenerEntregas(expanded.id);
           }
         }
       },
       error: () => {
         if (!this.loaded) {
-          this.toast.error('No se pudo cargar el historial.');
+          this.toast.fallo('No se pudo cargar el historial.');
         }
         this.loaded = true;
       }
@@ -90,16 +90,16 @@ export class HistorialComponent implements OnInit, OnDestroy {
   // ---------------------------------------------------------------
 
   /** Campaña que se está enviando o que está a punto de hacerlo. */
-  isActive(c: Campana): boolean {
-    return c.estado === 'processing' || this.isQueued(c);
+  estaActiva(c: Campana): boolean {
+    return c.estado === 'processing' || this.estaEnCola(c);
   }
 
-  private isQueued(c: Campana): boolean {
+  private estaEnCola(c: Campana): boolean {
     return c.estado === 'scheduled'
       && (c.programado_en === null || new Date(c.programado_en).getTime() <= Date.now() + REFRESH_MS);
   }
 
-  statusInfo(c: Campana): StatusInfo {
+  infoEstado(c: Campana): StatusInfo {
     switch (c.estado) {
       case 'processing':
         return { label: 'Enviando', badge: 'badge-blue' };
@@ -110,13 +110,13 @@ export class HistorialComponent implements OnInit, OnDestroy {
       case 'cancelled':
         return { label: 'Cancelada', badge: 'badge-gray' };
       default:
-        return this.isQueued(c)
+        return this.estaEnCola(c)
           ? { label: 'En cola', badge: 'badge-blue' }
           : { label: 'Programada', badge: 'badge-orange' };
     }
   }
 
-  progress(c: Campana): number {
+  progreso(c: Campana): number {
     if (c.total_destinatarios === 0) {
       return 100;
     }
@@ -125,15 +125,15 @@ export class HistorialComponent implements OnInit, OnDestroy {
   }
 
   /** Fecha relevante: la programada si la hay; si no, la de creación. */
-  displayDate(c: Campana): string {
+  fechaMostrar(c: Campana): string {
     return c.programado_en ?? c.creado_en;
   }
 
-  deliveryLabel(status: EstadoEntrega): string {
+  etiquetaEntrega(status: EstadoEntrega): string {
     return { pending: 'Pendiente', sent: 'Enviado', failed: 'Fallido', skipped: 'Omitido' }[status];
   }
 
-  deliveryBadge(status: EstadoEntrega): string {
+  insigniaEntrega(status: EstadoEntrega): string {
     return { pending: 'badge-blue', sent: 'badge-green', failed: 'badge-red', skipped: 'badge-gray' }[status];
   }
 
@@ -151,11 +151,11 @@ export class HistorialComponent implements OnInit, OnDestroy {
         return false;
       }
 
-      if (this.statusFilter && this.statusInfo(c).label !== this.statusFilter) {
+      if (this.statusFilter && this.infoEstado(c).label !== this.statusFilter) {
         return false;
       }
 
-      const date = new Date(this.displayDate(c));
+      const date = new Date(this.fechaMostrar(c));
 
       return (!min || date >= min) && (!max || date <= max);
     });
@@ -169,22 +169,22 @@ export class HistorialComponent implements OnInit, OnDestroy {
   // Entregas
   // ---------------------------------------------------------------
 
-  toggleDeliveries(campaignId: number): void {
+  alternarEntregas(campaignId: number): void {
     if (this.expandedCampaignId === campaignId) {
       this.expandedCampaignId = null;
       return;
     }
 
     this.expandedCampaignId = campaignId;
-    this.fetchDeliveries(campaignId);
+    this.obtenerEntregas(campaignId);
   }
 
-  private fetchDeliveries(campaignId: number): void {
+  private obtenerEntregas(campaignId: number): void {
     if (!this.deliveries[campaignId]) {
       this.loadingDeliveries[campaignId] = true;
     }
 
-    this.api.getCampaignDeliveries(campaignId).subscribe({
+    this.api.obtenerEntregasCampana(campaignId).subscribe({
       next: response => {
         this.deliveries[campaignId] = response.data ?? [];
         this.loadingDeliveries[campaignId] = false;
@@ -197,53 +197,53 @@ export class HistorialComponent implements OnInit, OnDestroy {
   // Acciones
   // ---------------------------------------------------------------
 
-  retryFailed(c: Campana): void {
+  reintentarFallidos(c: Campana): void {
     if (!confirm(`¿Reintentar el envío a los ${c.fallidos} destinatario(s) fallidos?`)) {
       return;
     }
 
     this.actionInProgress = c.id;
 
-    this.api.retryFailedDeliveries(c.id).subscribe({
+    this.api.reintentarEntregasFallidas(c.id).subscribe({
       next: response => {
         this.actionInProgress = null;
-        this.toast.success(`${response.reencolados} entrega(s) vuelven a la cola.`);
-        this.afterAction(c.id);
+        this.toast.exito(`${response.reencolados} entrega(s) vuelven a la cola.`);
+        this.despuesDeAccion(c.id);
       },
       error: (err: HttpErrorResponse) => {
         this.actionInProgress = null;
-        this.toast.error(err.error?.error ?? 'No se pudo reintentar.');
+        this.toast.fallo(err.error?.error ?? 'No se pudo reintentar.');
       }
     });
   }
 
-  cancel(c: Campana): void {
+  cancelar(c: Campana): void {
     if (!confirm('¿Cancelar esta campaña programada?')) {
       return;
     }
 
     this.actionInProgress = c.id;
 
-    this.api.cancelCampaign(c.id).subscribe({
+    this.api.cancelarCampana(c.id).subscribe({
       next: () => {
         this.actionInProgress = null;
-        this.toast.success('Campaña cancelada.');
-        this.afterAction(c.id);
+        this.toast.exito('Campaña cancelada.');
+        this.despuesDeAccion(c.id);
       },
       error: (err: HttpErrorResponse) => {
         this.actionInProgress = null;
-        this.toast.error(err.error?.error ?? 'No se pudo cancelar.');
-        this.loadHistory();
+        this.toast.fallo(err.error?.error ?? 'No se pudo cancelar.');
+        this.cargarHistorial();
       }
     });
   }
 
-  private afterAction(campaignId: number): void {
+  private despuesDeAccion(campaignId: number): void {
     delete this.deliveries[campaignId];
-    this.loadHistory();
+    this.cargarHistorial();
 
     if (this.expandedCampaignId === campaignId) {
-      this.fetchDeliveries(campaignId);
+      this.obtenerEntregas(campaignId);
     }
   }
 }

@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../services/api.service';
-import { clearToken } from '../../utils/token';
+import { borrarToken } from '../../utils/token';
 
 @Component({
   selector: 'app-sidebar',
@@ -18,19 +18,19 @@ export class SidebarComponent implements OnInit {
   constructor(private api: ApiService, private router: Router) {}
 
   ngOnInit(): void {
-    this.api.me().subscribe({
+    this.api.obtenerPerfil().subscribe({
       next: response => this.nombreUsuario.set(response.data.nombre_usuario),
       error: () => { /* el interceptor ya gestiona la sesión caducada */ }
     });
   }
 
-  logout(event: Event): void {
+  cerrarSesion(event: Event): void {
     event.preventDefault();
 
     // Invalida el token en el servidor; se cierra la sesión local pase lo que pase
-    this.api.logout()
+    this.api.cerrarSesion()
       .pipe(finalize(() => {
-        clearToken();
+        borrarToken();
         this.router.navigate(['/login']);
       }))
       .subscribe({ error: () => { /* sin conexión: basta con borrar el token local */ } });

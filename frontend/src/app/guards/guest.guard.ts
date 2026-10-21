@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { hasValidToken } from '../utils/token';
+import { tieneTokenValido } from '../utils/token';
 
-export const guestGuard: CanActivateFn = () => {
+export const guardiaInvitado: CanActivateFn = () => {
   const router = inject(Router);
 
-  if (!hasValidToken()) {
+  if (!tieneTokenValido()) {
     return true;
   }
 

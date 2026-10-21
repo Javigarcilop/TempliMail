@@ -24,7 +24,7 @@ import {
 } from '../models/api.models';
 
 /**
- * Único punto de acceso a la API. El JWT lo añade `authInterceptor`,
+ * Único punto de acceso a la API. El JWT lo añade `interceptorAutenticacion`,
  * que también gestiona el cierre de sesión ante un 401.
  */
 @Injectable({
@@ -40,24 +40,24 @@ export class ApiService {
   // AUTENTICACION
   // =====================================
 
-  login(data: { nombre_usuario: string; contrasena: string }): Observable<ApiResponse & { token: string }> {
+  iniciarSesion(data: { nombre_usuario: string; contrasena: string }): Observable<ApiResponse & { token: string }> {
     return this.http.post<ApiResponse & { token: string }>(`${this.baseUrl}/login`, data);
   }
 
-  register(data: { nombre_usuario: string; correo: string; contrasena: string }): Observable<ApiResponse> {
+  registrar(data: { nombre_usuario: string; correo: string; contrasena: string }): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/register`, data);
   }
 
-  me(): Observable<DataResponse<Usuario>> {
+  obtenerPerfil(): Observable<DataResponse<Usuario>> {
     return this.http.get<DataResponse<Usuario>>(`${this.baseUrl}/me`);
   }
 
-  updateProfile(correo: string): Observable<DataResponse<Usuario>> {
+  actualizarPerfil(correo: string): Observable<DataResponse<Usuario>> {
     return this.http.put<DataResponse<Usuario>>(`${this.baseUrl}/me`, { correo });
   }
 
   /** Devuelve un token nuevo: el cambio invalida las demás sesiones. */
-  changePassword(contrasenaActual: string, contrasenaNueva: string): Observable<ApiResponse & { token: string }> {
+  cambiarContrasena(contrasenaActual: string, contrasenaNueva: string): Observable<ApiResponse & { token: string }> {
     return this.http.put<ApiResponse & { token: string }>(`${this.baseUrl}/me/contrasena`, {
       contrasena_actual: contrasenaActual,
       contrasena_nueva: contrasenaNueva
@@ -65,7 +65,7 @@ export class ApiService {
   }
 
   /** Invalida en el servidor todos los tokens del usuario. */
-  logout(): Observable<ApiResponse> {
+  cerrarSesion(): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/logout`, {});
   }
 
@@ -73,34 +73,34 @@ export class ApiService {
   // CONTACTOS
   // =====================================
 
-  getContacts(): Observable<DataResponse<Contacto[]>> {
+  obtenerContactos(): Observable<DataResponse<Contacto[]>> {
     return this.http.get<DataResponse<Contacto[]>>(`${this.baseUrl}/contactos`);
   }
 
-  addContact(data: ContactoInput): Observable<ApiResponse & { id: number }> {
+  crearContacto(data: ContactoInput): Observable<ApiResponse & { id: number }> {
     return this.http.post<ApiResponse & { id: number }>(`${this.baseUrl}/contactos`, data);
   }
 
-  updateContact(id: number, data: ContactoInput): Observable<ApiResponse> {
+  actualizarContacto(id: number, data: ContactoInput): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/contactos/${id}`, data);
   }
 
-  deleteContact(id: number): Observable<ApiResponse> {
+  eliminarContacto(id: number): Observable<ApiResponse> {
     return this.http.delete<ApiResponse>(`${this.baseUrl}/contactos/${id}`);
   }
 
-  setContactSubscription(id: number, subscribed: boolean): Observable<ApiResponse> {
+  establecerSuscripcionContacto(id: number, subscribed: boolean): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/contactos/${id}/subscription`, { subscribed });
   }
 
-  importContacts(contactos: Partial<ContactoInput>[], grupoId?: number): Observable<ApiResponse & ResultadoImportacion> {
+  importarContactos(contactos: Partial<ContactoInput>[], grupoId?: number): Observable<ApiResponse & ResultadoImportacion> {
     return this.http.post<ApiResponse & ResultadoImportacion>(`${this.baseUrl}/contactos/import`, {
       contactos,
       ...(grupoId ? { grupo_id: grupoId } : {})
     });
   }
 
-  setContactGroups(id: number, idsGrupo: number[]): Observable<ApiResponse> {
+  establecerGruposContacto(id: number, idsGrupo: number[]): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/contactos/${id}/grupos`, { ids_grupo: idsGrupo });
   }
 
@@ -108,19 +108,19 @@ export class ApiService {
   // GRUPOS
   // =====================================
 
-  getGroups(): Observable<DataResponse<Grupo[]>> {
+  obtenerGrupos(): Observable<DataResponse<Grupo[]>> {
     return this.http.get<DataResponse<Grupo[]>>(`${this.baseUrl}/grupos`);
   }
 
-  createGroup(nombre: string): Observable<ApiResponse & { id: number }> {
+  crearGrupo(nombre: string): Observable<ApiResponse & { id: number }> {
     return this.http.post<ApiResponse & { id: number }>(`${this.baseUrl}/grupos`, { nombre });
   }
 
-  renameGroup(id: number, nombre: string): Observable<ApiResponse> {
+  renombrarGrupo(id: number, nombre: string): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/grupos/${id}`, { nombre });
   }
 
-  deleteGroup(id: number): Observable<ApiResponse> {
+  eliminarGrupo(id: number): Observable<ApiResponse> {
     return this.http.delete<ApiResponse>(`${this.baseUrl}/grupos/${id}`);
   }
 
@@ -128,23 +128,23 @@ export class ApiService {
   // PLANTILLAS
   // =====================================
 
-  getTemplates(): Observable<DataResponse<Plantilla[]>> {
+  obtenerPlantillas(): Observable<DataResponse<Plantilla[]>> {
     return this.http.get<DataResponse<Plantilla[]>>(`${this.baseUrl}/plantillas`);
   }
 
-  addTemplate(data: PlantillaInput): Observable<ApiResponse> {
+  crearPlantilla(data: PlantillaInput): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/plantillas`, data);
   }
 
-  updateTemplate(id: number, data: PlantillaInput): Observable<ApiResponse> {
+  actualizarPlantilla(id: number, data: PlantillaInput): Observable<ApiResponse> {
     return this.http.put<ApiResponse>(`${this.baseUrl}/plantillas/${id}`, data);
   }
 
-  deleteTemplate(id: number): Observable<ApiResponse> {
+  eliminarPlantilla(id: number): Observable<ApiResponse> {
     return this.http.delete<ApiResponse>(`${this.baseUrl}/plantillas/${id}`);
   }
 
-  uploadTemplateFile(formData: FormData): Observable<ApiResponse & { html: string }> {
+  subirArchivoPlantilla(formData: FormData): Observable<ApiResponse & { html: string }> {
     return this.http.post<ApiResponse & { html: string }>(`${this.baseUrl}/upload-template-file`, formData);
   }
 
@@ -152,12 +152,12 @@ export class ApiService {
   // CORREO
   // =====================================
 
-  sendSingleMail(data: { destinatario: string; asunto: string; cuerpo: string }): Observable<ApiResponse> {
+  enviarCorreoIndividual(data: { destinatario: string; asunto: string; cuerpo: string }): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/send-mail`, data);
   }
 
   /** Encola una campaña (inmediata o programada); la envía el worker del servidor. */
-  sendMassiveMail(data: EnvioMasivoInput): Observable<EnvioMasivoRespuesta> {
+  enviarCorreoMasivo(data: EnvioMasivoInput): Observable<EnvioMasivoRespuesta> {
     return this.http.post<EnvioMasivoRespuesta>(`${this.baseUrl}/send-massive`, {
       plantilla_id: data.plantilla_id,
       ids_contacto: data.ids_contacto,
@@ -167,16 +167,16 @@ export class ApiService {
   }
 
   /** Asunto y cuerpo con las variables ya sustituidas (contacto real o datos de ejemplo). */
-  previewMail(data: VistaPreviaCorreoInput): Observable<DataResponse<VistaPreviaCorreo>> {
+  previsualizarCorreo(data: VistaPreviaCorreoInput): Observable<DataResponse<VistaPreviaCorreo>> {
     return this.http.post<DataResponse<VistaPreviaCorreo>>(`${this.baseUrl}/mail/preview`, data);
   }
 
   /** Envía una copia de prueba al correo del propio usuario. */
-  sendTestMail(data: VistaPreviaCorreoInput): Observable<ApiResponse & { enviado_a: string }> {
+  enviarCorreoPrueba(data: VistaPreviaCorreoInput): Observable<ApiResponse & { enviado_a: string }> {
     return this.http.post<ApiResponse & { enviado_a: string }>(`${this.baseUrl}/mail/test`, data);
   }
 
-  suggestSubjects(topic: string): Observable<ApiResponse & { subjects: string[] }> {
+  sugerirAsuntos(topic: string): Observable<ApiResponse & { subjects: string[] }> {
     return this.http.post<ApiResponse & { subjects: string[] }>(`${this.baseUrl}/ai/suggest-asunto`, { topic });
   }
 
@@ -184,19 +184,19 @@ export class ApiService {
   // HISTORIAL / CAMPAÑAS
   // =====================================
 
-  getHistory(): Observable<DataResponse<Campana[]>> {
+  obtenerHistorial(): Observable<DataResponse<Campana[]>> {
     return this.http.get<DataResponse<Campana[]>>(`${this.baseUrl}/history`);
   }
 
-  getCampaignDeliveries(campanaId: number): Observable<DataResponse<Entrega[]>> {
+  obtenerEntregasCampana(campanaId: number): Observable<DataResponse<Entrega[]>> {
     return this.http.get<DataResponse<Entrega[]>>(`${this.baseUrl}/history/${campanaId}/deliveries`);
   }
 
-  cancelCampaign(campanaId: number): Observable<ApiResponse> {
+  cancelarCampana(campanaId: number): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/history/${campanaId}/cancel`, {});
   }
 
-  retryFailedDeliveries(campanaId: number): Observable<ApiResponse & { reencolados: number }> {
+  reintentarEntregasFallidas(campanaId: number): Observable<ApiResponse & { reencolados: number }> {
     return this.http.post<ApiResponse & { reencolados: number }>(`${this.baseUrl}/history/${campanaId}/retry-failed`, {});
   }
 
@@ -204,15 +204,15 @@ export class ApiService {
   // PANEL
   // =====================================
 
-  getDashboardStats(): Observable<DataResponse<EstadisticasPanel>> {
+  obtenerEstadisticas(): Observable<DataResponse<EstadisticasPanel>> {
     return this.http.get<DataResponse<EstadisticasPanel>>(`${this.baseUrl}/dashboard/stats`);
   }
 
-  getDashboardActivity(): Observable<DataResponse<DiaActividad[]>> {
+  obtenerActividad(): Observable<DataResponse<DiaActividad[]>> {
     return this.http.get<DataResponse<DiaActividad[]>>(`${this.baseUrl}/dashboard/activity`);
   }
 
-  getDashboardSummary(): Observable<DataResponse<ResumenPanel>> {
+  obtenerResumen(): Observable<DataResponse<ResumenPanel>> {
     return this.http.get<DataResponse<ResumenPanel>>(`${this.baseUrl}/dashboard/summary`);
   }
 }

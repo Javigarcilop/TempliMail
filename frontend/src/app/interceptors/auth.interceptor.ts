@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { clearToken, getToken } from '../utils/token';
+import { borrarToken, obtenerToken } from '../utils/token';
 
 /**
  * - Añade el JWT a todas las peticiones a la API.
@@ -11,10 +11,10 @@ import { clearToken, getToken } from '../utils/token';
  *   cierra la sesión y lleva al login. El 401 del propio login (credenciales
  *   incorrectas) se deja pasar para que el formulario muestre el error.
  */
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
+export const interceptorAutenticacion: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const isApi = req.url.startsWith(environment.apiUrl);
-  const token = getToken();
+  const token = obtenerToken();
 
   if (isApi && token) {
     req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
@@ -25,7 +25,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       const isLogin = req.url.endsWith('/login');
 
       if (isApi && error.status === 401 && !isLogin && token) {
-        clearToken();
+        borrarToken();
         router.navigate(['/login'], { queryParams: { expired: 1 } });
       }
 

@@ -16,18 +16,18 @@ export class ToastService {
 
   private nextId = 1;
 
-  success(text: string): void { this.show('success', text); }
-  error(text: string): void { this.show('error', text, 6000); }
-  info(text: string): void { this.show('info', text); }
+  exito(text: string): void { this.mostrar('success', text); }
+  fallo(text: string): void { this.mostrar('error', text, 6000); }
+  aviso(text: string): void { this.mostrar('info', text); }
 
-  dismiss(id: number): void {
+  descartar(id: number): void {
     this.toasts.update(list => list.filter(t => t.id !== id));
   }
 
-  private show(kind: ToastKind, text: string, ttl = 4000): void {
+  private mostrar(kind: ToastKind, text: string, ttl = 4000): void {
     const id = this.nextId++;
 
     this.toasts.update(list => [...list, { id, kind, text }]);
-    setTimeout(() => this.dismiss(id), ttl);
+    setTimeout(() => this.descartar(id), ttl);
   }
 }

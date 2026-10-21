@@ -1,4 +1,4 @@
-<form (ngSubmit)="saveContact()">
+<form (ngSubmit)="guardarContacto()">
 
   <input [(ngModel)]="newContact.nombre" name="nombre" placeholder="Nombre" required />
   <input [(ngModel)]="newContact.apellidos" name="apellidos" placeholder="Apellidos" />
@@ -16,7 +16,7 @@
             type="checkbox"
             [name]="'grupo_' + g.id"
             [checked]="selectedGroupIds.has(g.id)"
-            (change)="toggleGroup(g.id, $any($event.target).checked)"
+            (change)="alternarGrupo(g.id, $any($event.target).checked)"
           />
           {{ g.nombre }}
         </label>
@@ -28,7 +28,7 @@
     {{ editingId ? 'Actualizar' : 'Añadir' }}
   </button>
 
-  <button *ngIf="editingId" type="button" class="btn-cancelar" (click)="cancelEdit()">
+  <button *ngIf="editingId" type="button" class="btn-cancelar" (click)="cancelarEdicion()">
     Cancelar
   </button>
 
@@ -41,11 +41,11 @@
     class="search-input"
     placeholder="Buscar por nombre, correo, empresa..."
     [(ngModel)]="search"
-    (ngModelChange)="resetPage()"
+    (ngModelChange)="reiniciarPagina()"
     name="search"
   />
 
-  <select class="group-filter" [(ngModel)]="groupFilter" (ngModelChange)="resetPage()" name="groupFilter">
+  <select class="group-filter" [(ngModel)]="groupFilter" (ngModelChange)="reiniciarPagina()" name="groupFilter">
     <option [ngValue]="''">Todos los grupos</option>
     <option [ngValue]="'none'">Sin grupo</option>
     @for (g of grupos; track g.id) {
@@ -59,9 +59,9 @@
     </button>
     <label class="btn-tool file-btn">
       Importar CSV
-      <input type="file" accept=".csv,text/csv" hidden (change)="onFileSelected($event)" />
+      <input type="file" accept=".csv,text/csv" hidden (change)="seleccionarArchivo($event)" />
     </label>
-    <button type="button" class="btn-tool" [disabled]="filteredContacts.length === 0" (click)="exportCsv()">
+    <button type="button" class="btn-tool" [disabled]="filteredContacts.length === 0" (click)="exportarCsv()">
       Exportar CSV
     </button>
   </div>
@@ -79,9 +79,9 @@
         maxlength="100"
         [(ngModel)]="newGroupName"
         name="newGroupName"
-        (keyup.enter)="createGroup()"
+        (keyup.enter)="crearGrupo()"
       />
-      <button type="button" class="btn-accion" [disabled]="!newGroupName.trim()" (click)="createGroup()">
+      <button type="button" class="btn-accion" [disabled]="!newGroupName.trim()" (click)="crearGrupo()">
         Crear grupo
       </button>
     </div>
@@ -96,8 +96,8 @@
           <span class="group-name">{{ g.nombre }}</span>
           <span class="badge badge-blue">{{ g.total_miembros }} contacto(s)</span>
           <span class="group-actions">
-            <button type="button" class="btn-accion" (click)="renameGroup(g)">Renombrar</button>
-            <button type="button" class="btn-accion peligro" (click)="deleteGroup(g)">Eliminar</button>
+            <button type="button" class="btn-accion" (click)="renombrarGrupo(g)">Renombrar</button>
+            <button type="button" class="btn-accion peligro" (click)="eliminarGrupo(g)">Eliminar</button>
           </span>
         </li>
       }
@@ -130,10 +130,10 @@
     }
 
     <div class="panel-actions">
-      <button type="button" class="btn-accion" [disabled]="importing" (click)="confirmImport()">
+      <button type="button" class="btn-accion" [disabled]="importing" (click)="confirmarImportacion()">
         {{ importing ? 'Importando...' : 'Importar ' + importPreview.contacts.length + ' contactos' }}
       </button>
-      <button type="button" class="btn-accion" [disabled]="importing" (click)="cancelImport()">Cancelar</button>
+      <button type="button" class="btn-accion" [disabled]="importing" (click)="cancelarImportacion()">Cancelar</button>
     </div>
   </div>
 }
@@ -159,7 +159,7 @@
     }
 
     <div class="panel-actions">
-      <button type="button" class="btn-accion" (click)="cancelImport()">Cerrar</button>
+      <button type="button" class="btn-accion" (click)="cancelarImportacion()">Cerrar</button>
     </div>
   </div>
 }
@@ -190,7 +190,7 @@
       <td>{{ c.cargo }}</td>
       <td>
         @for (id of c.ids_grupo; track id) {
-          <span class="badge badge-blue chip">{{ groupName(id) }}</span>
+          <span class="badge badge-blue chip">{{ nombreGrupo(id) }}</span>
         }
       </td>
       <td>
@@ -201,11 +201,11 @@
         }
       </td>
       <td class="acciones">
-        <button type="button" class="btn-accion" (click)="editContact(c)">Editar</button>
-        <button type="button" class="btn-accion" (click)="toggleSubscription(c)">
+        <button type="button" class="btn-accion" (click)="editarContacto(c)">Editar</button>
+        <button type="button" class="btn-accion" (click)="alternarSuscripcion(c)">
           {{ c.baja_en ? 'Reactivar' : 'Dar de baja' }}
         </button>
-        <button type="button" class="btn-accion peligro" (click)="deleteContact(c)">Eliminar</button>
+        <button type="button" class="btn-accion peligro" (click)="eliminarContacto(c)">Eliminar</button>
       </td>
     </tr>
   } @empty {
@@ -220,8 +220,8 @@
 
 @if (totalPages > 1) {
   <div class="pagination">
-    <button type="button" class="btn-accion" [disabled]="page <= 1" (click)="goToPage(page - 1)">← Anterior</button>
+    <button type="button" class="btn-accion" [disabled]="page <= 1" (click)="irAPagina(page - 1)">← Anterior</button>
     <span>Página {{ page }} de {{ totalPages }}</span>
-    <button type="button" class="btn-accion" [disabled]="page >= totalPages" (click)="goToPage(page + 1)">Siguiente →</button>
+    <button type="button" class="btn-accion" [disabled]="page >= totalPages" (click)="irAPagina(page + 1)">Siguiente →</button>
   </div>
 }

@@ -60,14 +60,14 @@
             </td>
 
             <td>
-              <span class="badge" [ngClass]="statusInfo(campaign).badge">
-                {{ statusInfo(campaign).label }}
+              <span class="badge" [ngClass]="infoEstado(campaign).badge">
+                {{ infoEstado(campaign).label }}
               </span>
             </td>
 
             <td class="progress-cell">
-              <div class="progress" [attr.aria-label]="progress(campaign) + '%'">
-                <div class="progress-bar" [style.width.%]="progress(campaign)"></div>
+              <div class="progress" [attr.aria-label]="progreso(campaign) + '%'">
+                <div class="progress-bar" [style.width.%]="progreso(campaign)"></div>
               </div>
               <small>
                 {{ campaign.enviados }}/{{ campaign.total_destinatarios }} enviados
@@ -80,21 +80,21 @@
               </small>
             </td>
 
-            <td>{{ displayDate(campaign) | date:'short' }}</td>
+            <td>{{ fechaMostrar(campaign) | date:'short' }}</td>
 
             <td class="row-actions">
-              <button class="btn-expand" (click)="toggleDeliveries(campaign.id)">
+              <button class="btn-expand" (click)="alternarEntregas(campaign.id)">
                 {{ expandedCampaignId === campaign.id ? 'Ocultar ▲' : 'Detalle ▼' }}
               </button>
 
               @if (campaign.estado === 'completed' && campaign.fallidos > 0) {
-                <button class="btn-expand" [disabled]="actionInProgress === campaign.id" (click)="retryFailed(campaign)">
+                <button class="btn-expand" [disabled]="actionInProgress === campaign.id" (click)="reintentarFallidos(campaign)">
                   Reintentar fallidos
                 </button>
               }
 
-              @if (campaign.estado === 'scheduled' && !isActive(campaign)) {
-                <button class="btn-expand danger" [disabled]="actionInProgress === campaign.id" (click)="cancel(campaign)">
+              @if (campaign.estado === 'scheduled' && !estaActiva(campaign)) {
+                <button class="btn-expand danger" [disabled]="actionInProgress === campaign.id" (click)="cancelar(campaign)">
                   Cancelar
                 </button>
               }
@@ -126,8 +126,8 @@
                           <td>{{ d.nombre }} {{ d.apellidos }}</td>
                           <td>{{ d.correo }}</td>
                           <td>
-                            <span class="badge" [ngClass]="deliveryBadge(d.estado)">
-                              {{ deliveryLabel(d.estado) }}
+                            <span class="badge" [ngClass]="insigniaEntrega(d.estado)">
+                              {{ etiquetaEntrega(d.estado) }}
                             </span>
                           </td>
                           <td>{{ d.enviado_en | date:'short' }}</td>

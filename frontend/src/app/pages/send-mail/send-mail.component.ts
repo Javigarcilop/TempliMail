@@ -37,19 +37,19 @@ export class SendMailComponent {
     private toast: ToastService
   ) {}
 
-  onSubmit(form: NgForm): void {
+  enviarFormulario(form: NgForm): void {
     if (form.invalid || !this.cuerpo.trim()) {
-      this.toast.error('Destinatario, asunto y mensaje son obligatorios.');
+      this.toast.fallo('Destinatario, asunto y mensaje son obligatorios.');
       return;
     }
 
     this.loading = true;
 
-    this.api.sendSingleMail({ destinatario: this.destinatario, asunto: this.asunto, cuerpo: this.cuerpo })
+    this.api.enviarCorreoIndividual({ destinatario: this.destinatario, asunto: this.asunto, cuerpo: this.cuerpo })
       .subscribe({
         next: () => {
           this.loading = false;
-          this.toast.success('Correo enviado correctamente.');
+          this.toast.exito('Correo enviado correctamente.');
           form.resetForm();
           this.cuerpo = '';
           this.aiSuggestions = [];
@@ -59,20 +59,20 @@ export class SendMailComponent {
           this.loading = false;
           // La sesión caducada (401) la gestiona el interceptor
           if (err.status !== 401) {
-            this.toast.error(err.error?.error ?? 'Error al enviar el correo.');
+            this.toast.fallo(err.error?.error ?? 'Error al enviar el correo.');
           }
         }
       });
   }
 
-  suggestSubjects(): void {
+  sugerirAsuntos(): void {
     if (!this.aiTopic.trim()) return;
 
     this.aiLoading = true;
     this.aiSuggestions = [];
     this.aiError = '';
 
-    this.api.suggestSubjects(this.aiTopic).subscribe({
+    this.api.sugerirAsuntos(this.aiTopic).subscribe({
       next: response => {
         this.aiLoading = false;
         this.aiSuggestions = response.subjects ?? [];
@@ -84,7 +84,7 @@ export class SendMailComponent {
     });
   }
 
-  selectSuggestion(suggestion: string): void {
+  seleccionarSugerencia(suggestion: string): void {
     this.asunto = suggestion;
     this.aiSuggestions = [];
     this.aiTopic = '';

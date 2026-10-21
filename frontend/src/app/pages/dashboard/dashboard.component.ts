@@ -35,21 +35,21 @@ export class DashboardComponent implements OnInit {
   constructor(private api: ApiService, private router: Router) {}
 
   ngOnInit(): void {
-    this.api.me().subscribe(response => this.nombreUsuario = response.data.nombre_usuario);
+    this.api.obtenerPerfil().subscribe(response => this.nombreUsuario = response.data.nombre_usuario);
 
-    this.api.getDashboardStats().subscribe(response => {
+    this.api.obtenerEstadisticas().subscribe(response => {
       if (response?.success) {
         this.stats = response.data;
       }
     });
 
-    this.api.getDashboardActivity().subscribe(response => {
+    this.api.obtenerActividad().subscribe(response => {
       if (response?.success) {
         this.actividad = response.data;
       }
     });
 
-    this.api.getDashboardSummary().subscribe(response => {
+    this.api.obtenerResumen().subscribe(response => {
       if (response?.success) {
         const data = response.data;
 
@@ -79,16 +79,16 @@ export class DashboardComponent implements OnInit {
   }
 
   /** Altura de la barra (%), con un mínimo visible para los días con envíos. */
-  barHeight(dia: DiaActividad): number {
+  alturaBarra(dia: DiaActividad): number {
     return dia.enviados === 0 ? 0 : Math.max(4, Math.round((dia.enviados / this.maxDaily) * 100));
   }
 
   /** 'YYYY-MM-DD' -> Date en UTC, para que el pipe no lo desplace de día. */
-  asDate(dia: DiaActividad): Date {
+  aFecha(dia: DiaActividad): Date {
     return new Date(dia.fecha + 'T12:00:00Z');
   }
 
-  goTo(path: string): void {
+  irA(path: string): void {
     this.router.navigate(['/' + path]);
   }
 }

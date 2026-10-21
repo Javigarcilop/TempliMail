@@ -456,7 +456,7 @@ const handle = (method: string, path: string, body: any) => {
   return fail(404, 'Ruta no disponible en la demo.');
 };
 
-export const demoInterceptor: HttpInterceptorFn = (req) => {
+export const interceptorDemo: HttpInterceptorFn = (req) => {
   const marker = 'index.php';
   const at = req.url.indexOf(marker);
   const path = (at >= 0 ? req.url.slice(at + marker.length) : req.url).replace(/\/$/, '');

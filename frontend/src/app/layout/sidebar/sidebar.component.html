@@ -15,7 +15,7 @@
     @if (nombreUsuario()) {
       <a routerLink="/cuenta" routerLinkActive="active" class="user" title="Mi cuenta">👤 {{ nombreUsuario() }}</a>
     }
-    <a href="/login" (click)="logout($event)">Salir</a>
+    <a href="/login" (click)="cerrarSesion($event)">Salir</a>
   </div>
 
 </div>

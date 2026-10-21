@@ -5,7 +5,7 @@
   <section class="card">
     <h3>Datos personales</h3>
 
-    <form (ngSubmit)="saveProfile()" #profileForm="ngForm">
+    <form (ngSubmit)="guardarPerfil()" #profileForm="ngForm">
       <label for="nombre_usuario">Usuario</label>
       <input id="nombre_usuario" type="text" [value]="nombreUsuario" disabled />
 
@@ -21,7 +21,7 @@
   <section class="card">
     <h3>Cambiar contraseña</h3>
 
-    <form (ngSubmit)="changePassword()" #passwordForm="ngForm">
+    <form (ngSubmit)="cambiarContrasena()" #passwordForm="ngForm">
       <label for="actual">Contraseña actual</label>
       <input id="actual" name="actual" type="password" required autocomplete="current-password" [(ngModel)]="contrasenaActual" />
 

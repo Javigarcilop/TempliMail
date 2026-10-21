@@ -1,5 +1,5 @@
 <!-- Form -->
-<form (ngSubmit)="saveTemplate()" #form="ngForm">
+<form (ngSubmit)="guardarPlantilla()" #form="ngForm">
 
   <div class="mb-3">
     <label for="nombre" class="form-label">
@@ -33,7 +33,7 @@
 
   <div class="variables-box">
     <span class="variables-label">Variables (clic para insertar en el contenido):</span>
-    <button type="button" class="var-chip" *ngFor="let v of variables" [title]="v.label" (click)="insertVariable(v.key)">
+    <button type="button" class="var-chip" *ngFor="let v of variables" [title]="v.label" (click)="insertarVariable(v.key)">
       {{ v.tag }}
     </button>
     <small class="variables-help">
@@ -50,7 +50,7 @@
     <editor
       [apiKey]="tinymceApiKey"
       [licenseKey]="tinymceLicenseKey"
-      (onInit)="onEditorInit($event)"
+      (onInit)="alIniciarEditor($event)"
       [(ngModel)]="templateForm.contenido_html"
       name="contenido_html"
       [init]="{
@@ -81,7 +81,7 @@
       <button
         type="button"
         class="btn btn-secondary"
-        (click)="uploadFile()">
+        (click)="subirArchivo()">
         Cargar archivo
       </button>
     </div>
@@ -92,11 +92,11 @@
     <button type="submit" class="btn btn-primary">
       {{ editing ? "Actualizar plantilla" : "Guardar plantilla" }}
     </button>
-    <button type="button" class="btn-outline" (click)="showPreview()">Vista previa</button>
-    <button type="button" class="btn-outline" [disabled]="busy" (click)="sendTest()">
+    <button type="button" class="btn-outline" (click)="mostrarVistaPrevia()">Vista previa</button>
+    <button type="button" class="btn-outline" [disabled]="busy" (click)="enviarPrueba()">
       {{ busy ? "Enviando..." : "Enviarme una prueba" }}
     </button>
-    <button *ngIf="editing" type="button" class="btn-outline" (click)="resetForm()">Cancelar edición</button>
+    <button *ngIf="editing" type="button" class="btn-outline" (click)="reiniciarFormulario()">Cancelar edición</button>
   </div>
 
 </form>
@@ -126,15 +126,15 @@
         <td>{{ template.asunto }}</td>
 
         <td class="acciones">
-          <button (click)="editTemplate(template)">
+          <button (click)="editarPlantilla(template)">
             Editar
           </button>
 
-          <button (click)="duplicateTemplate(template)">
+          <button (click)="duplicarPlantilla(template)">
             Duplicar
           </button>
 
-          <button (click)="deleteTemplate(template)">
+          <button (click)="eliminarPlantilla(template)">
             Eliminar
           </button>
         </td>

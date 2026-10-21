@@ -1,20 +1,20 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './guards/auth.guard';
-import { guestGuard } from './guards/guest.guard';
+import { guardiaAutenticado } from './guards/auth.guard';
+import { guardiaInvitado } from './guards/guest.guard';
 
 export const routes: Routes = [
 
   // Rutas públicas (redirige a dashboard si ya hay sesión)
   {
     path: 'login',
-    canActivate: [guestGuard],
+    canActivate: [guardiaInvitado],
     loadComponent: () =>
       import('./pages/login/login.component')
         .then(m => m.LoginComponent)
   },
   {
     path: 'register',
-    canActivate: [guestGuard],
+    canActivate: [guardiaInvitado],
     loadComponent: () =>
       import('./pages/register/register.component')
         .then(m => m.RegisterComponent)
@@ -23,7 +23,7 @@ export const routes: Routes = [
   // Rutas privadas (redirige a login si no hay sesión)
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [guardiaAutenticado],
     loadComponent: () =>
       import('./layout/layout.component')
         .then(m => m.LayoutComponent),

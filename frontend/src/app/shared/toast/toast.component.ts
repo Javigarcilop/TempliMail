@@ -9,7 +9,7 @@ import { ToastService } from '../../services/toast.service';
       @for (toast of toasts.toasts(); track toast.id) {
         <div class="toast" [class]="'toast toast-' + toast.kind" role="status">
           <span>{{ toast.text }}</span>
-          <button type="button" aria-label="Cerrar" (click)="toasts.dismiss(toast.id)">×</button>
+          <button type="button" aria-label="Cerrar" (click)="toasts.descartar(toast.id)">×</button>
         </div>
       }
     </div>

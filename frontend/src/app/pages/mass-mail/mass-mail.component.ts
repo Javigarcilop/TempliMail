@@ -40,19 +40,19 @@ export class MassMailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.api.getContacts().subscribe({
+    this.api.obtenerContactos().subscribe({
       next: response => this.contactos = response.data ?? [],
-      error: () => this.toast.error('No se pudieron cargar los contactos.')
+      error: () => this.toast.fallo('No se pudieron cargar los contactos.')
     });
 
-    this.api.getGroups().subscribe({
+    this.api.obtenerGrupos().subscribe({
       next: response => this.grupos = response.data ?? [],
       error: () => { /* el filtro por grupo es opcional */ }
     });
 
-    this.api.getTemplates().subscribe({
+    this.api.obtenerPlantillas().subscribe({
       next: response => this.templates = response.data ?? [],
-      error: () => this.toast.error('No se pudieron cargar las plantillas.')
+      error: () => this.toast.fallo('No se pudieron cargar las plantillas.')
     });
   }
 
@@ -104,7 +104,7 @@ export class MassMailComponent implements OnInit {
   // Selección
   // ---------------------------------------------------------------
 
-  toggleContact(contact: Contacto, checked: boolean): void {
+  alternarContacto(contact: Contacto, checked: boolean): void {
     if (checked) {
       this.selectedContactIds.add(contact.id);
     } else {
@@ -112,9 +112,9 @@ export class MassMailComponent implements OnInit {
     }
   }
 
-  toggleAllVisible(checked: boolean): void {
+  alternarTodosVisibles(checked: boolean): void {
     for (const contact of this.selectableVisible) {
-      this.toggleContact(contact, checked);
+      this.alternarContacto(contact, checked);
     }
   }
 
@@ -122,22 +122,22 @@ export class MassMailComponent implements OnInit {
   // Vista previa y prueba
   // ---------------------------------------------------------------
 
-  showPreview(): void {
-    const payload = this.previewPayload();
+  mostrarVistaPrevia(): void {
+    const payload = this.datosVistaPrevia();
 
     if (!payload) {
       return;
     }
 
-    this.api.previewMail(payload).subscribe({
+    this.api.previsualizarCorreo(payload).subscribe({
       next: response => this.preview = response.data,
       error: (err: HttpErrorResponse) =>
-        this.toast.error(err.error?.error ?? 'No se pudo generar la vista previa.')
+        this.toast.fallo(err.error?.error ?? 'No se pudo generar la vista previa.')
     });
   }
 
-  sendTest(): void {
-    const payload = this.previewPayload();
+  enviarPrueba(): void {
+    const payload = this.datosVistaPrevia();
 
     if (!payload) {
       return;
@@ -145,14 +145,14 @@ export class MassMailComponent implements OnInit {
 
     this.busy = true;
 
-    this.api.sendTestMail(payload).subscribe({
+    this.api.enviarCorreoPrueba(payload).subscribe({
       next: response => {
         this.busy = false;
-        this.toast.success(`Correo de prueba enviado a ${response.enviado_a}.`);
+        this.toast.exito(`Correo de prueba enviado a ${response.enviado_a}.`);
       },
       error: (err: HttpErrorResponse) => {
         this.busy = false;
-        this.toast.error(err.error?.error ?? 'No se pudo enviar la prueba.');
+        this.toast.fallo(err.error?.error ?? 'No se pudo enviar la prueba.');
       }
     });
   }
@@ -161,11 +161,11 @@ export class MassMailComponent implements OnInit {
   // Envío
   // ---------------------------------------------------------------
 
-  sendMassive(): void {
+  enviarMasivo(): void {
     const template = this.selectedTemplate;
 
     if (!template || this.selectedContactIds.size === 0) {
-      this.toast.error('Elige una plantilla y al menos un contacto.');
+      this.toast.fallo('Elige una plantilla y al menos un contacto.');
       return;
     }
 
@@ -182,7 +182,7 @@ export class MassMailComponent implements OnInit {
       const date = new Date(this.scheduledAt); // hora local del navegador
 
       if (date.getTime() - Date.now() < 60_000) {
-        this.toast.error('La hora programada debe ser al menos 1 minuto posterior a la actual.');
+        this.toast.fallo('La hora programada debe ser al menos 1 minuto posterior a la actual.');
         return;
       }
 
@@ -201,13 +201,13 @@ export class MassMailComponent implements OnInit {
 
     this.loading = true;
 
-    this.api.sendMassiveMail(payload).subscribe({
+    this.api.enviarCorreoMasivo(payload).subscribe({
       next: response => {
         this.loading = false;
 
         const excluidos = response.excluidos > 0 ? ` (${response.excluidos} excluido/s por baja o no válido)` : '';
 
-        this.toast.success(
+        this.toast.exito(
           response.programado
             ? `Campaña programada para ${response.destinatarios} contacto(s)${excluidos}.`
             : `Campaña en cola: ${response.destinatarios} contacto(s)${excluidos}. Se enviará en unos segundos.`
@@ -217,7 +217,7 @@ export class MassMailComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
-        this.toast.error(err.error?.error ?? 'Error al crear la campaña.');
+        this.toast.fallo(err.error?.error ?? 'Error al crear la campaña.');
       }
     });
   }
@@ -225,11 +225,11 @@ export class MassMailComponent implements OnInit {
   // ---------------------------------------------------------------
 
   /** Datos para la vista previa / prueba: la plantilla con el primer contacto elegido. */
-  private previewPayload() {
+  private datosVistaPrevia() {
     const template = this.selectedTemplate;
 
     if (!template) {
-      this.toast.error('Elige primero una plantilla.');
+      this.toast.fallo('Elige primero una plantilla.');
       return null;
     }
 

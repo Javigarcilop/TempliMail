@@ -4,7 +4,7 @@ import { NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../services/api.service';
-import { setToken } from '../../utils/token';
+import { establecerToken } from '../../utils/token';
 import { DEMO_MODE } from '../../demo/demo-mode';
 
 @Component({
@@ -36,7 +36,7 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  onLogin(): void {
+  iniciarSesion(): void {
     if (!this.nombreUsuario || !this.contrasena) {
       this.errorMessage = 'Completa todos los campos.';
       return;
@@ -46,7 +46,7 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
     this.infoMessage = '';
 
-    this.api.login({ nombre_usuario: this.nombreUsuario, contrasena: this.contrasena }).subscribe({
+    this.api.iniciarSesion({ nombre_usuario: this.nombreUsuario, contrasena: this.contrasena }).subscribe({
       next: response => {
         this.loading = false;
 
@@ -55,7 +55,7 @@ export class LoginComponent implements OnInit {
           return;
         }
 
-        setToken(response.token);
+        establecerToken(response.token);
         this.router.navigate(['/dashboard']);
       },
       error: (err: HttpErrorResponse) => {
