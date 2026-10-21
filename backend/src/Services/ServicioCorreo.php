@@ -16,6 +16,7 @@ use TempliMail\Utils\Entorno;
 use TempliMail\Utils\EnviadorCorreo;
 use TempliMail\Utils\RenderizadorPlantilla;
 use TempliMail\Utils\Baja;
+use TempliMail\Utils\Seguimiento;
 use Throwable;
 
 class ServicioCorreo
@@ -46,7 +47,8 @@ class ServicioCorreo
         $delivery = ModeloEntregaCorreo::getPendingByCampaign($campaignId, 1)[0];
 
         try {
-            EnviadorCorreo::sendOnce($to, $asunto, $body);
+            $trackedBody = self::applyTracking($body, (int) $delivery['id'], null);
+            EnviadorCorreo::sendOnce($to, $asunto, $trackedBody);
             ModeloEntregaCorreo::markSent((int) $delivery['id']);
         } catch (Throwable $e) {
             ModeloEntregaCorreo::markFailed((int) $delivery['id'], $e->getMessage());
@@ -278,6 +280,7 @@ class ServicioCorreo
         );
         $body = self::withFooter((string) $campaign['contenido_html']);
         $body = RenderizadorPlantilla::render($body, $vars, true);
+        $body = self::applyTracking($body, $deliveryId, $contactId !== null ? $vars['enlace_baja'] : null);
 
         $headers = $contactId !== null
             ? [
@@ -311,6 +314,40 @@ class ServicioCorreo
         return str_contains($html, '{{unsubscribe_url') || str_contains($html, '{{enlace_baja')
             ? $html
             : $html . Baja::FOOTER;
+    }
+
+    /**
+     * Incrusta el seguimiento de apertura (pixel) y de clics en el HTML ya
+     * renderizado (variables resueltas). Solo reescribe enlaces http(s)
+     * absolutos: es un reemplazo por expresion regular, no un parser HTML
+     * completo, pero basta para el HTML que genera el editor (TinyMCE).
+     *
+     * @param ?string $skipUrl el enlace de baja no se reescribe (se deja ir directo)
+     */
+    private static function applyTracking(string $html, int $deliveryId, ?string $skipUrl): string
+    {
+        $html = (string) preg_replace_callback(
+            '/\bhref\s*=\s*(["\'])(https?:\/\/[^"\']+)\1/i',
+            static function (array $m) use ($deliveryId, $skipUrl): string {
+                $url = html_entity_decode($m[2], ENT_QUOTES, 'UTF-8');
+
+                if ($skipUrl !== null && $url === $skipUrl) {
+                    return $m[0];
+                }
+
+                $tracked = htmlspecialchars(Seguimiento::clickUrl($deliveryId, $url), ENT_QUOTES, 'UTF-8');
+
+                return 'href=' . $m[1] . $tracked . $m[1];
+            },
+            $html
+        );
+
+        $pixel = '<img src="' . htmlspecialchars(Seguimiento::pixelUrl($deliveryId), ENT_QUOTES, 'UTF-8')
+            . '" width="1" height="1" alt="" style="display:none" />';
+
+        return str_contains($html, '</body>')
+            ? str_replace('</body>', $pixel . '</body>', $html)
+            : $html . $pixel;
     }
 
     /**

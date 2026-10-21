@@ -36,13 +36,15 @@ class ModeloPanel
         ];
     }
 
-    /** Correos enviados / fallidos (campañas masivas e individuales). */
+    /** Correos enviados / fallidos / abiertos / con clic (campañas masivas e individuales). */
     public static function getDeliveryTotals(int $userId): array
     {
         $stmt = BD::get()->prepare("
             SELECT
                 COALESCE(SUM(ed.estado = 'sent'),   0) AS total_enviados,
-                COALESCE(SUM(ed.estado = 'failed'), 0) AS total_fallidos
+                COALESCE(SUM(ed.estado = 'failed'), 0) AS total_fallidos,
+                COALESCE(SUM(ed.aperturas > 0), 0)     AS total_abiertos,
+                COALESCE(SUM(ed.clics > 0),     0)     AS total_con_clics
             FROM entregas_correo ed
             JOIN campanas_correo ec ON ec.id = ed.campana_id
             WHERE ec.usuario_id = :usuario_id
@@ -50,7 +52,12 @@ class ModeloPanel
         $stmt->execute(['usuario_id' => $userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return ['total_enviados' => (int) $row['total_enviados'], 'total_fallidos' => (int) $row['total_fallidos']];
+        return [
+            'total_enviados'  => (int) $row['total_enviados'],
+            'total_fallidos'  => (int) $row['total_fallidos'],
+            'total_abiertos'  => (int) $row['total_abiertos'],
+            'total_con_clics' => (int) $row['total_con_clics'],
+        ];
     }
 
     /**

@@ -12,6 +12,7 @@ use TempliMail\Controllers\ControladorGrupo;
 use TempliMail\Controllers\ControladorCorreo;
 use TempliMail\Controllers\ControladorPlantilla;
 use TempliMail\Controllers\ControladorBaja;
+use TempliMail\Controllers\ControladorSeguimiento;
 use TempliMail\Controllers\ControladorSubidaPlantilla;
 use TempliMail\Middleware\MiddlewareAutenticacion;
 use TempliMail\Services\ServicioJwt;
@@ -51,6 +52,10 @@ $routes = [
     ['POST', '#^/register$#',                           ControladorAutenticacion::class,           'register',           true],
     ['GET',  '#^/unsubscribe/(\d+)/([a-f0-9]{64})$#',   ControladorBaja::class,    'handle',             true],
     ['POST', '#^/unsubscribe/(\d+)/([a-f0-9]{64})$#',   ControladorBaja::class,    'handle',             true],
+
+    // Seguimiento de apertura y clics (lo visita el cliente de correo/navegador, no el frontend)
+    ['GET',  '#^/t/(\d+)/([a-f0-9]{64})\.gif$#',         ControladorSeguimiento::class, 'pixel',          true],
+    ['GET',  '#^/t/(\d+)/([a-f0-9]{64})/click$#',        ControladorSeguimiento::class, 'click',          true],
 
     // Sesion
     ['GET',  '#^/me$#',                                 ControladorAutenticacion::class,           'me',                 false],

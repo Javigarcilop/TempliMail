@@ -230,7 +230,9 @@ class ModeloCampanaCorreo
                 COALESCE(SUM(ed.estado = 'sent'),    0)      AS enviados,
                 COALESCE(SUM(ed.estado = 'failed'),  0)      AS fallidos,
                 COALESCE(SUM(ed.estado = 'pending'), 0)      AS pendientes,
-                COALESCE(SUM(ed.estado = 'skipped'), 0)      AS omitidos
+                COALESCE(SUM(ed.estado = 'skipped'), 0)      AS omitidos,
+                COALESCE(SUM(ed.aperturas > 0), 0)           AS abiertos,
+                COALESCE(SUM(ed.clics > 0),     0)           AS con_clics
             FROM campanas_correo ec
             LEFT JOIN plantillas t         ON ec.plantilla_id = t.id
             LEFT JOIN entregas_correo ed ON ed.campana_id = ec.id
@@ -243,7 +245,7 @@ class ModeloCampanaCorreo
         $stmt->execute(['usuario_id' => $userId]);
 
         return array_map(static function (array $row): array {
-            foreach (['total_destinatarios', 'enviados', 'fallidos', 'pendientes', 'omitidos'] as $field) {
+            foreach (['total_destinatarios', 'enviados', 'fallidos', 'pendientes', 'omitidos', 'abiertos', 'con_clics'] as $field) {
                 $row[$field] = (int) $row[$field];
             }
 

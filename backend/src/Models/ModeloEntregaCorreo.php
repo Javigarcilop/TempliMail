@@ -95,6 +95,28 @@ class ModeloEntregaCorreo
         ")->execute(['id' => $deliveryId, 'reason' => $reason]);
     }
 
+    /** Registra una apertura (pixel de seguimiento). Cuenta todas, no solo la primera. */
+    public static function recordOpen(int $deliveryId): void
+    {
+        BD::get()->prepare("
+            UPDATE entregas_correo
+            SET abierto_en = COALESCE(abierto_en, UTC_TIMESTAMP()),
+                aperturas  = aperturas + 1
+            WHERE id = :id
+        ")->execute(['id' => $deliveryId]);
+    }
+
+    /** Registra un clic en un enlace del correo. Independiente de si se registro apertura. */
+    public static function recordClick(int $deliveryId): void
+    {
+        BD::get()->prepare("
+            UPDATE entregas_correo
+            SET clic_en = COALESCE(clic_en, UTC_TIMESTAMP()),
+                clics   = clics + 1
+            WHERE id = :id
+        ")->execute(['id' => $deliveryId]);
+    }
+
     public static function getByCampaign(int $campaignId, int $userId): array
     {
         $stmt = BD::get()->prepare("
@@ -103,6 +125,10 @@ class ModeloEntregaCorreo
                 ed.estado,
                 ed.reintentos,
                 DATE_FORMAT(ed.enviado_en, '%Y-%m-%dT%H:%i:%sZ') AS enviado_en,
+                DATE_FORMAT(ed.abierto_en, '%Y-%m-%dT%H:%i:%sZ') AS abierto_en,
+                ed.aperturas,
+                DATE_FORMAT(ed.clic_en, '%Y-%m-%dT%H:%i:%sZ') AS clic_en,
+                ed.clics,
                 ed.mensaje_error,
                 c.nombre,
                 c.apellidos,
@@ -117,6 +143,11 @@ class ModeloEntregaCorreo
 
         $stmt->execute(['campana_id' => $campaignId, 'usuario_id' => $userId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(static function (array $row): array {
+            $row['aperturas'] = (int) $row['aperturas'];
+            $row['clics']     = (int) $row['clics'];
+
+            return $row;
+        }, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 }
