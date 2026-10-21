@@ -23,6 +23,7 @@
 - Envío programado (las horas se guardan en UTC) y cancelación de campañas programadas
 - Historial con progreso en tiempo real, detalle por destinatario y **reintento de fallidos**
 - **Baja de suscriptores**: enlace firmado en cada correo, cabeceras `List-Unsubscribe` (baja *one-click*) y exclusión automática de los dados de baja
+- **Seguimiento de aperturas y clics**: píxel de apertura y reescritura de enlaces con firma HMAC (atada a la URL exacta, sin riesgo de *open redirect*); aperturas/clics por destinatario y agregados por campaña y por cuenta
 - Envío individual (queda registrado en el historial) y sugerencia de asuntos con IA (Groq)
 - **Dashboard** con totales, tasa de entrega y gráfica de correos enviados en los últimos 14 días
 - **Mi cuenta**: cambio de email y de contraseña (cierra las demás sesiones)
@@ -63,6 +64,8 @@ La base de datos se crea sola la primera vez (`database/schema.sql` + `database/
 ```bash
 docker compose exec -T db mysql -uroot templimail_db < database/migrations/001_email_queue.sql
 docker compose exec -T db mysql -uroot templimail_db < database/migrations/002_contact_groups.sql
+docker compose exec -T db mysql -uroot templimail_db < database/migrations/003_email_tracking.sql
+docker compose exec -T db mysql -uroot templimail_db < database/migrations/004_espanol.sql
 ```
 
 ### El worker
@@ -88,7 +91,7 @@ Copia el proyecto en `htdocs/TempliMail`, usa `DB_HOST=localhost` en `backend/.e
 ## 🧪 Pruebas
 
 ```bash
-bash tests/e2e.sh          # 100+ comprobaciones de la API (requiere Docker y Mailpit)
+bash tests/e2e.sh          # 130+ comprobaciones de la API (requiere Docker y Mailpit)
 cd frontend && npm run build
 ```
 

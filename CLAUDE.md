@@ -42,6 +42,7 @@ docker compose logs -f worker              # actividad del worker de envío
 - Estados de campaña: `scheduled → processing → completed | cancelled` (valores guardados en inglés). Entregas: `pending | sent | failed | skipped`.
 - Envíos individuales también quedan en el historial (`tipo = 'single'`, `contacto_id` NULL).
 - Variables de plantilla en español (`{{nombre}}`, `{{correo}}`...); `Utils\RenderizadorPlantilla::ALIAS` reconoce además los nombres antiguos en inglés por compatibilidad con plantillas guardadas antes de traducir el proyecto.
+- **Seguimiento de aperturas y clics**: `ServicioCorreo::applyTracking()` se ejecuta tras renderizar el HTML final (variables ya resueltas) y antes de enviar, tanto en `deliver()` (masivas) como en `sendSingle()`. Reescribe los `href="https://..."` absolutos (menos el enlace de baja) a `/t/{entrega_id}/{firma}/click?url=...` y añade un píxel `<img src=".../t/{entrega_id}/{firma}.gif">`. Las firmas son HMAC (`Utils\Seguimiento`): la del clic está atada a la entrega **y** a la URL exacta, así que cambiar `url` la invalida (sin eso, un rastreador de clics es un *open redirect*). `ControladorSeguimiento` (rutas públicas `GET /t/{id}/{firma}.gif` y `GET /t/{id}/{firma}/click`) no extiende `ControladorBase`: la respuesta es una imagen o una redirección 302, no JSON. El píxel responde 200 aunque la firma sea inválida (para no delatar al destinatario); el clic con firma o URL inválidas responde 404. Los contadores (`aperturas`, `abierto_en`, `clics`, `clic_en` en `entregas_correo`) se devuelven por destinatario en `GET /history/{id}/deliveries` y agregados (`abiertos`, `con_clics`: nº de destinatarios con al menos una apertura/clic) en `GET /history` y `GET /dashboard/stats` (`total_abiertos`, `total_con_clics`). Las vistas previas y los correos de prueba (`ServicioCorreo::previewContent`) no llevan seguimiento: no generan una fila en `entregas_correo`.
 
 ### Grupos, importación y cuenta
 - Grupos: `grupos_contacto` + `miembros_grupo_contacto` (N:M, cascada). `ModeloGrupo::setContactGroups` valida que contacto y grupos sean del usuario. `GET /contactos` devuelve `ids_grupo` de cada contacto.
@@ -58,7 +59,7 @@ docker compose logs -f worker              # actividad del worker de envío
 - Interfaz en español.
 
 ### Endpoints
-Públicos: `POST /login`, `POST /register`, `GET|POST /unsubscribe/{id}/{firma}`.
+Públicos: `POST /login`, `POST /register`, `GET|POST /unsubscribe/{id}/{firma}`, `GET /t/{entrega_id}/{firma}.gif` (píxel de apertura), `GET /t/{entrega_id}/{firma}/click?url=...` (clic, redirige 302).
 Con JWT: `GET|PUT /me`, `PUT /me/contrasena`, `POST /logout`, contactos (`/contactos`, `/contactos/{id}`, `PUT /contactos/{id}/subscription`, `PUT /contactos/{id}/grupos`, `POST /contactos/import`), grupos (`/grupos`, `/grupos/{id}`), plantillas (`/plantillas`, `/plantillas/{id}`, `POST /upload-template-file`), correo (`POST /send-mail`, `/send-massive`, `/mail/preview`, `/mail/test`, `GET /process-scheduled`), historial (`GET /history`, `/history/{id}/deliveries`, `POST /history/{id}/cancel`, `/history/{id}/retry-failed`), `POST /ai/suggest-asunto`, `GET /dashboard/stats|summary|activity`.
 
 ## Convenciones y trampas
