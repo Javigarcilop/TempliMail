@@ -197,9 +197,58 @@ R=$(req POST /login '{"nombre_usuario":"otheruser","contrasena":"otraClave123"}'
 echo "== 15. Dashboard =="
 R=$(req GET /dashboard/stats "" "$TOKEN"); has "stats incluye correos enviados" "$(body "$R")" '"total_enviados":'
 has "stats incluye correos fallidos" "$(body "$R")" '"total_fallidos":'
+has "stats incluye aperturas" "$(body "$R")" '"total_abiertos":'
+has "stats incluye clics" "$(body "$R")" '"total_con_clics":'
 R=$(req GET /dashboard/activity "" "$TOKEN"); check "actividad: 14 días" "$(echo "$(body "$R")" | grep -o '"fecha"' | wc -l | tr -d ' ')" 14
 
-echo "== 16. Logout =="
+echo "== 16. Seguimiento de aperturas y clics =="
+R=$(req POST /plantillas '{"nombre":"Boletin","asunto":"Boletin con enlace","contenido_html":"<p>Visita <a href=\"https://example.com/enlace-real\">nuestra web</a> para mas info.</p>"}' "$TOKEN"); check "crear plantilla con enlace -> 201" "$(code "$R")" 201
+TPL2=$(SQL "SELECT id FROM plantillas WHERE nombre='Boletin'")
+curl -s -X DELETE http://localhost:8025/api/v1/messages > /dev/null
+R=$(req POST /send-massive "{\"plantilla_id\":$TPL2,\"ids_contacto\":[$BETO]}" "$TOKEN"); CAMP4=$(json "$(body "$R")" campana_id)
+worker_once > /dev/null
+DELID=$(SQL "SELECT id FROM entregas_correo WHERE campana_id=$CAMP4")
+
+MID=$(curl -s -G "http://localhost:8025/api/v1/search" --data-urlencode "query=subject:Boletin" | grep -o '"ID":"[^"]*"' | head -1 | sed 's/"ID":"//;s/"//')
+# json_decode real (no grep/sed): el HTML trae comillas escapadas (href="...") que un grep ingenuo no entiende
+HTML=$(curl -s "http://localhost:8025/api/v1/message/$MID" | docker compose exec -T backend php -r 'echo json_decode(file_get_contents("php://stdin"), true)["HTML"] ?? "";')
+
+has "el correo lleva el pixel de apertura" "$HTML" "/t/$DELID/"
+has "el correo lleva el pie de baja sin trackear" "$HTML" "/unsubscribe/"
+PIXEL_HREF=$(echo "$HTML" | grep -oE "src=.${API}/t/$DELID/[a-f0-9]{64}\.gif" | sed -E 's/^src=.//')
+CLICK_HREF=$(echo "$HTML" | grep -oE "href=.${API}/t/$DELID/[a-f0-9]{64}/click\?url=[^\"' ]*" | sed -E "s/^href=.//")
+
+check "se encontró el pixel en el cuerpo" "$([ -n "$PIXEL_HREF" ] && echo si)" si
+check "se encontró el enlace trackeado" "$([ -n "$CLICK_HREF" ] && echo si)" si
+has "la URL trackeada envuelve el enlace original" "$CLICK_HREF" "url=https%3A%2F%2Fexample.com%2Fenlace-real"
+
+# Pixel: cuenta cada apertura; una firma falsa responde igual (no delata) pero no cuenta
+R1=$(curl -s -o /dev/null -w "%{http_code},%{content_type}" "$PIXEL_HREF"); check "pixel -> 200 image/gif" "$R1" "200,image/gif"
+check "1ª apertura registrada" "$(SQL "SELECT aperturas FROM entregas_correo WHERE id=$DELID")" 1
+curl -s -o /dev/null "$PIXEL_HREF"
+check "2ª apertura también cuenta" "$(SQL "SELECT aperturas FROM entregas_correo WHERE id=$DELID")" 2
+FAKE_PIXEL="${PIXEL_HREF%/*.gif}/$(printf 'a%.0s' $(seq 64)).gif"
+R2=$(curl -s -o /dev/null -w "%{http_code}" "$FAKE_PIXEL"); check "pixel con firma falsa -> 200 igualmente (no delata)" "$R2" 200
+check "...pero no incrementa aperturas" "$(SQL "SELECT aperturas FROM entregas_correo WHERE id=$DELID")" 2
+
+# Clic: redirige a la URL real y cuenta; la firma esta atada a esa URL exacta (anti open-redirect)
+RESP=$(curl -s -D - -o /dev/null "$CLICK_HREF")
+has "clic válido -> 302" "$RESP" " 302 "
+has "redirige a la URL original" "$RESP" "Location: https://example.com/enlace-real"
+check "clic registrado" "$(SQL "SELECT clics FROM entregas_correo WHERE id=$DELID")" 1
+TAMPERED="${CLICK_HREF%url=*}url=https%3A%2F%2Fmalicioso.test"
+R3=$(curl -s -o /dev/null -w "%{http_code}" "$TAMPERED"); check "url manipulada (firma no coincide) -> 404" "$R3" 404
+check "...y no cuenta el clic" "$(SQL "SELECT clics FROM entregas_correo WHERE id=$DELID")" 1
+
+R=$(req GET "/history/$CAMP4/deliveries" "" "$TOKEN")
+has "la entrega expone 2 aperturas" "$(body "$R")" '"aperturas":2'
+has "la entrega expone 1 clic" "$(body "$R")" '"clics":1'
+has "clic_en no es null" "$(body "$R")" '"clic_en":"'
+R=$(req GET /history "" "$TOKEN")
+has "el historial agrega abiertos=1" "$(body "$R")" '"abiertos":1'
+has "el historial agrega con_clics=1" "$(body "$R")" '"con_clics":1'
+
+echo "== 17. Logout =="
 R=$(req POST /logout "" "$TOKEN"); check "logout -> 200" "$(code "$R")" 200
 R=$(req GET /me "" "$TOKEN"); check "token invalidado tras logout -> 401" "$(code "$R")" 401
 
