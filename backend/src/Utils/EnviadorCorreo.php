@@ -21,9 +21,9 @@ class EnviadorCorreo
      * @param array<string,string> $headers cabeceras extra (List-Unsubscribe...)
      * @throws Exception si el servidor SMTP rechaza el mensaje
      */
-    public function send(string $to, string $asunto, string $htmlBody, array $headers = []): void
+    public function enviar(string $to, string $asunto, string $htmlBody, array $headers = []): void
     {
-        $mail = $this->connection();
+        $mail = $this->conexion();
 
         try {
             $mail->clearAllRecipients();
@@ -41,13 +41,13 @@ class EnviadorCorreo
             $mail->send();
         } catch (\Throwable $e) {
             // Fuerza una conexion nueva en el siguiente envio
-            $this->close();
+            $this->cerrar();
             throw new Exception('Error enviando correo: ' . $e->getMessage());
         }
     }
 
     /** Cierra la conexion SMTP (si hay una abierta). */
-    public function close(): void
+    public function cerrar(): void
     {
         if ($this->mail !== null) {
             try {
@@ -60,24 +60,24 @@ class EnviadorCorreo
     }
 
     /** Envio unico (abre y cierra la conexion). */
-    public static function sendOnce(string $to, string $asunto, string $htmlBody, array $headers = []): void
+    public static function enviarUnaVez(string $to, string $asunto, string $htmlBody, array $headers = []): void
     {
         $mailer = new self(false);
 
         try {
-            $mailer->send($to, $asunto, $htmlBody, $headers);
+            $mailer->enviar($to, $asunto, $htmlBody, $headers);
         } finally {
-            $mailer->close();
+            $mailer->cerrar();
         }
     }
 
-    private function connection(): PHPMailer
+    private function conexion(): PHPMailer
     {
         if ($this->mail !== null) {
             return $this->mail;
         }
 
-        $host = Entorno::get('SMTP_HOST');
+        $host = Entorno::obtener('SMTP_HOST');
 
         if ($host === null) {
             throw new Exception('El servidor SMTP no esta configurado');
@@ -85,18 +85,18 @@ class EnviadorCorreo
 
         $mail = new PHPMailer(true);
 
-        $secure = Entorno::get('SMTP_SECURE', PHPMailer::ENCRYPTION_STARTTLS);
-        $user   = Entorno::get('SMTP_USER', '');
+        $secure = Entorno::obtener('SMTP_SECURE', PHPMailer::ENCRYPTION_STARTTLS);
+        $user   = Entorno::obtener('SMTP_USER', '');
 
         $mail->isSMTP();
         $mail->Host          = $host;
         $mail->SMTPAuth      = $user !== '';
         $mail->Username      = $user;
-        $mail->Password      = Entorno::get('SMTP_PASSWORD', '');
+        $mail->Password      = Entorno::obtener('SMTP_PASSWORD', '');
         // SMTP_SECURE=none -> sin cifrado (buzones de prueba como Mailpit)
         $mail->SMTPSecure    = $secure === 'none' ? '' : $secure;
         $mail->SMTPAutoTLS   = $secure !== 'none';
-        $mail->Port          = Entorno::int('SMTP_PORT', 587);
+        $mail->Port          = Entorno::entero('SMTP_PORT', 587);
         $mail->SMTPKeepAlive = $this->keepAlive;
         $mail->Timeout       = 20;
         $mail->SMTPDebug     = 0;
@@ -106,8 +106,8 @@ class EnviadorCorreo
         $mail->isHTML(true);
 
         $mail->setFrom(
-            Entorno::get('SMTP_FROM', Entorno::get('SMTP_USER', 'no-reply@localhost')),
-            Entorno::get('SMTP_FROM_NAME', 'TempliMail')
+            Entorno::obtener('SMTP_FROM', Entorno::obtener('SMTP_USER', 'no-reply@localhost')),
+            Entorno::obtener('SMTP_FROM_NAME', 'TempliMail')
         );
 
         return $this->mail = $mail;

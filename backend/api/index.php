@@ -22,7 +22,7 @@ use TempliMail\Utils\Entorno;
 // CORS
 // =======================
 // CORS_ORIGIN admite varios origenes separados por comas.
-$allowedOrigins = array_map('trim', explode(',', Entorno::get('CORS_ORIGIN', 'http://localhost:4200')));
+$allowedOrigins = array_map('trim', explode(',', Entorno::obtener('CORS_ORIGIN', 'http://localhost:4200')));
 $requestOrigin  = $_SERVER['HTTP_ORIGIN'] ?? '';
 
 if (in_array('*', $allowedOrigins, true)) {
@@ -48,61 +48,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
  */
 $routes = [
     // Publicas
-    ['POST', '#^/login$#',                              AutenticacionControlador::class,           'login',              true],
-    ['POST', '#^/register$#',                           AutenticacionControlador::class,           'register',           true],
-    ['GET',  '#^/unsubscribe/(\d+)/([a-f0-9]{64})$#',   BajaControlador::class,    'handle',             true],
-    ['POST', '#^/unsubscribe/(\d+)/([a-f0-9]{64})$#',   BajaControlador::class,    'handle',             true],
+    ['POST', '#^/login$#',                              AutenticacionControlador::class,           'iniciarSesion',      true],
+    ['POST', '#^/register$#',                           AutenticacionControlador::class,           'registrar',          true],
+    ['GET',  '#^/unsubscribe/(\d+)/([a-f0-9]{64})$#',   BajaControlador::class,    'gestionarBaja',      true],
+    ['POST', '#^/unsubscribe/(\d+)/([a-f0-9]{64})$#',   BajaControlador::class,    'gestionarBaja',      true],
 
     // Seguimiento de apertura y clics (lo visita el cliente de correo/navegador, no el frontend)
     ['GET',  '#^/t/(\d+)/([a-f0-9]{64})\.gif$#',         SeguimientoControlador::class, 'pixel',          true],
-    ['GET',  '#^/t/(\d+)/([a-f0-9]{64})/click$#',        SeguimientoControlador::class, 'click',          true],
+    ['GET',  '#^/t/(\d+)/([a-f0-9]{64})/click$#',        SeguimientoControlador::class, 'clic',           true],
 
     // Sesion
-    ['GET',  '#^/me$#',                                 AutenticacionControlador::class,           'me',                 false],
-    ['PUT',  '#^/me$#',                                 AutenticacionControlador::class,           'updateProfile',      false],
-    ['PUT',  '#^/me/contrasena$#',                        AutenticacionControlador::class,           'changePassword',     false],
-    ['POST', '#^/logout$#',                             AutenticacionControlador::class,           'logout',             false],
+    ['GET',  '#^/me$#',                                 AutenticacionControlador::class,           'obtenerPerfil',      false],
+    ['PUT',  '#^/me$#',                                 AutenticacionControlador::class,           'actualizarPerfil',   false],
+    ['PUT',  '#^/me/contrasena$#',                        AutenticacionControlador::class,           'cambiarContrasena',  false],
+    ['POST', '#^/logout$#',                             AutenticacionControlador::class,           'cerrarSesion',       false],
 
     // IA
-    ['POST', '#^/ai/suggest-asunto$#',                 IAControlador::class,             'suggestSubjects',    false],
+    ['POST', '#^/ai/suggest-asunto$#',                 IAControlador::class,             'sugerirAsuntos',     false],
 
     // Dashboard
-    ['GET',  '#^/dashboard/stats$#',                    PanelControlador::class,      'stats',              false],
-    ['GET',  '#^/dashboard/activity$#',                 PanelControlador::class,      'activity',           false],
-    ['GET',  '#^/dashboard/summary$#',                  PanelControlador::class,      'summary',            false],
+    ['GET',  '#^/dashboard/stats$#',                    PanelControlador::class,      'estadisticas',       false],
+    ['GET',  '#^/dashboard/activity$#',                 PanelControlador::class,      'actividad',          false],
+    ['GET',  '#^/dashboard/summary$#',                  PanelControlador::class,      'resumen',            false],
 
     // Correo
-    ['POST', '#^/send-mail$#',                          CorreoControlador::class,           'sendSingle',         false],
-    ['POST', '#^/send-massive$#',                       CorreoControlador::class,           'sendMassive',        false],
-    ['POST', '#^/mail/preview$#',                       CorreoControlador::class,           'preview',            false],
-    ['POST', '#^/mail/test$#',                          CorreoControlador::class,           'sendTest',           false],
-    ['GET',  '#^/process-scheduled$#',                  CorreoControlador::class,           'processScheduled',   false],
-    ['GET',  '#^/history$#',                            CorreoControlador::class,           'getHistory',         false],
-    ['GET',  '#^/history/(\d+)/deliveries$#',           CorreoControlador::class,           'getCampaignDeliveries', false],
-    ['POST', '#^/history/(\d+)/cancel$#',               CorreoControlador::class,           'cancelCampaign',     false],
-    ['POST', '#^/history/(\d+)/retry-failed$#',         CorreoControlador::class,           'retryFailed',        false],
+    ['POST', '#^/send-mail$#',                          CorreoControlador::class,           'enviarIndividual',   false],
+    ['POST', '#^/send-massive$#',                       CorreoControlador::class,           'enviarMasivo',       false],
+    ['POST', '#^/mail/preview$#',                       CorreoControlador::class,           'previsualizar',      false],
+    ['POST', '#^/mail/test$#',                          CorreoControlador::class,           'enviarPrueba',       false],
+    ['GET',  '#^/process-scheduled$#',                  CorreoControlador::class,           'procesarProgramadas', false],
+    ['GET',  '#^/history$#',                            CorreoControlador::class,           'obtenerHistorial',   false],
+    ['GET',  '#^/history/(\d+)/deliveries$#',           CorreoControlador::class,           'obtenerEntregasCampana', false],
+    ['POST', '#^/history/(\d+)/cancel$#',               CorreoControlador::class,           'cancelarCampana',    false],
+    ['POST', '#^/history/(\d+)/retry-failed$#',         CorreoControlador::class,           'reintentarFallidas', false],
 
     // Contactos
-    ['GET',    '#^/contactos$#',                         ContactoControlador::class,        'getAll',             false],
-    ['POST',   '#^/contactos$#',                         ContactoControlador::class,        'create',             false],
-    ['PUT',    '#^/contactos/(\d+)$#',                   ContactoControlador::class,        'update',             false],
-    ['DELETE', '#^/contactos/(\d+)$#',                   ContactoControlador::class,        'delete',             false],
-    ['PUT',    '#^/contactos/(\d+)/subscription$#',      ContactoControlador::class,        'setSubscription',    false],
-    ['PUT',    '#^/contactos/(\d+)/grupos$#',            ContactoControlador::class,        'setGroups',          false],
-    ['POST',   '#^/contactos/import$#',                  ContactoControlador::class,        'import',             false],
+    ['GET',    '#^/contactos$#',                         ContactoControlador::class,        'obtenerTodos',       false],
+    ['POST',   '#^/contactos$#',                         ContactoControlador::class,        'crear',              false],
+    ['PUT',    '#^/contactos/(\d+)$#',                   ContactoControlador::class,        'actualizar',         false],
+    ['DELETE', '#^/contactos/(\d+)$#',                   ContactoControlador::class,        'eliminar',           false],
+    ['PUT',    '#^/contactos/(\d+)/subscription$#',      ContactoControlador::class,        'establecerSuscripcion', false],
+    ['PUT',    '#^/contactos/(\d+)/grupos$#',            ContactoControlador::class,        'establecerGrupos',   false],
+    ['POST',   '#^/contactos/import$#',                  ContactoControlador::class,        'importar',           false],
 
     // Grupos de contactos
-    ['GET',    '#^/grupos$#',                           GrupoControlador::class,          'getAll',             false],
-    ['POST',   '#^/grupos$#',                           GrupoControlador::class,          'create',             false],
-    ['PUT',    '#^/grupos/(\d+)$#',                     GrupoControlador::class,          'update',             false],
-    ['DELETE', '#^/grupos/(\d+)$#',                     GrupoControlador::class,          'delete',             false],
+    ['GET',    '#^/grupos$#',                           GrupoControlador::class,          'obtenerTodos',       false],
+    ['POST',   '#^/grupos$#',                           GrupoControlador::class,          'crear',              false],
+    ['PUT',    '#^/grupos/(\d+)$#',                     GrupoControlador::class,          'actualizar',         false],
+    ['DELETE', '#^/grupos/(\d+)$#',                     GrupoControlador::class,          'eliminar',           false],
 
     // Plantillas
-    ['GET',    '#^/plantillas$#',                        PlantillaControlador::class,       'getAll',             false],
-    ['POST',   '#^/plantillas$#',                        PlantillaControlador::class,       'create',             false],
-    ['PUT',    '#^/plantillas/(\d+)$#',                  PlantillaControlador::class,       'update',             false],
-    ['DELETE', '#^/plantillas/(\d+)$#',                  PlantillaControlador::class,       'delete',             false],
-    ['POST',   '#^/upload-template-file$#',             SubidaPlantillaControlador::class, 'handleUpload',       false],
+    ['GET',    '#^/plantillas$#',                        PlantillaControlador::class,       'obtenerTodos',       false],
+    ['POST',   '#^/plantillas$#',                        PlantillaControlador::class,       'crear',              false],
+    ['PUT',    '#^/plantillas/(\d+)$#',                  PlantillaControlador::class,       'actualizar',         false],
+    ['DELETE', '#^/plantillas/(\d+)$#',                  PlantillaControlador::class,       'eliminar',           false],
+    ['POST',   '#^/upload-template-file$#',             SubidaPlantillaControlador::class, 'gestionarSubida',    false],
 ];
 
 try {
@@ -142,7 +142,7 @@ try {
         }
 
         if (!$isPublic) {
-            (new AutenticacionMiddleware(new JwtServicio(Entorno::get('JWT_SECRET', ''))))->handle();
+            (new AutenticacionMiddleware(new JwtServicio(Entorno::obtener('JWT_SECRET', ''))))->autenticar();
         }
 
         array_shift($matches);

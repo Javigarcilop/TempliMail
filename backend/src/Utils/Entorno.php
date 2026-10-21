@@ -6,7 +6,7 @@ namespace TempliMail\Utils;
 
 class Entorno
 {
-    public static function get(string $key, ?string $default = null): ?string
+    public static function obtener(string $key, ?string $default = null): ?string
     {
         $value = $_ENV[$key] ?? getenv($key);
 
@@ -17,9 +17,9 @@ class Entorno
         return (string) $value;
     }
 
-    public static function int(string $key, int $default): int
+    public static function entero(string $key, int $default): int
     {
-        $value = self::get($key);
+        $value = self::obtener($key);
 
         return $value === null ? $default : (int) $value;
     }

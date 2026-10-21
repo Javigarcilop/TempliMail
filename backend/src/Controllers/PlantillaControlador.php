@@ -8,33 +8,33 @@ use TempliMail\Services\PlantillaServicio;
 
 class PlantillaControlador extends BaseControlador
 {
-    public function getAll(): void
+    public function obtenerTodos(): void
     {
-        $this->respond(fn(): array => ['data' => PlantillaServicio::getAll($this->userId())]);
+        $this->responder(fn(): array => ['data' => PlantillaServicio::obtenerTodos($this->idUsuario())]);
     }
 
-    public function create(): void
+    public function crear(): void
     {
-        $this->respond(function (): array {
-            PlantillaServicio::create($this->userId(), $this->body());
+        $this->responder(function (): array {
+            PlantillaServicio::crear($this->idUsuario(), $this->cuerpoPeticion());
 
             return [];
         }, 201);
     }
 
-    public function update(int $id): void
+    public function actualizar(int $id): void
     {
-        $this->respond(function () use ($id): array {
-            PlantillaServicio::update($this->userId(), $id, $this->body());
+        $this->responder(function () use ($id): array {
+            PlantillaServicio::actualizar($this->idUsuario(), $id, $this->cuerpoPeticion());
 
             return [];
         });
     }
 
-    public function delete(int $id): void
+    public function eliminar(int $id): void
     {
-        $this->respond(function () use ($id): array {
-            PlantillaServicio::delete($this->userId(), $id);
+        $this->responder(function () use ($id): array {
+            PlantillaServicio::eliminar($this->idUsuario(), $id);
 
             return [];
         });

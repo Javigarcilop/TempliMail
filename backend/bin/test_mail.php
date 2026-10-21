@@ -20,7 +20,7 @@ if ($to === null || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
-    EnviadorCorreo::sendOnce($to, 'Prueba SMTP TempliMail', '<h1>Si lees esto, el SMTP funciona</h1>');
+    EnviadorCorreo::enviarUnaVez($to, 'Prueba SMTP TempliMail', '<h1>Si lees esto, el SMTP funciona</h1>');
     echo "Correo enviado a {$to}\n";
 } catch (Throwable $e) {
     fwrite(STDERR, 'Error: ' . $e->getMessage() . "\n");

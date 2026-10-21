@@ -8,64 +8,64 @@ use TempliMail\Services\ContactoServicio;
 
 class ContactoControlador extends BaseControlador
 {
-    public function getAll(): void
+    public function obtenerTodos(): void
     {
-        $this->respond(fn(): array => ['data' => ContactoServicio::getAll($this->userId())]);
+        $this->responder(fn(): array => ['data' => ContactoServicio::obtenerTodos($this->idUsuario())]);
     }
 
-    public function create(): void
+    public function crear(): void
     {
-        $this->respond(
-            fn(): array => ['id' => ContactoServicio::create($this->userId(), $this->body())],
+        $this->responder(
+            fn(): array => ['id' => ContactoServicio::crear($this->idUsuario(), $this->cuerpoPeticion())],
             201
         );
     }
 
-    public function update(int $id): void
+    public function actualizar(int $id): void
     {
-        $this->respond(function () use ($id): array {
-            ContactoServicio::update($this->userId(), $id, $this->body());
+        $this->responder(function () use ($id): array {
+            ContactoServicio::actualizar($this->idUsuario(), $id, $this->cuerpoPeticion());
 
             return [];
         });
     }
 
-    public function delete(int $id): void
+    public function eliminar(int $id): void
     {
-        $this->respond(function () use ($id): array {
-            ContactoServicio::delete($this->userId(), $id);
+        $this->responder(function () use ($id): array {
+            ContactoServicio::eliminar($this->idUsuario(), $id);
 
             return [];
         });
     }
 
     /** PUT /contactos/{id}/subscription  {"subscribed": true|false} */
-    public function setSubscription(int $id): void
+    public function establecerSuscripcion(int $id): void
     {
-        $this->respond(function () use ($id): array {
-            $subscribed = (bool) ($this->body()['subscribed'] ?? false);
+        $this->responder(function () use ($id): array {
+            $subscribed = (bool) ($this->cuerpoPeticion()['subscribed'] ?? false);
 
-            ContactoServicio::setSubscribed($this->userId(), $id, $subscribed);
+            ContactoServicio::establecerSuscripcion($this->idUsuario(), $id, $subscribed);
 
             return [];
         });
     }
 
     /** PUT /contactos/{id}/groups  {"ids_grupo": [1, 2]} */
-    public function setGroups(int $id): void
+    public function establecerGrupos(int $id): void
     {
-        $this->respond(function () use ($id): array {
-            ContactoServicio::setGroups($this->userId(), $id, $this->body());
+        $this->responder(function () use ($id): array {
+            ContactoServicio::establecerGrupos($this->idUsuario(), $id, $this->cuerpoPeticion());
 
             return [];
         });
     }
 
     /** POST /contactos/import  {"contactos": [...], "grupo_id": 3?} */
-    public function import(): void
+    public function importar(): void
     {
-        $this->respond(
-            fn(): array => ContactoServicio::import($this->userId(), $this->body()),
+        $this->responder(
+            fn(): array => ContactoServicio::importar($this->idUsuario(), $this->cuerpoPeticion()),
             201
         );
     }

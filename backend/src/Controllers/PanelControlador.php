@@ -8,24 +8,24 @@ use TempliMail\Models\PanelModelo;
 
 class PanelControlador extends BaseControlador
 {
-    public function stats(): void
+    public function estadisticas(): void
     {
-        $this->respond(fn(): array => [
-            'data' => PanelModelo::getStats($this->userId()) + PanelModelo::getDeliveryTotals($this->userId()),
+        $this->responder(fn(): array => [
+            'data' => PanelModelo::obtenerEstadisticas($this->idUsuario()) + PanelModelo::obtenerTotalesEntregas($this->idUsuario()),
         ]);
     }
 
-    public function activity(): void
+    public function actividad(): void
     {
-        $this->respond(fn(): array => ['data' => PanelModelo::getActivity($this->userId())]);
+        $this->responder(fn(): array => ['data' => PanelModelo::obtenerActividad($this->idUsuario())]);
     }
 
-    public function summary(): void
+    public function resumen(): void
     {
-        $this->respond(fn(): array => [
+        $this->responder(fn(): array => [
             'data' => [
-                'plantilla_top' => PanelModelo::getTopTemplate($this->userId()),
-                'contacto_top'  => PanelModelo::getTopContact($this->userId()),
+                'plantilla_top' => PanelModelo::obtenerPlantillaTop($this->idUsuario()),
+                'contacto_top'  => PanelModelo::obtenerContactoTop($this->idUsuario()),
             ],
         ]);
     }

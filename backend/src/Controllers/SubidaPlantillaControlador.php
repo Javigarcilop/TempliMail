@@ -9,14 +9,14 @@ use TempliMail\Services\SubidaPlantillaServicio;
 
 class SubidaPlantillaControlador extends BaseControlador
 {
-    public function handleUpload(): void
+    public function gestionarSubida(): void
     {
-        $this->respond(function (): array {
+        $this->responder(function (): array {
             if (!isset($_FILES['file']) || !is_array($_FILES['file'])) {
                 throw new ApiExcepcion('No se recibió ningún archivo.');
             }
 
-            return ['html' => SubidaPlantillaServicio::process($_FILES['file'])];
+            return ['html' => SubidaPlantillaServicio::procesar($_FILES['file'])];
         });
     }
 }

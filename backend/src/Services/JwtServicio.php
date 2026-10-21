@@ -17,7 +17,7 @@ class JwtServicio
         $this->ttl = $ttl;
     }
 
-    public function generate(array $user): string
+    public function generar(array $user): string
     {
         $payload = [
             'iss' => 'templimail',
@@ -30,7 +30,7 @@ class JwtServicio
         return JWT::encode($payload, $this->secret, 'HS256');
     }
 
-    public function validate(string $token): object
+    public function validar(string $token): object
     {
         return JWT::decode($token, new Key($this->secret, 'HS256'));
     }

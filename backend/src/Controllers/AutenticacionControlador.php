@@ -11,31 +11,31 @@ use TempliMail\Utils\Entorno;
 
 class AutenticacionControlador extends BaseControlador
 {
-    public function login(): void
+    public function iniciarSesion(): void
     {
-        $this->respond(function (): array {
-            $data = $this->body();
+        $this->responder(function (): array {
+            $data = $this->cuerpoPeticion();
 
             if (empty($data['nombre_usuario']) || empty($data['contrasena'])) {
                 throw new ApiExcepcion('Usuario y contraseña son obligatorios');
             }
 
-            $token = AutenticacionServicio::login(
+            $token = AutenticacionServicio::iniciarSesion(
                 (string) $data['nombre_usuario'],
                 (string) $data['contrasena'],
-                new JwtServicio(Entorno::get('JWT_SECRET', ''))
+                new JwtServicio(Entorno::obtener('JWT_SECRET', ''))
             );
 
             return ['token' => $token];
         });
     }
 
-    public function register(): void
+    public function registrar(): void
     {
-        $this->respond(function (): array {
-            $data = $this->body();
+        $this->responder(function (): array {
+            $data = $this->cuerpoPeticion();
 
-            AutenticacionServicio::register(
+            AutenticacionServicio::registrar(
                 (string) ($data['nombre_usuario'] ?? ''),
                 (string) ($data['correo'] ?? ''),
                 (string) ($data['contrasena'] ?? '')
@@ -45,40 +45,40 @@ class AutenticacionControlador extends BaseControlador
         }, 201);
     }
 
-    public function me(): void
+    public function obtenerPerfil(): void
     {
-        $this->respond(fn(): array => ['data' => AutenticacionServicio::currentUser($this->userId())]);
+        $this->responder(fn(): array => ['data' => AutenticacionServicio::usuarioActual($this->idUsuario())]);
     }
 
     /** PUT /me  {"correo": "..."} */
-    public function updateProfile(): void
+    public function actualizarPerfil(): void
     {
-        $this->respond(fn(): array => [
-            'data' => AutenticacionServicio::updateProfile($this->userId(), (string) ($this->body()['correo'] ?? '')),
+        $this->responder(fn(): array => [
+            'data' => AutenticacionServicio::actualizarPerfil($this->idUsuario(), (string) ($this->cuerpoPeticion()['correo'] ?? '')),
         ]);
     }
 
     /** PUT /me/contrasena  {"contrasena_actual": "...", "contrasena_nueva": "..."} */
-    public function changePassword(): void
+    public function cambiarContrasena(): void
     {
-        $this->respond(function (): array {
-            $data = $this->body();
+        $this->responder(function (): array {
+            $data = $this->cuerpoPeticion();
 
-            $token = AutenticacionServicio::changePassword(
-                $this->userId(),
+            $token = AutenticacionServicio::cambiarContrasena(
+                $this->idUsuario(),
                 (string) ($data['contrasena_actual'] ?? ''),
                 (string) ($data['contrasena_nueva'] ?? ''),
-                new JwtServicio(Entorno::get('JWT_SECRET', ''))
+                new JwtServicio(Entorno::obtener('JWT_SECRET', ''))
             );
 
             return ['token' => $token];
         });
     }
 
-    public function logout(): void
+    public function cerrarSesion(): void
     {
-        $this->respond(function (): array {
-            AutenticacionServicio::logout($this->userId());
+        $this->responder(function (): array {
+            AutenticacionServicio::cerrarSesion($this->idUsuario());
 
             return [];
         });

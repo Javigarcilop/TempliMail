@@ -10,9 +10,9 @@ use PDO;
 
 class ContactoModelo
 {
-    public static function getAllByUser(int $userId): array
+    public static function obtenerTodosPorUsuario(int $userId): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT id, nombre, apellidos, correo, telefono, empresa, cargo,
                    DATE_FORMAT(baja_en, '%Y-%m-%dT%H:%i:%sZ') AS baja_en,
                    DATE_FORMAT(creado_en,      '%Y-%m-%dT%H:%i:%sZ') AS creado_en,
@@ -26,7 +26,7 @@ class ContactoModelo
         $stmt->execute(['usuario_id' => $userId]);
 
         $contactos    = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $memberships = GrupoModelo::membershipsByContact($userId);
+        $memberships = GrupoModelo::pertenenciasPorContacto($userId);
 
         foreach ($contactos as &$contact) {
             $contact['ids_grupo'] = $memberships[(int) $contact['id']] ?? [];
@@ -42,7 +42,7 @@ class ContactoModelo
      * @param  int[] $ids
      * @return array<int,array<string,mixed>>
      */
-    public static function getSendableByIds(int $userId, array $ids): array
+    public static function obtenerEnviablesPorIds(int $userId, array $ids): array
     {
         $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
 
@@ -52,7 +52,7 @@ class ContactoModelo
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT id, correo
             FROM contactos
             WHERE usuario_id = ?
@@ -66,9 +66,9 @@ class ContactoModelo
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getById(int $userId, int $id): ?array
+    public static function obtenerPorId(int $userId, int $id): ?array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT id, nombre, apellidos, correo, empresa, cargo
             FROM contactos
             WHERE id = :id AND usuario_id = :usuario_id AND eliminado_en IS NULL
@@ -80,15 +80,15 @@ class ContactoModelo
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function create(int $userId, array $data): int
+    public static function crear(int $userId, array $data): int
     {
-        $correo = self::validEmail($data['correo'] ?? '');
+        $correo = self::validarCorreo($data['correo'] ?? '');
 
-        if (self::emailExists($userId, $correo)) {
-            throw ApiExcepcion::conflict('Ya existe un contacto con ese correo');
+        if (self::existeCorreo($userId, $correo)) {
+            throw ApiExcepcion::conflicto('Ya existe un contacto con ese correo');
         }
 
-        $db   = BD::get();
+        $db   = BD::obtener();
         $stmt = $db->prepare("
             INSERT INTO contactos
             (usuario_id, nombre, apellidos, correo, telefono, empresa, cargo)
@@ -97,26 +97,26 @@ class ContactoModelo
 
         $stmt->execute([
             'usuario_id'    => $userId,
-            'nombre' => self::nullable($data['nombre'] ?? null),
-            'apellidos'  => self::nullable($data['apellidos'] ?? null),
+            'nombre' => self::valorOpcional($data['nombre'] ?? null),
+            'apellidos'  => self::valorOpcional($data['apellidos'] ?? null),
             'correo'      => $correo,
-            'telefono'      => self::nullable($data['telefono'] ?? null),
-            'empresa'    => self::nullable($data['empresa'] ?? null),
-            'cargo'   => self::nullable($data['cargo'] ?? null),
+            'telefono'      => self::valorOpcional($data['telefono'] ?? null),
+            'empresa'    => self::valorOpcional($data['empresa'] ?? null),
+            'cargo'   => self::valorOpcional($data['cargo'] ?? null),
         ]);
 
         return (int) $db->lastInsertId();
     }
 
-    public static function update(int $userId, int $id, array $data): void
+    public static function actualizar(int $userId, int $id, array $data): void
     {
-        $correo = self::validEmail($data['correo'] ?? '');
+        $correo = self::validarCorreo($data['correo'] ?? '');
 
-        if (self::emailExistsForAnotherContact($userId, $correo, $id)) {
-            throw ApiExcepcion::conflict('Ya existe otro contacto con ese correo');
+        if (self::existeCorreoEnOtroContacto($userId, $correo, $id)) {
+            throw ApiExcepcion::conflicto('Ya existe otro contacto con ese correo');
         }
 
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             UPDATE contactos
             SET nombre = :nombre,
                 apellidos  = :apellidos,
@@ -132,23 +132,23 @@ class ContactoModelo
         $stmt->execute([
             'id'         => $id,
             'usuario_id'    => $userId,
-            'nombre' => self::nullable($data['nombre'] ?? null),
-            'apellidos'  => self::nullable($data['apellidos'] ?? null),
+            'nombre' => self::valorOpcional($data['nombre'] ?? null),
+            'apellidos'  => self::valorOpcional($data['apellidos'] ?? null),
             'correo'      => $correo,
-            'telefono'      => self::nullable($data['telefono'] ?? null),
-            'empresa'    => self::nullable($data['empresa'] ?? null),
-            'cargo'   => self::nullable($data['cargo'] ?? null),
+            'telefono'      => self::valorOpcional($data['telefono'] ?? null),
+            'empresa'    => self::valorOpcional($data['empresa'] ?? null),
+            'cargo'   => self::valorOpcional($data['cargo'] ?? null),
         ]);
 
         // rowCount() vale 0 si no cambio nada: se comprueba la existencia aparte
-        if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
-            throw ApiExcepcion::notFound('Contacto no encontrado');
+        if ($stmt->rowCount() === 0 && self::obtenerPorId($userId, $id) === null) {
+            throw ApiExcepcion::noEncontrado('Contacto no encontrado');
         }
     }
 
-    public static function delete(int $userId, int $id): void
+    public static function eliminar(int $userId, int $id): void
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             DELETE FROM contactos
             WHERE id = :id AND usuario_id = :usuario_id
         ");
@@ -156,7 +156,7 @@ class ContactoModelo
         $stmt->execute(['id' => $id, 'usuario_id' => $userId]);
 
         if ($stmt->rowCount() === 0) {
-            throw ApiExcepcion::notFound('Contacto no encontrado');
+            throw ApiExcepcion::noEncontrado('Contacto no encontrado');
         }
     }
 
@@ -167,13 +167,13 @@ class ContactoModelo
      * @param  array<int,array<string,mixed>> $rows
      * @return array{created:int,duplicates:int,invalid:array<int,array{row:int,correo:string,reason:string}>}
      */
-    public static function importMany(int $userId, array $rows, ?int $groupId = null): array
+    public static function importarVarios(int $userId, array $rows, ?int $groupId = null): array
     {
-        if ($groupId !== null && !GrupoModelo::owns($userId, $groupId)) {
-            throw ApiExcepcion::notFound('Grupo no encontrado');
+        if ($groupId !== null && !GrupoModelo::esPropietario($userId, $groupId)) {
+            throw ApiExcepcion::noEncontrado('Grupo no encontrado');
         }
 
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("SELECT LOWER(correo) FROM contactos WHERE usuario_id = :usuario_id AND eliminado_en IS NULL");
         $stmt->execute(['usuario_id' => $userId]);
@@ -213,12 +213,12 @@ class ContactoModelo
 
                 $insert->execute([
                     'usuario_id'    => $userId,
-                    'nombre' => self::nullable(isset($row['nombre']) ? mb_substr((string) $row['nombre'], 0, 100) : null),
-                    'apellidos'  => self::nullable(isset($row['apellidos']) ? mb_substr((string) $row['apellidos'], 0, 100) : null),
+                    'nombre' => self::valorOpcional(isset($row['nombre']) ? mb_substr((string) $row['nombre'], 0, 100) : null),
+                    'apellidos'  => self::valorOpcional(isset($row['apellidos']) ? mb_substr((string) $row['apellidos'], 0, 100) : null),
                     'correo'      => $correo,
-                    'telefono'      => self::nullable(isset($row['telefono']) ? mb_substr((string) $row['telefono'], 0, 50) : null),
-                    'empresa'    => self::nullable(isset($row['empresa']) ? mb_substr((string) $row['empresa'], 0, 150) : null),
-                    'cargo'   => self::nullable(isset($row['cargo']) ? mb_substr((string) $row['cargo'], 0, 150) : null),
+                    'telefono'      => self::valorOpcional(isset($row['telefono']) ? mb_substr((string) $row['telefono'], 0, 50) : null),
+                    'empresa'    => self::valorOpcional(isset($row['empresa']) ? mb_substr((string) $row['empresa'], 0, 150) : null),
+                    'cargo'   => self::valorOpcional(isset($row['cargo']) ? mb_substr((string) $row['cargo'], 0, 150) : null),
                 ]);
 
                 $known[strtolower($correo)] = true;
@@ -227,7 +227,7 @@ class ContactoModelo
             }
 
             if ($groupId !== null) {
-                GrupoModelo::addContacts($groupId, $newIds);
+                GrupoModelo::agregarContactos($groupId, $newIds);
             }
 
             $db->commit();
@@ -240,9 +240,9 @@ class ContactoModelo
     }
 
     /** Baja / alta manual desde el panel. */
-    public static function setSubscribed(int $userId, int $id, bool $subscribed): void
+    public static function establecerSuscripcion(int $userId, int $id, bool $subscribed): void
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             UPDATE contactos
             SET baja_en = " . ($subscribed ? 'NULL' : 'UTC_TIMESTAMP()') . "
             WHERE id = :id AND usuario_id = :usuario_id AND eliminado_en IS NULL
@@ -250,15 +250,15 @@ class ContactoModelo
 
         $stmt->execute(['id' => $id, 'usuario_id' => $userId]);
 
-        if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
-            throw ApiExcepcion::notFound('Contacto no encontrado');
+        if ($stmt->rowCount() === 0 && self::obtenerPorId($userId, $id) === null) {
+            throw ApiExcepcion::noEncontrado('Contacto no encontrado');
         }
     }
 
     /** Baja pedida por el propio contacto desde el enlace del correo. */
-    public static function unsubscribe(int $id): ?string
+    public static function darDeBaja(int $id): ?string
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("SELECT correo FROM contactos WHERE id = :id AND eliminado_en IS NULL");
         $stmt->execute(['id' => $id]);
@@ -279,7 +279,7 @@ class ContactoModelo
 
     // -----------------------------------------------------------------
 
-    private static function validEmail(mixed $value): string
+    private static function validarCorreo(mixed $value): string
     {
         $correo = trim((string) $value);
 
@@ -294,16 +294,16 @@ class ContactoModelo
         return $correo;
     }
 
-    private static function nullable(mixed $value): ?string
+    private static function valorOpcional(mixed $value): ?string
     {
         $value = trim((string) ($value ?? ''));
 
         return $value === '' ? null : $value;
     }
 
-    private static function emailExists(int $userId, string $correo): bool
+    private static function existeCorreo(int $userId, string $correo): bool
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT 1 FROM contactos
             WHERE usuario_id = :usuario_id AND correo = :correo AND eliminado_en IS NULL
             LIMIT 1
@@ -314,9 +314,9 @@ class ContactoModelo
         return (bool) $stmt->fetchColumn();
     }
 
-    private static function emailExistsForAnotherContact(int $userId, string $correo, int $contactId): bool
+    private static function existeCorreoEnOtroContacto(int $userId, string $correo, int $contactId): bool
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT 1 FROM contactos
             WHERE usuario_id = :usuario_id AND correo = :correo AND id != :id AND eliminado_en IS NULL
             LIMIT 1

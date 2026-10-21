@@ -23,8 +23,8 @@ class SeguimientoControlador
     public function pixel(int $deliveryId, string $signature): void
     {
         try {
-            if (Seguimiento::isValidOpenSignature($deliveryId, $signature)) {
-                EntregaCorreoModelo::recordOpen($deliveryId);
+            if (Seguimiento::esFirmaAperturaValida($deliveryId, $signature)) {
+                EntregaCorreoModelo::registrarApertura($deliveryId);
             }
         } catch (Throwable $e) {
             error_log('Seguimiento (apertura) fallo: ' . $e->getMessage());
@@ -40,7 +40,7 @@ class SeguimientoControlador
         echo self::PIXEL_GIF;
     }
 
-    public function click(int $deliveryId, string $signature): void
+    public function clic(int $deliveryId, string $signature): void
     {
         header('X-Robots-Tag: noindex');
 
@@ -48,8 +48,8 @@ class SeguimientoControlador
 
         if (
             $url === '' ||
-            !Seguimiento::isValidClickSignature($deliveryId, $url, $signature) ||
-            !self::isSafeUrl($url)
+            !Seguimiento::esFirmaClicValida($deliveryId, $url, $signature) ||
+            !self::esUrlSegura($url)
         ) {
             http_response_code(404);
             header('Content-Type: text/html; charset=utf-8');
@@ -59,7 +59,7 @@ class SeguimientoControlador
         }
 
         try {
-            EntregaCorreoModelo::recordClick($deliveryId);
+            EntregaCorreoModelo::registrarClic($deliveryId);
         } catch (Throwable $e) {
             error_log('Seguimiento (clic) fallo: ' . $e->getMessage());
         }
@@ -69,7 +69,7 @@ class SeguimientoControlador
     }
 
     /** Solo se redirige a enlaces http(s) absolutos (nunca javascript:, data:, etc.). */
-    private static function isSafeUrl(string $url): bool
+    private static function esUrlSegura(string $url): bool
     {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
             return false;

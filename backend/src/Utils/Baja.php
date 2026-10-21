@@ -16,25 +16,25 @@ class Baja
         . 'Si no deseas recibir más correos, <a href="{{enlace_baja}}" style="color:#888">'
         . 'date de baja aquí</a>.</p>';
 
-    public static function signature(int $contactId): string
+    public static function firma(int $contactId): string
     {
-        return hash_hmac('sha256', 'unsubscribe:' . $contactId, self::secret());
+        return hash_hmac('sha256', 'unsubscribe:' . $contactId, self::secreto());
     }
 
-    public static function isValid(int $contactId, string $signature): bool
+    public static function esValida(int $contactId, string $signature): bool
     {
-        return hash_equals(self::signature($contactId), $signature);
+        return hash_equals(self::firma($contactId), $signature);
     }
 
-    public static function url(int $contactId): string
+    public static function generarUrl(int $contactId): string
     {
-        $base = rtrim(Entorno::get('PUBLIC_API_URL', 'http://localhost:8080/backend/api/index.php'), '/');
+        $base = rtrim(Entorno::obtener('PUBLIC_API_URL', 'http://localhost:8080/backend/api/index.php'), '/');
 
-        return sprintf('%s/unsubscribe/%d/%s', $base, $contactId, self::signature($contactId));
+        return sprintf('%s/unsubscribe/%d/%s', $base, $contactId, self::firma($contactId));
     }
 
-    private static function secret(): string
+    private static function secreto(): string
     {
-        return Entorno::get('JWT_SECRET', '');
+        return Entorno::obtener('JWT_SECRET', '');
     }
 }

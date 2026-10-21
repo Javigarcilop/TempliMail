@@ -20,17 +20,17 @@ class ApiExcepcion extends RuntimeException
         parent::__construct($message);
     }
 
-    public function getStatus(): int
+    public function obtenerEstado(): int
     {
         return $this->estado;
     }
 
-    public static function notFound(string $message = 'Recurso no encontrado'): self
+    public static function noEncontrado(string $message = 'Recurso no encontrado'): self
     {
         return new self($message, 404);
     }
 
-    public static function conflict(string $message): self
+    public static function conflicto(string $message): self
     {
         return new self($message, 409);
     }

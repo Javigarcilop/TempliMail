@@ -7,9 +7,9 @@ use PDO;
 
 class AutenticacionModelo
 {
-    public static function findByUsername(string $nombre_usuario): ?array
+    public static function buscarPorNombreUsuario(string $nombre_usuario): ?array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT id, nombre_usuario, correo, hash_contrasena, version_token, eliminado_en
@@ -25,9 +25,9 @@ class AutenticacionModelo
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function findById(int $id): ?array
+    public static function buscarPorId(int $id): ?array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT id, nombre_usuario, correo, version_token, eliminado_en
@@ -43,9 +43,9 @@ class AutenticacionModelo
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function findWithPasswordById(int $id): ?array
+    public static function buscarConContrasenaPorId(int $id): ?array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT id, nombre_usuario, correo, hash_contrasena, version_token, eliminado_en
             FROM usuarios WHERE id = :id LIMIT 1
         ");
@@ -54,16 +54,16 @@ class AutenticacionModelo
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function updateEmail(int $userId, string $correo): void
+    public static function actualizarCorreo(int $userId, string $correo): void
     {
-        BD::get()
+        BD::obtener()
             ->prepare("UPDATE usuarios SET correo = :correo WHERE id = :id AND eliminado_en IS NULL")
             ->execute(['correo' => $correo, 'id' => $userId]);
     }
 
-    public static function findByEmail(string $correo): ?array
+    public static function buscarPorCorreo(string $correo): ?array
     {
-        $stmt = BD::get()->prepare("SELECT id FROM usuarios WHERE correo = :correo LIMIT 1");
+        $stmt = BD::obtener()->prepare("SELECT id FROM usuarios WHERE correo = :correo LIMIT 1");
         $stmt->execute(['correo' => $correo]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -73,9 +73,9 @@ class AutenticacionModelo
     // Proteccion contra fuerza bruta
     // -----------------------------------------------------------------
 
-    public static function recordFailedLogin(string $nombre_usuario, string $ip): void
+    public static function registrarIntentoFallido(string $nombre_usuario, string $ip): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $db->prepare("INSERT INTO intentos_login (nombre_usuario, ip) VALUES (:nombre_usuario, :ip)")
            ->execute(['nombre_usuario' => mb_substr($nombre_usuario, 0, 100), 'ip' => $ip]);
@@ -84,9 +84,9 @@ class AutenticacionModelo
         $db->exec("DELETE FROM intentos_login WHERE intentado_en < UTC_TIMESTAMP() - INTERVAL 1 DAY");
     }
 
-    public static function countRecentFailuresByUsername(string $nombre_usuario, int $minutes): int
+    public static function contarFallosRecientesPorUsuario(string $nombre_usuario, int $minutes): int
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT COUNT(*) FROM intentos_login
             WHERE nombre_usuario = :nombre_usuario
               AND intentado_en > UTC_TIMESTAMP() - INTERVAL $minutes MINUTE
@@ -96,9 +96,9 @@ class AutenticacionModelo
         return (int) $stmt->fetchColumn();
     }
 
-    public static function countRecentFailuresByIp(string $ip, int $minutes): int
+    public static function contarFallosRecientesPorIp(string $ip, int $minutes): int
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT COUNT(*) FROM intentos_login
             WHERE ip = :ip
               AND intentado_en > UTC_TIMESTAMP() - INTERVAL $minutes MINUTE
@@ -108,16 +108,16 @@ class AutenticacionModelo
         return (int) $stmt->fetchColumn();
     }
 
-    public static function clearFailedLogins(string $nombre_usuario): void
+    public static function borrarIntentosFallidos(string $nombre_usuario): void
     {
-        BD::get()
+        BD::obtener()
             ->prepare("DELETE FROM intentos_login WHERE nombre_usuario = :nombre_usuario")
             ->execute(['nombre_usuario' => mb_substr($nombre_usuario, 0, 100)]);
     }
 
-    public static function create(string $nombre_usuario, string $correo, string $contrasena): void
+    public static function crear(string $nombre_usuario, string $correo, string $contrasena): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             INSERT INTO usuarios (nombre_usuario, correo, hash_contrasena, version_token)
@@ -131,9 +131,9 @@ class AutenticacionModelo
         ]);
     }
 
-    public static function updatePassword(int $userId, string $newPassword): void
+    public static function actualizarContrasena(int $userId, string $newPassword): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             UPDATE usuarios
@@ -150,9 +150,9 @@ class AutenticacionModelo
         ]);
     }
 
-    public static function incrementTokenVersion(int $userId): void
+    public static function incrementarVersionToken(int $userId): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             UPDATE usuarios
@@ -165,9 +165,9 @@ class AutenticacionModelo
         ]);
     }
 
-    public static function softDelete(int $userId): void
+    public static function eliminarLogico(int $userId): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             UPDATE usuarios

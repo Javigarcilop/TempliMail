@@ -9,32 +9,32 @@ use TempliMail\Models\PlantillaModelo;
 
 class PlantillaServicio
 {
-    public static function getAll(int $userId): array
+    public static function obtenerTodos(int $userId): array
     {
-        return PlantillaModelo::getAllByUser($userId);
+        return PlantillaModelo::obtenerTodosPorUsuario($userId);
     }
 
-    public static function create(int $userId, array $data): void
+    public static function crear(int $userId, array $data): void
     {
-        PlantillaModelo::create($userId, self::validated($data));
+        PlantillaModelo::crear($userId, self::validarDatos($data));
     }
 
-    public static function update(int $userId, int $id, array $data): void
+    public static function actualizar(int $userId, int $id, array $data): void
     {
-        PlantillaModelo::update($userId, $id, self::validated($data));
+        PlantillaModelo::actualizar($userId, $id, self::validarDatos($data));
     }
 
-    public static function delete(int $userId, int $id): void
+    public static function eliminar(int $userId, int $id): void
     {
-        PlantillaModelo::softDelete($userId, $id);
+        PlantillaModelo::eliminarLogico($userId, $id);
     }
 
-    public static function getById(int $userId, int $id): ?array
+    public static function obtenerPorId(int $userId, int $id): ?array
     {
-        return PlantillaModelo::getById($userId, $id);
+        return PlantillaModelo::obtenerPorId($userId, $id);
     }
 
-    private static function validated(array $data): array
+    private static function validarDatos(array $data): array
     {
         $nombre    = trim((string) ($data['nombre'] ?? ''));
         $asunto = trim((string) ($data['asunto'] ?? ''));

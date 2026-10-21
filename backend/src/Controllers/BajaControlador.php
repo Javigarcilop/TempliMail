@@ -16,36 +16,36 @@ use Throwable;
  */
 class BajaControlador
 {
-    public function handle(int $contactId, string $signature): void
+    public function gestionarBaja(int $contactId, string $signature): void
     {
         header('Content-Type: text/html; charset=utf-8');
         header('X-Robots-Tag: noindex');
 
-        if (!Baja::isValid($contactId, $signature)) {
+        if (!Baja::esValida($contactId, $signature)) {
             http_response_code(404);
-            echo $this->page('Enlace no válido', '<p>Este enlace de baja no es válido o ha caducado.</p>');
+            echo $this->construirPagina('Enlace no válido', '<p>Este enlace de baja no es válido o ha caducado.</p>');
             return;
         }
 
         try {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $correo = ContactoModelo::unsubscribe($contactId);
+                $correo = ContactoModelo::darDeBaja($contactId);
 
                 if ($correo === null) {
                     http_response_code(404);
-                    echo $this->page('Enlace no válido', '<p>No hemos encontrado tu suscripción.</p>');
+                    echo $this->construirPagina('Enlace no válido', '<p>No hemos encontrado tu suscripción.</p>');
                     return;
                 }
 
-                echo $this->page(
+                echo $this->construirPagina(
                     'Baja confirmada',
-                    '<p>Hemos dado de baja <strong>' . $this->e($correo) . '</strong>.</p>'
+                    '<p>Hemos dado de baja <strong>' . $this->escapar($correo) . '</strong>.</p>'
                     . '<p>No volverás a recibir correos nuestros.</p>'
                 );
                 return;
             }
 
-            echo $this->page(
+            echo $this->construirPagina(
                 'Darse de baja',
                 '<p>¿Quieres dejar de recibir estos correos?</p>'
                 . '<form method="post"><button type="submit">Confirmar baja</button></form>'
@@ -53,13 +53,13 @@ class BajaControlador
         } catch (Throwable $e) {
             error_log('Baja failed: ' . $e->getMessage());
             http_response_code(500);
-            echo $this->page('Error', '<p>No hemos podido procesar la baja. Inténtalo de nuevo más tarde.</p>');
+            echo $this->construirPagina('Error', '<p>No hemos podido procesar la baja. Inténtalo de nuevo más tarde.</p>');
         }
     }
 
-    private function page(string $title, string $content): string
+    private function construirPagina(string $title, string $content): string
     {
-        $title = $this->e($title);
+        $title = $this->escapar($title);
 
         return <<<HTML
 <!DOCTYPE html>
@@ -87,7 +87,7 @@ class BajaControlador
 HTML;
     }
 
-    private function e(string $value): string
+    private function escapar(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }

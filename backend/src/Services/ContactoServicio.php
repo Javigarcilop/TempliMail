@@ -10,31 +10,31 @@ use TempliMail\Models\GrupoModelo;
 
 class ContactoServicio
 {
-    public static function getAll(int $userId): array
+    public static function obtenerTodos(int $userId): array
     {
-        return ContactoModelo::getAllByUser($userId);
+        return ContactoModelo::obtenerTodosPorUsuario($userId);
     }
 
-    public static function create(int $userId, array $data): int
+    public static function crear(int $userId, array $data): int
     {
-        return ContactoModelo::create($userId, $data);
+        return ContactoModelo::crear($userId, $data);
     }
 
-    public static function update(int $userId, int $id, array $data): void
+    public static function actualizar(int $userId, int $id, array $data): void
     {
-        ContactoModelo::update($userId, $id, $data);
+        ContactoModelo::actualizar($userId, $id, $data);
     }
 
-    public static function delete(int $userId, int $id): void
+    public static function eliminar(int $userId, int $id): void
     {
-        ContactoModelo::delete($userId, $id);
+        ContactoModelo::eliminar($userId, $id);
     }
 
-    public static function setSubscribed(int $userId, int $id, bool $subscribed): void
+    public static function establecerSuscripcion(int $userId, int $id, bool $subscribed): void
     {
-        ContactoModelo::setSubscribed($userId, $id, $subscribed);
+        ContactoModelo::establecerSuscripcion($userId, $id, $subscribed);
     }
-    public static function setGroups(int $userId, int $id, array $data): void
+    public static function establecerGrupos(int $userId, int $id, array $data): void
     {
         $groupIds = $data['ids_grupo'] ?? [];
 
@@ -42,11 +42,11 @@ class ContactoServicio
             throw new ApiExcepcion('ids_grupo debe ser una lista');
         }
 
-        GrupoModelo::setContactGroups($userId, $id, $groupIds);
+        GrupoModelo::establecerGruposDeContacto($userId, $id, $groupIds);
     }
 
     /** @return array{created:int,duplicates:int,invalid:array} */
-    public static function import(int $userId, array $data): array
+    public static function importar(int $userId, array $data): array
     {
         $rows = $data['contactos'] ?? null;
 
@@ -60,6 +60,6 @@ class ContactoServicio
 
         $groupId = !empty($data['grupo_id']) ? (int) $data['grupo_id'] : null;
 
-        return ContactoModelo::importMany($userId, array_filter($rows, 'is_array'), $groupId);
+        return ContactoModelo::importarVarios($userId, array_filter($rows, 'is_array'), $groupId);
     }
 }

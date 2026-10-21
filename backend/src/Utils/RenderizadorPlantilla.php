@@ -53,9 +53,9 @@ class RenderizadorPlantilla
      * @param array<string,?string> $vars
      * @param bool $html true = escapa los valores para insertarlos en HTML
      */
-    public static function render(string $text, array $vars, bool $html): string
+    public static function renderizar(string $text, array $vars, bool $html): string
     {
-        $vars = self::withDerived($vars);
+        $vars = self::conDerivadas($vars);
 
         return (string) preg_replace_callback(
             '/\{\{\s*([a-z_]+)\s*(?:\|([^}]*))?\}\}/i',
@@ -80,12 +80,12 @@ class RenderizadorPlantilla
     }
 
     /** Elimina saltos de linea de un asunto (evita inyeccion de cabeceras). */
-    public static function sanitizeSubject(string $asunto): string
+    public static function sanearAsunto(string $asunto): string
     {
         return trim((string) preg_replace('/[\r\n]+/', ' ', $asunto));
     }
 
-    private static function withDerived(array $vars): array
+    private static function conDerivadas(array $vars): array
     {
         $vars['nombre_completo'] = trim(
             (string) ($vars['nombre'] ?? '') . ' ' . (string) ($vars['apellidos'] ?? '')

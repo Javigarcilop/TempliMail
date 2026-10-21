@@ -8,61 +8,61 @@ use TempliMail\Services\CorreoServicio;
 
 class CorreoControlador extends BaseControlador
 {
-    public function sendSingle(): void
+    public function enviarIndividual(): void
     {
-        $this->respond(function (): array {
-            CorreoServicio::sendSingle($this->userId(), $this->body());
+        $this->responder(function (): array {
+            CorreoServicio::enviarIndividual($this->idUsuario(), $this->cuerpoPeticion());
 
             return [];
         });
     }
 
     /** POST /mail/preview */
-    public function preview(): void
+    public function previsualizar(): void
     {
-        $this->respond(fn(): array => ['data' => CorreoServicio::preview($this->userId(), $this->body())]);
+        $this->responder(fn(): array => ['data' => CorreoServicio::previsualizar($this->idUsuario(), $this->cuerpoPeticion())]);
     }
 
     /** POST /mail/test  (envia una copia al correo del propio usuario) */
-    public function sendTest(): void
+    public function enviarPrueba(): void
     {
-        $this->respond(fn(): array => ['enviado_a' => CorreoServicio::sendTest($this->userId(), $this->body())]);
+        $this->responder(fn(): array => ['enviado_a' => CorreoServicio::enviarPrueba($this->idUsuario(), $this->cuerpoPeticion())]);
     }
 
     /** Encola una campana (inmediata o programada). */
-    public function sendMassive(): void
+    public function enviarMasivo(): void
     {
-        $this->respond(
-            fn(): array => CorreoServicio::sendMassive($this->userId(), $this->body()),
+        $this->responder(
+            fn(): array => CorreoServicio::enviarMasivo($this->idUsuario(), $this->cuerpoPeticion()),
             201
         );
     }
 
-    public function getHistory(): void
+    public function obtenerHistorial(): void
     {
-        $this->respond(fn(): array => ['data' => CorreoServicio::getHistory($this->userId())]);
+        $this->responder(fn(): array => ['data' => CorreoServicio::obtenerHistorial($this->idUsuario())]);
     }
 
-    public function getCampaignDeliveries(int $campaignId): void
+    public function obtenerEntregasCampana(int $campaignId): void
     {
-        $this->respond(fn(): array => [
-            'data' => CorreoServicio::getDeliveries($this->userId(), $campaignId),
+        $this->responder(fn(): array => [
+            'data' => CorreoServicio::obtenerEntregas($this->idUsuario(), $campaignId),
         ]);
     }
 
-    public function cancelCampaign(int $campaignId): void
+    public function cancelarCampana(int $campaignId): void
     {
-        $this->respond(function () use ($campaignId): array {
-            CorreoServicio::cancelCampaign($this->userId(), $campaignId);
+        $this->responder(function () use ($campaignId): array {
+            CorreoServicio::cancelarCampana($this->idUsuario(), $campaignId);
 
             return [];
         });
     }
 
-    public function retryFailed(int $campaignId): void
+    public function reintentarFallidas(int $campaignId): void
     {
-        $this->respond(fn(): array => [
-            'reencolados' => CorreoServicio::retryFailed($this->userId(), $campaignId),
+        $this->responder(fn(): array => [
+            'reencolados' => CorreoServicio::reintentarFallidas($this->idUsuario(), $campaignId),
         ]);
     }
 
@@ -70,10 +70,10 @@ class CorreoControlador extends BaseControlador
      * Procesa a mano las campanas vencidas del usuario. Normalmente lo hace el
      * worker; este endpoint sirve de respaldo si el worker no esta en marcha.
      */
-    public function processScheduled(): void
+    public function procesarProgramadas(): void
     {
-        $this->respond(fn(): array => [
-            'procesadas' => CorreoServicio::processDueForUser($this->userId()),
+        $this->responder(fn(): array => [
+            'procesadas' => CorreoServicio::procesarPendientesUsuario($this->idUsuario()),
         ]);
     }
 }

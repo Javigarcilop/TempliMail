@@ -8,9 +8,9 @@ use PDO;
 
 class PlantillaModelo
 {
-    public static function getAllByUser(int $userId): array
+    public static function obtenerTodosPorUsuario(int $userId): array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT id, nombre, asunto, contenido_html,
@@ -27,9 +27,9 @@ class PlantillaModelo
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function getById(int $userId, int $id): ?array
+    public static function obtenerPorId(int $userId, int $id): ?array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT id, nombre, asunto, contenido_html,
@@ -50,9 +50,9 @@ class PlantillaModelo
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function create(int $userId, array $data): void
+    public static function crear(int $userId, array $data): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             INSERT INTO plantillas (usuario_id, nombre, asunto, contenido_html)
@@ -67,9 +67,9 @@ class PlantillaModelo
         ]);
     }
 
-    public static function update(int $userId, int $id, array $data): void
+    public static function actualizar(int $userId, int $id, array $data): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             UPDATE plantillas
@@ -90,14 +90,14 @@ class PlantillaModelo
         ]);
 
         // rowCount() vale 0 si no cambio nada: se comprueba la existencia aparte
-        if ($stmt->rowCount() === 0 && self::getById($userId, $id) === null) {
-            throw ApiExcepcion::notFound('Plantilla no encontrada');
+        if ($stmt->rowCount() === 0 && self::obtenerPorId($userId, $id) === null) {
+            throw ApiExcepcion::noEncontrado('Plantilla no encontrada');
         }
     }
 
-    public static function softDelete(int $userId, int $id): void
+    public static function eliminarLogico(int $userId, int $id): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             UPDATE plantillas
@@ -113,7 +113,7 @@ class PlantillaModelo
         ]);
 
         if ($stmt->rowCount() === 0) {
-            throw ApiExcepcion::notFound('Plantilla no encontrada');
+            throw ApiExcepcion::noEncontrado('Plantilla no encontrada');
         }
     }
 }

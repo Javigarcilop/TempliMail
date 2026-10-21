@@ -16,49 +16,49 @@ namespace TempliMail\Utils;
  */
 class Seguimiento
 {
-    public static function openSignature(int $deliveryId): string
+    public static function firmaApertura(int $deliveryId): string
     {
-        return hash_hmac('sha256', 'track-open:' . $deliveryId, self::secret());
+        return hash_hmac('sha256', 'track-open:' . $deliveryId, self::secreto());
     }
 
-    public static function isValidOpenSignature(int $deliveryId, string $signature): bool
+    public static function esFirmaAperturaValida(int $deliveryId, string $signature): bool
     {
-        return hash_equals(self::openSignature($deliveryId), $signature);
+        return hash_equals(self::firmaApertura($deliveryId), $signature);
     }
 
-    public static function clickSignature(int $deliveryId, string $url): string
+    public static function firmaClic(int $deliveryId, string $url): string
     {
-        return hash_hmac('sha256', 'track-click:' . $deliveryId . ':' . $url, self::secret());
+        return hash_hmac('sha256', 'track-click:' . $deliveryId . ':' . $url, self::secreto());
     }
 
-    public static function isValidClickSignature(int $deliveryId, string $url, string $signature): bool
+    public static function esFirmaClicValida(int $deliveryId, string $url, string $signature): bool
     {
-        return hash_equals(self::clickSignature($deliveryId, $url), $signature);
+        return hash_equals(self::firmaClic($deliveryId, $url), $signature);
     }
 
-    public static function pixelUrl(int $deliveryId): string
+    public static function generarUrlPixel(int $deliveryId): string
     {
-        return sprintf('%s/t/%d/%s.gif', self::base(), $deliveryId, self::openSignature($deliveryId));
+        return sprintf('%s/t/%d/%s.gif', self::urlBase(), $deliveryId, self::firmaApertura($deliveryId));
     }
 
-    public static function clickUrl(int $deliveryId, string $url): string
+    public static function generarUrlClic(int $deliveryId, string $url): string
     {
         return sprintf(
             '%s/t/%d/%s/click?url=%s',
-            self::base(),
+            self::urlBase(),
             $deliveryId,
-            self::clickSignature($deliveryId, $url),
+            self::firmaClic($deliveryId, $url),
             rawurlencode($url)
         );
     }
 
-    private static function base(): string
+    private static function urlBase(): string
     {
-        return rtrim(Entorno::get('PUBLIC_API_URL', 'http://localhost:8080/backend/api/index.php'), '/');
+        return rtrim(Entorno::obtener('PUBLIC_API_URL', 'http://localhost:8080/backend/api/index.php'), '/');
     }
 
-    private static function secret(): string
+    private static function secreto(): string
     {
-        return Entorno::get('JWT_SECRET', '');
+        return Entorno::obtener('JWT_SECRET', '');
     }
 }

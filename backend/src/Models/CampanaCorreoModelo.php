@@ -24,7 +24,7 @@ class CampanaCorreoModelo
 
     private const ISO = "'%Y-%m-%dT%H:%i:%sZ'";
 
-    public static function create(
+    public static function crear(
         int $userId,
         ?int $templateId,
         ?string $nombre,
@@ -34,7 +34,7 @@ class CampanaCorreoModelo
         string $estado,
         ?string $scheduledAtUtc
     ): int {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             INSERT INTO campanas_correo
@@ -57,9 +57,9 @@ class CampanaCorreoModelo
     }
 
     /** Uso interno (worker): sin filtrar por usuario. */
-    public static function findById(int $campaignId): ?array
+    public static function buscarPorId(int $campaignId): ?array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT id, usuario_id, asunto, contenido_html, estado, tipo
             FROM campanas_correo
             WHERE id = :id
@@ -75,9 +75,9 @@ class CampanaCorreoModelo
      * Reclama la campana de forma atomica. Devuelve false si otro proceso
      * ya la esta enviando, no esta lista o no existe: evita envios duplicados.
      */
-    public static function claim(int $campaignId): bool
+    public static function reclamar(int $campaignId): bool
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             UPDATE campanas_correo
             SET estado = 'processing',
                 procesamiento_iniciado_en = UTC_TIMESTAMP()
@@ -96,24 +96,24 @@ class CampanaCorreoModelo
     }
 
     /** Latido: indica que la campana sigue procesandose. */
-    public static function heartbeat(int $campaignId): void
+    public static function latido(int $campaignId): void
     {
-        BD::get()
+        BD::obtener()
             ->prepare("UPDATE campanas_correo SET procesamiento_iniciado_en = UTC_TIMESTAMP() WHERE id = :id AND estado = 'processing'")
             ->execute(['id' => $campaignId]);
     }
 
-    public static function markCompleted(int $campaignId): void
+    public static function marcarCompletada(int $campaignId): void
     {
-        BD::get()
+        BD::obtener()
             ->prepare("UPDATE campanas_correo SET estado = 'completed', procesamiento_iniciado_en = NULL WHERE id = :id")
             ->execute(['id' => $campaignId]);
     }
 
     /** Campanas listas para enviarse (de todos los usuarios) o abandonadas a medias. */
-    public static function getDue(int $limit = 10): array
+    public static function obtenerPendientesEnvio(int $limit = 10): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT id, usuario_id
             FROM campanas_correo
             WHERE (estado = 'scheduled'
@@ -131,9 +131,9 @@ class CampanaCorreoModelo
     }
 
     /** Cancela una campana programada que aun no ha empezado a enviarse. */
-    public static function cancel(int $userId, int $campaignId): void
+    public static function cancelar(int $userId, int $campaignId): void
     {
-        $db = BD::get();
+        $db = BD::obtener();
         $db->beginTransaction();
 
         try {
@@ -162,9 +162,9 @@ class CampanaCorreoModelo
     }
 
     /** Vuelve a encolar las entregas fallidas de una campana ya terminada. */
-    public static function retryFailed(int $userId, int $campaignId): int
+    public static function reintentarFallidas(int $userId, int $campaignId): int
     {
-        $db = BD::get();
+        $db = BD::obtener();
         $db->beginTransaction();
 
         try {
@@ -177,7 +177,7 @@ class CampanaCorreoModelo
             $estado = $stmt->fetchColumn();
 
             if ($estado === false) {
-                throw ApiExcepcion::notFound('Campaña no encontrada');
+                throw ApiExcepcion::noEncontrado('Campaña no encontrada');
             }
 
             if ($estado !== 'completed') {
@@ -211,11 +211,11 @@ class CampanaCorreoModelo
         }
     }
 
-    public static function getAllByUser(int $userId): array
+    public static function obtenerTodosPorUsuario(int $userId): array
     {
         $iso = self::ISO;
 
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT
                 ec.id,
                 ec.nombre,

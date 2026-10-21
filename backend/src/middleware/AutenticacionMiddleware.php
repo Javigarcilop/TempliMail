@@ -16,30 +16,30 @@ class AutenticacionMiddleware
         private JwtServicio $jwtService
     ) {}
 
-    public function handle(): int
+    public function autenticar(): int
     {
-        $authHeader = $this->getAuthorizationHeader();
+        $authHeader = $this->obtenerCabeceraAutorizacion();
 
         if ($authHeader === null || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            $this->unauthorized();
+            $this->noAutorizado();
         }
 
         try {
-            $decoded = $this->jwtService->validate($matches[1]);
+            $decoded = $this->jwtService->validar($matches[1]);
         } catch (UnexpectedValueException | DomainException | InvalidArgumentException) {
             // Token malformado, con firma invalida o caducado.
             // (Otros errores, p. ej. la base de datos caida, NO son un 401: se propagan.)
-            $this->unauthorized();
+            $this->noAutorizado();
         }
 
-        $user = AutenticacionModelo::findById((int) $decoded->sub);
+        $user = AutenticacionModelo::buscarPorId((int) $decoded->sub);
 
         if (
             !$user ||
             (int) $decoded->ver !== (int) $user['version_token'] ||
             $user['eliminado_en'] !== null
         ) {
-            $this->unauthorized();
+            $this->noAutorizado();
         }
 
         $_SERVER['AUTH_USER_ID'] = (int) $user['id'];
@@ -47,7 +47,7 @@ class AutenticacionMiddleware
         return (int) $user['id'];
     }
 
-    private function getAuthorizationHeader(): ?string
+    private function obtenerCabeceraAutorizacion(): ?string
     {
         $headers = function_exists('getallheaders') ? getallheaders() : [];
 
@@ -70,7 +70,7 @@ class AutenticacionMiddleware
         return null;
     }
 
-    private function unauthorized(): never
+    private function noAutorizado(): never
     {
         http_response_code(401);
         echo json_encode([

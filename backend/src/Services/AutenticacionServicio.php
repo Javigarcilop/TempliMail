@@ -14,7 +14,7 @@ class AutenticacionServicio
     private const LOCK_MINUTES          = 15;
     private const MIN_PASSWORD_LENGTH   = 8;
 
-    public static function register(string $nombre_usuario, string $correo, string $contrasena): void
+    public static function registrar(string $nombre_usuario, string $correo, string $contrasena): void
     {
         $nombre_usuario = trim($nombre_usuario);
         $correo    = trim($correo);
@@ -35,24 +35,24 @@ class AutenticacionServicio
             throw new ApiExcepcion('La contraseña debe tener al menos ' . self::MIN_PASSWORD_LENGTH . ' caracteres');
         }
 
-        if (AutenticacionModelo::findByUsername($nombre_usuario) !== null) {
-            throw ApiExcepcion::conflict('Ese nombre de usuario ya existe');
+        if (AutenticacionModelo::buscarPorNombreUsuario($nombre_usuario) !== null) {
+            throw ApiExcepcion::conflicto('Ese nombre de usuario ya existe');
         }
 
-        if (AutenticacionModelo::findByEmail($correo) !== null) {
-            throw ApiExcepcion::conflict('Ya existe una cuenta con ese correo');
+        if (AutenticacionModelo::buscarPorCorreo($correo) !== null) {
+            throw ApiExcepcion::conflicto('Ya existe una cuenta con ese correo');
         }
 
-        AutenticacionModelo::create($nombre_usuario, $correo, $contrasena);
+        AutenticacionModelo::crear($nombre_usuario, $correo, $contrasena);
     }
 
-    public static function login(string $nombre_usuario, string $contrasena, JwtServicio $jwtService): string
+    public static function iniciarSesion(string $nombre_usuario, string $contrasena, JwtServicio $jwtService): string
     {
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'cli';
 
         if (
-            AutenticacionModelo::countRecentFailuresByUsername($nombre_usuario, self::LOCK_MINUTES) >= self::MAX_FAILURES_PER_USER ||
-            AutenticacionModelo::countRecentFailuresByIp($ip, self::LOCK_MINUTES) >= self::MAX_FAILURES_PER_IP
+            AutenticacionModelo::contarFallosRecientesPorUsuario($nombre_usuario, self::LOCK_MINUTES) >= self::MAX_FAILURES_PER_USER ||
+            AutenticacionModelo::contarFallosRecientesPorIp($ip, self::LOCK_MINUTES) >= self::MAX_FAILURES_PER_IP
         ) {
             throw new ApiExcepcion(
                 'Demasiados intentos fallidos. Vuelve a intentarlo en ' . self::LOCK_MINUTES . ' minutos.',
@@ -60,7 +60,7 @@ class AutenticacionServicio
             );
         }
 
-        $user = AutenticacionModelo::findByUsername($nombre_usuario);
+        $user = AutenticacionModelo::buscarPorNombreUsuario($nombre_usuario);
 
         // Mismo mensaje para usuario inexistente, contrasena erronea o cuenta desactivada
         if (
@@ -68,23 +68,23 @@ class AutenticacionServicio
             $user['eliminado_en'] !== null ||
             !password_verify($contrasena, $user['hash_contrasena'])
         ) {
-            AutenticacionModelo::recordFailedLogin($nombre_usuario, $ip);
+            AutenticacionModelo::registrarIntentoFallido($nombre_usuario, $ip);
             throw new ApiExcepcion('Credenciales incorrectas', 401);
         }
 
-        AutenticacionModelo::clearFailedLogins($nombre_usuario);
+        AutenticacionModelo::borrarIntentosFallidos($nombre_usuario);
 
-        return $jwtService->generate($user);
+        return $jwtService->generar($user);
     }
 
     /** Invalida todos los tokens del usuario (cierre de sesion). */
-    public static function logout(int $userId): void
+    public static function cerrarSesion(int $userId): void
     {
-        AutenticacionModelo::incrementTokenVersion($userId);
+        AutenticacionModelo::incrementarVersionToken($userId);
     }
 
     /** Cambia el correo de la cuenta. */
-    public static function updateProfile(int $userId, string $correo): array
+    public static function actualizarPerfil(int $userId, string $correo): array
     {
         $correo = trim($correo);
 
@@ -92,24 +92,24 @@ class AutenticacionServicio
             throw new ApiExcepcion('El formato del correo no es valido');
         }
 
-        $existing = AutenticacionModelo::findByEmail($correo);
+        $existing = AutenticacionModelo::buscarPorCorreo($correo);
 
         if ($existing !== null && (int) $existing['id'] !== $userId) {
-            throw ApiExcepcion::conflict('Ya existe una cuenta con ese correo');
+            throw ApiExcepcion::conflicto('Ya existe una cuenta con ese correo');
         }
 
-        AutenticacionModelo::updateEmail($userId, $correo);
+        AutenticacionModelo::actualizarCorreo($userId, $correo);
 
-        return self::currentUser($userId);
+        return self::usuarioActual($userId);
     }
 
     /**
      * Cambia la contrasena y devuelve un token nuevo: el cambio invalida los
      * tokens anteriores (otras sesiones), pero esta sesion sigue abierta.
      */
-    public static function changePassword(int $userId, string $current, string $new, JwtServicio $jwtService): string
+    public static function cambiarContrasena(int $userId, string $current, string $new, JwtServicio $jwtService): string
     {
-        $user = AutenticacionModelo::findWithPasswordById($userId);
+        $user = AutenticacionModelo::buscarConContrasenaPorId($userId);
 
         if (!$user || !password_verify($current, $user['hash_contrasena'])) {
             throw new ApiExcepcion('La contraseña actual no es correcta', 403);
@@ -123,17 +123,17 @@ class AutenticacionServicio
             throw new ApiExcepcion('La nueva contraseña debe ser distinta de la actual');
         }
 
-        AutenticacionModelo::updatePassword($userId, $new);
+        AutenticacionModelo::actualizarContrasena($userId, $new);
 
-        return $jwtService->generate(AutenticacionModelo::findById($userId));
+        return $jwtService->generar(AutenticacionModelo::buscarPorId($userId));
     }
 
-    public static function currentUser(int $userId): array
+    public static function usuarioActual(int $userId): array
     {
-        $user = AutenticacionModelo::findById($userId);
+        $user = AutenticacionModelo::buscarPorId($userId);
 
         if (!$user) {
-            throw ApiExcepcion::notFound('Usuario no encontrado');
+            throw ApiExcepcion::noEncontrado('Usuario no encontrado');
         }
 
         return [

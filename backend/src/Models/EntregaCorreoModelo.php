@@ -13,13 +13,13 @@ class EntregaCorreoModelo
      * @param array<int,array{id:int|string|null,correo:string}> $recipients
      *        contacto_id puede ser null (envio individual)
      */
-    public static function insertBatch(int $campaignId, array $recipients): void
+    public static function insertarLote(int $campaignId, array $recipients): void
     {
         if ($recipients === []) {
             return;
         }
 
-        $db = BD::get();
+        $db = BD::obtener();
 
         foreach (array_chunk($recipients, 500) as $chunk) {
             $rows   = [];
@@ -43,9 +43,9 @@ class EntregaCorreoModelo
      * Entregas pendientes con los datos del contacto (para personalizar el correo).
      * Los contactos borrados aparecen con contacto_id NULL.
      */
-    public static function getPendingByCampaign(int $campaignId, int $limit = 50): array
+    public static function obtenerPendientesPorCampana(int $campaignId, int $limit = 50): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT ed.id, ed.contacto_id, ed.correo_destinatario,
                    c.nombre, c.apellidos, c.empresa, c.cargo,
                    c.baja_en
@@ -64,18 +64,18 @@ class EntregaCorreoModelo
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function markSent(int $deliveryId, int $attempts = 1): void
+    public static function marcarEnviada(int $deliveryId, int $attempts = 1): void
     {
-        BD::get()->prepare("
+        BD::obtener()->prepare("
             UPDATE entregas_correo
             SET estado = 'sent', enviado_en = UTC_TIMESTAMP(), mensaje_error = NULL, reintentos = :attempts
             WHERE id = :id
         ")->execute(['id' => $deliveryId, 'attempts' => max(0, $attempts - 1)]);
     }
 
-    public static function markFailed(int $deliveryId, string $error, int $attempts = 1): void
+    public static function marcarFallida(int $deliveryId, string $error, int $attempts = 1): void
     {
-        BD::get()->prepare("
+        BD::obtener()->prepare("
             UPDATE entregas_correo
             SET estado = 'failed', mensaje_error = :error, reintentos = :attempts
             WHERE id = :id
@@ -86,9 +86,9 @@ class EntregaCorreoModelo
         ]);
     }
 
-    public static function markSkipped(int $deliveryId, string $reason): void
+    public static function marcarOmitida(int $deliveryId, string $reason): void
     {
-        BD::get()->prepare("
+        BD::obtener()->prepare("
             UPDATE entregas_correo
             SET estado = 'skipped', mensaje_error = :reason
             WHERE id = :id
@@ -96,9 +96,9 @@ class EntregaCorreoModelo
     }
 
     /** Registra una apertura (pixel de seguimiento). Cuenta todas, no solo la primera. */
-    public static function recordOpen(int $deliveryId): void
+    public static function registrarApertura(int $deliveryId): void
     {
-        BD::get()->prepare("
+        BD::obtener()->prepare("
             UPDATE entregas_correo
             SET abierto_en = COALESCE(abierto_en, UTC_TIMESTAMP()),
                 aperturas  = aperturas + 1
@@ -107,9 +107,9 @@ class EntregaCorreoModelo
     }
 
     /** Registra un clic en un enlace del correo. Independiente de si se registro apertura. */
-    public static function recordClick(int $deliveryId): void
+    public static function registrarClic(int $deliveryId): void
     {
-        BD::get()->prepare("
+        BD::obtener()->prepare("
             UPDATE entregas_correo
             SET clic_en = COALESCE(clic_en, UTC_TIMESTAMP()),
                 clics   = clics + 1
@@ -117,9 +117,9 @@ class EntregaCorreoModelo
         ")->execute(['id' => $deliveryId]);
     }
 
-    public static function getByCampaign(int $campaignId, int $userId): array
+    public static function obtenerPorCampana(int $campaignId, int $userId): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT
                 ed.id,
                 ed.estado,

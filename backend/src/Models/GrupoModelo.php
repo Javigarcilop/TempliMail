@@ -11,9 +11,9 @@ use PDO;
 
 class GrupoModelo
 {
-    public static function getAllByUser(int $userId): array
+    public static function obtenerTodosPorUsuario(int $userId): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT g.id, g.nombre, COUNT(c.id) AS total_miembros
             FROM grupos_contacto g
             LEFT JOIN miembros_grupo_contacto m ON m.grupo_id = g.id
@@ -33,50 +33,50 @@ class GrupoModelo
         }, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    public static function create(int $userId, string $nombre): int
+    public static function crear(int $userId, string $nombre): int
     {
-        $nombre = self::validName($nombre);
+        $nombre = self::validarNombre($nombre);
 
         try {
-            $db = BD::get();
+            $db = BD::obtener();
             $db->prepare("INSERT INTO grupos_contacto (usuario_id, nombre) VALUES (:usuario_id, :nombre)")
                ->execute(['usuario_id' => $userId, 'nombre' => $nombre]);
 
             return (int) $db->lastInsertId();
         } catch (PDOException $e) {
-            throw self::duplicateOrRethrow($e);
+            throw self::manejarDuplicado($e);
         }
     }
 
-    public static function rename(int $userId, int $id, string $nombre): void
+    public static function renombrar(int $userId, int $id, string $nombre): void
     {
-        $nombre = self::validName($nombre);
+        $nombre = self::validarNombre($nombre);
 
         try {
-            BD::get()->prepare("UPDATE grupos_contacto SET nombre = :nombre WHERE id = :id AND usuario_id = :usuario_id")
+            BD::obtener()->prepare("UPDATE grupos_contacto SET nombre = :nombre WHERE id = :id AND usuario_id = :usuario_id")
                ->execute(['nombre' => $nombre, 'id' => $id, 'usuario_id' => $userId]);
         } catch (PDOException $e) {
-            throw self::duplicateOrRethrow($e);
+            throw self::manejarDuplicado($e);
         }
 
-        if (!self::owns($userId, $id)) {
-            throw ApiExcepcion::notFound('Grupo no encontrado');
+        if (!self::esPropietario($userId, $id)) {
+            throw ApiExcepcion::noEncontrado('Grupo no encontrado');
         }
     }
 
-    public static function delete(int $userId, int $id): void
+    public static function eliminar(int $userId, int $id): void
     {
-        $stmt = BD::get()->prepare("DELETE FROM grupos_contacto WHERE id = :id AND usuario_id = :usuario_id");
+        $stmt = BD::obtener()->prepare("DELETE FROM grupos_contacto WHERE id = :id AND usuario_id = :usuario_id");
         $stmt->execute(['id' => $id, 'usuario_id' => $userId]);
 
         if ($stmt->rowCount() === 0) {
-            throw ApiExcepcion::notFound('Grupo no encontrado');
+            throw ApiExcepcion::noEncontrado('Grupo no encontrado');
         }
     }
 
-    public static function owns(int $userId, int $groupId): bool
+    public static function esPropietario(int $userId, int $groupId): bool
     {
-        $stmt = BD::get()->prepare("SELECT 1 FROM grupos_contacto WHERE id = :id AND usuario_id = :usuario_id");
+        $stmt = BD::obtener()->prepare("SELECT 1 FROM grupos_contacto WHERE id = :id AND usuario_id = :usuario_id");
         $stmt->execute(['id' => $groupId, 'usuario_id' => $userId]);
 
         return (bool) $stmt->fetchColumn();
@@ -87,9 +87,9 @@ class GrupoModelo
      *
      * @return array<int,int[]>
      */
-    public static function membershipsByContact(int $userId): array
+    public static function pertenenciasPorContacto(int $userId): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT m.contacto_id, m.grupo_id
             FROM miembros_grupo_contacto m
             JOIN grupos_contacto g ON g.id = m.grupo_id
@@ -108,21 +108,21 @@ class GrupoModelo
     }
 
     /** Sustituye los grupos de un contacto (solo grupos y contacto del propio usuario). */
-    public static function setContactGroups(int $userId, int $contactId, array $groupIds): void
+    public static function establecerGruposDeContacto(int $userId, int $contactId, array $groupIds): void
     {
         $groupIds = array_values(array_unique(array_filter(array_map('intval', $groupIds))));
 
-        if (ContactoModelo::getById($userId, $contactId) === null) {
-            throw ApiExcepcion::notFound('Contacto no encontrado');
+        if (ContactoModelo::obtenerPorId($userId, $contactId) === null) {
+            throw ApiExcepcion::noEncontrado('Contacto no encontrado');
         }
 
         foreach ($groupIds as $groupId) {
-            if (!self::owns($userId, $groupId)) {
-                throw ApiExcepcion::notFound('Grupo no encontrado');
+            if (!self::esPropietario($userId, $groupId)) {
+                throw ApiExcepcion::noEncontrado('Grupo no encontrado');
             }
         }
 
-        $db = BD::get();
+        $db = BD::obtener();
         $db->beginTransaction();
 
         try {
@@ -146,13 +146,13 @@ class GrupoModelo
     }
 
     /** @param int[] $contactIds ids recien creados por el propio usuario */
-    public static function addContacts(int $groupId, array $contactIds): void
+    public static function agregarContactos(int $groupId, array $contactIds): void
     {
         if ($contactIds === []) {
             return;
         }
 
-        $insert = BD::get()->prepare("INSERT IGNORE INTO miembros_grupo_contacto (grupo_id, contacto_id) VALUES (:grupo_id, :contacto_id)");
+        $insert = BD::obtener()->prepare("INSERT IGNORE INTO miembros_grupo_contacto (grupo_id, contacto_id) VALUES (:grupo_id, :contacto_id)");
 
         foreach ($contactIds as $contactId) {
             $insert->execute(['grupo_id' => $groupId, 'contacto_id' => $contactId]);
@@ -161,7 +161,7 @@ class GrupoModelo
 
     // -----------------------------------------------------------------
 
-    private static function validName(string $nombre): string
+    private static function validarNombre(string $nombre): string
     {
         $nombre = trim($nombre);
 
@@ -176,11 +176,11 @@ class GrupoModelo
         return $nombre;
     }
 
-    private static function duplicateOrRethrow(PDOException $e): \Throwable
+    private static function manejarDuplicado(PDOException $e): \Throwable
     {
         // 23000 = violacion de UNIQUE (nombre repetido para el usuario)
         return $e->getCode() === '23000'
-            ? ApiExcepcion::conflict('Ya existe un grupo con ese nombre')
+            ? ApiExcepcion::conflicto('Ya existe un grupo con ese nombre')
             : $e;
     }
 }

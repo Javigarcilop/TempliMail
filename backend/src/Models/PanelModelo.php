@@ -9,9 +9,9 @@ use PDO;
 
 class PanelModelo
 {
-    public static function getStats(int $userId): array
+    public static function obtenerEstadisticas(int $userId): array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT
@@ -37,9 +37,9 @@ class PanelModelo
     }
 
     /** Correos enviados / fallidos / abiertos / con clic (campañas masivas e individuales). */
-    public static function getDeliveryTotals(int $userId): array
+    public static function obtenerTotalesEntregas(int $userId): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT
                 COALESCE(SUM(ed.estado = 'sent'),   0) AS total_enviados,
                 COALESCE(SUM(ed.estado = 'failed'), 0) AS total_fallidos,
@@ -65,9 +65,9 @@ class PanelModelo
      *
      * @return array<int,array{fecha:string,enviados:int}>
      */
-    public static function getActivity(int $userId, int $days = 14): array
+    public static function obtenerActividad(int $userId, int $days = 14): array
     {
-        $stmt = BD::get()->prepare("
+        $stmt = BD::obtener()->prepare("
             SELECT DATE(ed.enviado_en) AS dia, COUNT(*) AS enviados
             FROM entregas_correo ed
             JOIN campanas_correo ec ON ec.id = ed.campana_id
@@ -94,9 +94,9 @@ class PanelModelo
         return $result;
     }
 
-    public static function getTopTemplate(int $userId): ?array
+    public static function obtenerPlantillaTop(int $userId): ?array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT t.nombre, COUNT(ec.id) AS total
@@ -114,9 +114,9 @@ class PanelModelo
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public static function getTopContact(int $userId): ?array
+    public static function obtenerContactoTop(int $userId): ?array
     {
-        $db = BD::get();
+        $db = BD::obtener();
 
         $stmt = $db->prepare("
             SELECT

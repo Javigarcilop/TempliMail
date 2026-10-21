@@ -10,7 +10,7 @@ class SubidaPlantillaServicio
 {
     private const MAX_SIZE = 5242880; // 5MB
 
-    public static function process(array $file): string
+    public static function procesar(array $file): string
     {
         if (!isset($file['tmp_name'], $file['nombre'], $file['size'])) {
             throw new ApiExcepcion('Archivo inválido.');
@@ -42,13 +42,13 @@ class SubidaPlantillaServicio
 
         return match ($mime) {
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                => self::convertDocxToHtml($file['tmp_name']),
+                => self::convertirDocxAHtml($file['tmp_name']),
             'application/pdf'
-                => self::convertPdfToHtml($file['tmp_name']),
+                => self::convertirPdfAHtml($file['tmp_name']),
         };
     }
 
-    private static function convertDocxToHtml(string $path): string
+    private static function convertirDocxAHtml(string $path): string
     {
         $phpWord = IOFactory::load($path, 'Word2007');
         $htmlWriter = IOFactory::createWriter($phpWord, 'HTML');
@@ -71,7 +71,7 @@ class SubidaPlantillaServicio
         return trim($cleanHtml);
     }
 
-    private static function convertPdfToHtml(string $path): string
+    private static function convertirPdfAHtml(string $path): string
     {
         $parser = new Parser();
         $pdf = $parser->parseFile($path);

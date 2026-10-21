@@ -12,9 +12,9 @@ class IAServicio
     private const MODEL   = 'llama-3.3-70b-versatile';
     private const API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-    public static function suggestSubjects(string $topic): array
+    public static function sugerirAsuntos(string $topic): array
     {
-        $apiKey = Entorno::get('GROQ_API_KEY', '');
+        $apiKey = Entorno::obtener('GROQ_API_KEY', '');
 
         if ($apiKey === '' || $apiKey === 'your-api-key-here') {
             throw new ApiExcepcion('La generación de asuntos con IA no está configurada', 503);

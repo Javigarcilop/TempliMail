@@ -9,13 +9,13 @@ use Throwable;
 
 abstract class BaseControlador
 {
-    protected function userId(): int
+    protected function idUsuario(): int
     {
         return (int) $_SERVER['AUTH_USER_ID'];
     }
 
     /** Cuerpo JSON de la peticion (array vacio si no hay o es invalido). */
-    protected function body(): array
+    protected function cuerpoPeticion(): array
     {
         $data = json_decode((string) file_get_contents('php://input'), true);
 
@@ -27,7 +27,7 @@ abstract class BaseControlador
      * - ApiExcepcion  -> su codigo HTTP y su mensaje.
      * - Otro Throwable -> se registra y se responde 500 generico (sin filtrar detalles).
      */
-    protected function respond(callable $action, int $estado = 200): void
+    protected function responder(callable $action, int $estado = 200): void
     {
         try {
             $result = $action();
@@ -35,7 +35,7 @@ abstract class BaseControlador
             http_response_code($estado);
             echo json_encode(['success' => true] + (is_array($result) ? $result : []));
         } catch (ApiExcepcion $e) {
-            http_response_code($e->getStatus());
+            http_response_code($e->obtenerEstado());
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         } catch (Throwable $e) {
             error_log(sprintf(
